@@ -1,0 +1,159 @@
+# Requirements: Nemovia
+
+**Defined:** 2026-03-04
+**Core Value:** Mostrare TUTTE le sagre del Veneto in un unico posto — dove sono, quando sono, cosa offrono — con un'esperienza mobile-first che nessun portale esistente offre.
+
+## v1 Requirements
+
+### Data Pipeline
+
+- [ ] **PIPE-01**: Sistema scrapa automaticamente sagre da almeno 5 siti (SagreItaliane, EventieSagre, SoloSagre, TuttoFesta, Sagritaly)
+- [ ] **PIPE-02**: Scraper config-driven legge selettori CSS dal database per ogni fonte
+- [ ] **PIPE-03**: Geocoding automatico città → coordinate GPS via Nominatim (rate limit 1 req/sec)
+- [ ] **PIPE-04**: Deduplicazione cross-fonte tramite normalizzazione nome+città+date sovrapposte
+- [ ] **PIPE-05**: Scadenza automatica eventi passati (is_active = false)
+- [ ] **PIPE-06**: Cron scheduling via Supabase pg_cron (scraping 2x/giorno, enrichment 2x/giorno, expire 1x/giorno)
+- [ ] **PIPE-07**: LLM auto-tagging con Gemini 2.5 Flash: assegna food_tags e feature_tags a ogni sagra
+- [ ] **PIPE-08**: LLM arricchimento descrizioni: genera testo coinvolgente max 250 char per sagra
+- [ ] **PIPE-09**: Batching LLM: 5-10 eventi per prompt per rispettare limite 250 RPD free tier
+
+### Discovery
+
+- [ ] **DISC-01**: Homepage con hero "Scopri le sagre del Veneto" e barra ricerca
+- [ ] **DISC-02**: Sezione "Questo weekend" con sagre dei prossimi 3 giorni
+- [ ] **DISC-03**: Quick filter chips emoji (Pesce, Carne, Formaggi, Vino, Radicchio, Funghi, Gratis, Oggi)
+- [ ] **DISC-04**: SagraCard con immagine, titolo, città(provincia), date, food tags (max 3), prezzo, distanza
+- [ ] **DISC-05**: Enriched description come sottotitolo nella card (se disponibile)
+- [ ] **DISC-06**: Pagina ricerca con filtri: provincia, raggio km, date, gratis/pagamento, tipo cucina
+- [ ] **DISC-07**: Ordinamento risultati per distanza quando geolocalizzazione attiva
+- [ ] **DISC-08**: Sezione "Per provincia" in homepage con conteggio sagre
+
+### Mappa
+
+- [ ] **MAP-01**: Mappa interattiva con Leaflet + OpenStreetMap con pin per ogni sagra
+- [ ] **MAP-02**: Marker clustering quando sagre vicine
+- [ ] **MAP-03**: Popup al click su marker con mini-info sagra
+- [ ] **MAP-04**: "Vicino a me" con geolocalizzazione browser via API PostGIS find_nearby_sagre
+- [ ] **MAP-05**: Pagina mappa fullscreen dedicata
+- [ ] **MAP-06**: Toggle lista/mappa nella pagina ricerca
+- [ ] **MAP-07**: Filtri overlay sulla mappa
+
+### Dettaglio
+
+- [ ] **DET-01**: Pagina dettaglio sagra con titolo, date, orari, indirizzo, prezzo, descrizione
+- [ ] **DET-02**: Mini mappa con singolo marker nella pagina dettaglio
+- [ ] **DET-03**: Bottone "Indicazioni" che apre Google Maps con coordinate
+- [ ] **DET-04**: Bottone "Condividi" con copia link
+- [ ] **DET-05**: Link al sito originale della sagra
+
+### SEO & Polish
+
+- [ ] **SEO-01**: generateMetadata dinamici per ogni pagina (titolo, description, OG)
+- [ ] **SEO-02**: Sitemap.xml dinamica con tutte le sagre attive
+- [ ] **SEO-03**: OG image dinamica per ogni sagra (1200x630, @vercel/og)
+- [ ] **SEO-04**: robots.txt
+- [ ] **SEO-05**: Loading skeleton per ogni route
+- [ ] **SEO-06**: Empty states per ricerche senza risultati
+
+### UI & Design
+
+- [ ] **UI-01**: Design mobile-first, perfetto su iPhone
+- [ ] **UI-02**: BottomNav mobile con tab Home/Cerca/Mappa
+- [ ] **UI-03**: Colori brand: primary amber-600, accent olive/green-700, bg stone-50
+- [ ] **UI-04**: Animazioni premium con Motion + Magic UI (fade-in scroll, spring filters, shimmer loading)
+- [ ] **UI-05**: Grafica modernissima — "non sembra un template"
+
+## v2 Requirements
+
+### Auth & Preferiti
+
+- **AUTH-01**: User can login via Google OAuth
+- **AUTH-02**: User can login via Magic Link
+- **AUTH-03**: User can save sagre to favorites
+- **AUTH-04**: User can view saved favorites list
+
+### Social & Recensioni
+
+- **SOCL-01**: User can rate sagra (1-5 stelle)
+- **SOCL-02**: User can write text review
+- **SOCL-03**: User can upload photos
+- **SOCL-04**: User can vote review as "utile/non utile"
+
+### Advanced Pipeline
+
+- **ADV-01**: Multi-LLM router con 6 provider e fallback
+- **ADV-02**: OCR locandine da Facebook/Instagram Pro Loco
+- **ADV-03**: Auto-discovery selettori CSS per nuovi siti via LLM
+
+### Engagement
+
+- **ENG-01**: Gamification con livelli utente
+- **ENG-02**: Notifiche "nuova sagra nella tua zona"
+- **ENG-03**: Filtro "Aperte ora" real-time
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| User authentication | Non necessario per consultazione pura, aggiunge complessità |
+| Recensioni e commenti | Richiede auth + moderazione, eccessivo per v1 |
+| Listing sponsorizzati | Prima validare il prodotto, poi monetizzare |
+| App nativa mobile | Web app mobile-first è sufficiente per v1 |
+| Real-time chat | Irrilevante per il caso d'uso |
+| Prenotazione tavoli | Fuori scope — l'app mostra info, non gestisce prenotazioni |
+| Multi-lingua | Solo italiano per MVP — target Veneto |
+| Cache ricerche | Ottimizzazione prematura |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| PIPE-01 | — | Pending |
+| PIPE-02 | — | Pending |
+| PIPE-03 | — | Pending |
+| PIPE-04 | — | Pending |
+| PIPE-05 | — | Pending |
+| PIPE-06 | — | Pending |
+| PIPE-07 | — | Pending |
+| PIPE-08 | — | Pending |
+| PIPE-09 | — | Pending |
+| DISC-01 | — | Pending |
+| DISC-02 | — | Pending |
+| DISC-03 | — | Pending |
+| DISC-04 | — | Pending |
+| DISC-05 | — | Pending |
+| DISC-06 | — | Pending |
+| DISC-07 | — | Pending |
+| DISC-08 | — | Pending |
+| MAP-01 | — | Pending |
+| MAP-02 | — | Pending |
+| MAP-03 | — | Pending |
+| MAP-04 | — | Pending |
+| MAP-05 | — | Pending |
+| MAP-06 | — | Pending |
+| MAP-07 | — | Pending |
+| DET-01 | — | Pending |
+| DET-02 | — | Pending |
+| DET-03 | — | Pending |
+| DET-04 | — | Pending |
+| DET-05 | — | Pending |
+| SEO-01 | — | Pending |
+| SEO-02 | — | Pending |
+| SEO-03 | — | Pending |
+| SEO-04 | — | Pending |
+| SEO-05 | — | Pending |
+| SEO-06 | — | Pending |
+| UI-01 | — | Pending |
+| UI-02 | — | Pending |
+| UI-03 | — | Pending |
+| UI-04 | — | Pending |
+| UI-05 | — | Pending |
+
+**Coverage:**
+- v1 requirements: 40 total
+- Mapped to phases: 0
+- Unmapped: 40 ⚠️
+
+---
+*Requirements defined: 2026-03-04*
+*Last updated: 2026-03-04 after initial definition*
