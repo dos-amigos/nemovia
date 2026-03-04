@@ -3,6 +3,21 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: checkpoint
+stopped_at: Completed 02-01-PLAN.md (vitest config + scraper helpers + Italian date parser)
+last_updated: "2026-03-04T21:12:50.410Z"
+last_activity: 2026-03-04 -- Completed 02-02-PLAN.md automated tasks
+progress:
+  total_phases: 6
+  completed_phases: 1
+  total_plans: 6
+  completed_plans: 5
+---
+
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: checkpoint
 stopped_at: "02-02 awaiting human verification of Supabase migration"
 last_updated: "2026-03-04T21:08:00Z"
 last_activity: "2026-03-04 -- Completed 02-02-PLAN.md (checkpoint: migration committed, pending Supabase verification)"
@@ -51,6 +66,7 @@ Progress: [█████░░░░░] 50% (3 of 6 plans completed)
 - Trend: accelerating
 
 *Updated after each plan completion*
+| Phase 02 P01 | 8 | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -74,6 +90,7 @@ Recent decisions affecting current work:
 - [02-02] pg_cron scraper jobs use vault.decrypted_secrets for project_url and anon_key -- no hardcoded secrets in cron body
 - [02-02] expire-sagre-daily is pure SQL in pg_cron body (no Edge Function invocation needed)
 - [02-02] find_duplicate_sagra() falls back to name+city match when either side has NULL dates
+- [Phase 02-01]: reporters: ['verbose'] array syntax (not reporter string) required for vitest v4 type compliance
 
 ### Pending Todos
 
@@ -88,6 +105,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-04T21:08:00Z
-Stopped at: 02-02 awaiting human verification of Supabase migration
-Resume file: .planning/phases/02-scraping-pipeline/02-02-SUMMARY.md
+Last session: 2026-03-04T21:12:46.491Z
+Stopped at: Completed 02-01-PLAN.md (vitest config + scraper helpers + Italian date parser)
+Resume file: None

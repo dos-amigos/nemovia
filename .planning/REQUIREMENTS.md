@@ -7,7 +7,7 @@
 
 ### Data Pipeline
 
-- [ ] **PIPE-01**: Sistema scrapa automaticamente sagre da almeno 5 siti (SagreItaliane, EventieSagre, SoloSagre, TuttoFesta, Sagritaly)
+- [x] **PIPE-01**: Sistema scrapa automaticamente sagre da almeno 5 siti (SagreItaliane, EventieSagre, SoloSagre, TuttoFesta, Sagritaly)
 - [x] **PIPE-02**: Scraper config-driven legge selettori CSS dal database per ogni fonte
 - [ ] **PIPE-03**: Geocoding automatico citta -> coordinate GPS via Nominatim (rate limit 1 req/sec)
 - [x] **PIPE-04**: Deduplicazione cross-fonte tramite normalizzazione nome+citta+date sovrapposte
@@ -108,7 +108,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PIPE-01 | Phase 2 | Pending |
+| PIPE-01 | Phase 2 | Complete |
 | PIPE-02 | Phase 2 | Complete |
 | PIPE-03 | Phase 3 | Pending |
 | PIPE-04 | Phase 2 | Complete |
