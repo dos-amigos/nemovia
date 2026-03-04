@@ -13,7 +13,7 @@ Nemovia delivers a sagre aggregator for the Veneto region in 6 phases. We start 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Design System** - Project scaffolding, Supabase with PostGIS, Vercel deploy, mobile-first layout with brand design system
-- [ ] **Phase 2: Scraping Pipeline** - Config-driven scraper collecting sagre from 5+ sources with dedup, scheduling, and expiration
+- [x] **Phase 2: Scraping Pipeline** - Config-driven scraper collecting sagre from 5+ sources with dedup, scheduling, and expiration (completed 2026-03-04)
 - [ ] **Phase 3: Data Enrichment** - LLM tagging and description enrichment via Gemini, geocoding via Nominatim
 - [ ] **Phase 4: Discovery UI** - Homepage, sagra cards, search page with filters, quick filter chips
 - [ ] **Phase 5: Map & Detail** - Interactive Leaflet map with clustering and geolocation, sagra detail page with sharing
@@ -47,7 +47,7 @@ Plans:
   3. Duplicate sagre from different sources are merged into a single record (same name + city + overlapping dates)
   4. Past events are automatically marked inactive and excluded from queries
   5. Scraping runs automatically on schedule via pg_cron + Supabase Edge Functions
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 - [ ] 02-01-PLAN.md -- Vitest setup + scraper helper library (normalizeText, parseItalianDateRange, types) with unit tests
@@ -128,7 +128,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Design System | 2/2 | Complete | 2026-03-04 |
-| 2. Scraping Pipeline | 3/4 | In Progress|  |
+| 2. Scraping Pipeline | 4/4 | Complete   | 2026-03-04 |
 | 3. Data Enrichment | 0/2 | Not started | - |
 | 4. Discovery UI | 0/3 | Not started | - |
 | 5. Map & Detail | 0/3 | Not started | - |
