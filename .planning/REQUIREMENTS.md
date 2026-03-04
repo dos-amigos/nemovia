@@ -1,7 +1,7 @@
 # Requirements: Nemovia
 
 **Defined:** 2026-03-04
-**Core Value:** Mostrare TUTTE le sagre del Veneto in un unico posto — dove sono, quando sono, cosa offrono — con un'esperienza mobile-first che nessun portale esistente offre.
+**Core Value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
 
 ## v1 Requirements
 
@@ -9,8 +9,8 @@
 
 - [ ] **PIPE-01**: Sistema scrapa automaticamente sagre da almeno 5 siti (SagreItaliane, EventieSagre, SoloSagre, TuttoFesta, Sagritaly)
 - [ ] **PIPE-02**: Scraper config-driven legge selettori CSS dal database per ogni fonte
-- [ ] **PIPE-03**: Geocoding automatico città → coordinate GPS via Nominatim (rate limit 1 req/sec)
-- [ ] **PIPE-04**: Deduplicazione cross-fonte tramite normalizzazione nome+città+date sovrapposte
+- [ ] **PIPE-03**: Geocoding automatico citta -> coordinate GPS via Nominatim (rate limit 1 req/sec)
+- [ ] **PIPE-04**: Deduplicazione cross-fonte tramite normalizzazione nome+citta+date sovrapposte
 - [ ] **PIPE-05**: Scadenza automatica eventi passati (is_active = false)
 - [ ] **PIPE-06**: Cron scheduling via Supabase pg_cron (scraping 2x/giorno, enrichment 2x/giorno, expire 1x/giorno)
 - [ ] **PIPE-07**: LLM auto-tagging con Gemini 2.5 Flash: assegna food_tags e feature_tags a ogni sagra
@@ -22,7 +22,7 @@
 - [ ] **DISC-01**: Homepage con hero "Scopri le sagre del Veneto" e barra ricerca
 - [ ] **DISC-02**: Sezione "Questo weekend" con sagre dei prossimi 3 giorni
 - [ ] **DISC-03**: Quick filter chips emoji (Pesce, Carne, Formaggi, Vino, Radicchio, Funghi, Gratis, Oggi)
-- [ ] **DISC-04**: SagraCard con immagine, titolo, città(provincia), date, food tags (max 3), prezzo, distanza
+- [ ] **DISC-04**: SagraCard con immagine, titolo, citta(provincia), date, food tags (max 3), prezzo, distanza
 - [ ] **DISC-05**: Enriched description come sottotitolo nella card (se disponibile)
 - [ ] **DISC-06**: Pagina ricerca con filtri: provincia, raggio km, date, gratis/pagamento, tipo cucina
 - [ ] **DISC-07**: Ordinamento risultati per distanza quando geolocalizzazione attiva
@@ -61,7 +61,7 @@
 - [ ] **UI-02**: BottomNav mobile con tab Home/Cerca/Mappa
 - [ ] **UI-03**: Colori brand: primary amber-600, accent olive/green-700, bg stone-50
 - [ ] **UI-04**: Animazioni premium con Motion + Magic UI (fade-in scroll, spring filters, shimmer loading)
-- [ ] **UI-05**: Grafica modernissima — "non sembra un template"
+- [ ] **UI-05**: Grafica modernissima -- "non sembra un template"
 
 ## v2 Requirements
 
@@ -95,65 +95,65 @@
 
 | Feature | Reason |
 |---------|--------|
-| User authentication | Non necessario per consultazione pura, aggiunge complessità |
+| User authentication | Non necessario per consultazione pura, aggiunge complessita |
 | Recensioni e commenti | Richiede auth + moderazione, eccessivo per v1 |
 | Listing sponsorizzati | Prima validare il prodotto, poi monetizzare |
-| App nativa mobile | Web app mobile-first è sufficiente per v1 |
+| App nativa mobile | Web app mobile-first e sufficiente per v1 |
 | Real-time chat | Irrilevante per il caso d'uso |
-| Prenotazione tavoli | Fuori scope — l'app mostra info, non gestisce prenotazioni |
-| Multi-lingua | Solo italiano per MVP — target Veneto |
+| Prenotazione tavoli | Fuori scope -- l'app mostra info, non gestisce prenotazioni |
+| Multi-lingua | Solo italiano per MVP -- target Veneto |
 | Cache ricerche | Ottimizzazione prematura |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PIPE-01 | — | Pending |
-| PIPE-02 | — | Pending |
-| PIPE-03 | — | Pending |
-| PIPE-04 | — | Pending |
-| PIPE-05 | — | Pending |
-| PIPE-06 | — | Pending |
-| PIPE-07 | — | Pending |
-| PIPE-08 | — | Pending |
-| PIPE-09 | — | Pending |
-| DISC-01 | — | Pending |
-| DISC-02 | — | Pending |
-| DISC-03 | — | Pending |
-| DISC-04 | — | Pending |
-| DISC-05 | — | Pending |
-| DISC-06 | — | Pending |
-| DISC-07 | — | Pending |
-| DISC-08 | — | Pending |
-| MAP-01 | — | Pending |
-| MAP-02 | — | Pending |
-| MAP-03 | — | Pending |
-| MAP-04 | — | Pending |
-| MAP-05 | — | Pending |
-| MAP-06 | — | Pending |
-| MAP-07 | — | Pending |
-| DET-01 | — | Pending |
-| DET-02 | — | Pending |
-| DET-03 | — | Pending |
-| DET-04 | — | Pending |
-| DET-05 | — | Pending |
-| SEO-01 | — | Pending |
-| SEO-02 | — | Pending |
-| SEO-03 | — | Pending |
-| SEO-04 | — | Pending |
-| SEO-05 | — | Pending |
-| SEO-06 | — | Pending |
-| UI-01 | — | Pending |
-| UI-02 | — | Pending |
-| UI-03 | — | Pending |
-| UI-04 | — | Pending |
-| UI-05 | — | Pending |
+| PIPE-01 | Phase 2 | Pending |
+| PIPE-02 | Phase 2 | Pending |
+| PIPE-03 | Phase 3 | Pending |
+| PIPE-04 | Phase 2 | Pending |
+| PIPE-05 | Phase 2 | Pending |
+| PIPE-06 | Phase 2 | Pending |
+| PIPE-07 | Phase 3 | Pending |
+| PIPE-08 | Phase 3 | Pending |
+| PIPE-09 | Phase 3 | Pending |
+| DISC-01 | Phase 4 | Pending |
+| DISC-02 | Phase 4 | Pending |
+| DISC-03 | Phase 4 | Pending |
+| DISC-04 | Phase 4 | Pending |
+| DISC-05 | Phase 4 | Pending |
+| DISC-06 | Phase 4 | Pending |
+| DISC-07 | Phase 4 | Pending |
+| DISC-08 | Phase 4 | Pending |
+| MAP-01 | Phase 5 | Pending |
+| MAP-02 | Phase 5 | Pending |
+| MAP-03 | Phase 5 | Pending |
+| MAP-04 | Phase 5 | Pending |
+| MAP-05 | Phase 5 | Pending |
+| MAP-06 | Phase 5 | Pending |
+| MAP-07 | Phase 5 | Pending |
+| DET-01 | Phase 5 | Pending |
+| DET-02 | Phase 5 | Pending |
+| DET-03 | Phase 5 | Pending |
+| DET-04 | Phase 5 | Pending |
+| DET-05 | Phase 5 | Pending |
+| SEO-01 | Phase 6 | Pending |
+| SEO-02 | Phase 6 | Pending |
+| SEO-03 | Phase 6 | Pending |
+| SEO-04 | Phase 6 | Pending |
+| SEO-05 | Phase 6 | Pending |
+| SEO-06 | Phase 6 | Pending |
+| UI-01 | Phase 1 | Pending |
+| UI-02 | Phase 1 | Pending |
+| UI-03 | Phase 1 | Pending |
+| UI-04 | Phase 6 | Pending |
+| UI-05 | Phase 6 | Pending |
 
 **Coverage:**
 - v1 requirements: 40 total
-- Mapped to phases: 0
-- Unmapped: 40 ⚠️
+- Mapped to phases: 40
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-04*
-*Last updated: 2026-03-04 after initial definition*
+*Last updated: 2026-03-04 after roadmap creation*
