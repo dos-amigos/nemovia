@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: checkpoint
-stopped_at: "02-04 checkpoint: awaiting human verification of pg_cron schedules and scrape pipeline in Supabase SQL Editor"
-last_updated: "2026-03-04T21:14:42.051Z"
+stopped_at: Phase 2 complete -- Phase 3 Data Enrichment is next
+last_updated: "2026-03-04T21:44:20.673Z"
 last_activity: 2026-03-04 -- Completed 02-02-PLAN.md automated tasks
 progress:
   total_phases: 6
@@ -67,6 +67,8 @@ Progress: [█████░░░░░] 50% (3 of 6 plans completed)
 
 *Updated after each plan completion*
 | Phase 02 P01 | 8 | 3 tasks | 7 files |
+| Phase 02-scraping-pipeline P02 | 10 | 2 tasks | 1 files |
+| Phase 02 P04 | 10 | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -91,6 +93,12 @@ Recent decisions affecting current work:
 - [02-02] expire-sagre-daily is pure SQL in pg_cron body (no Edge Function invocation needed)
 - [02-02] find_duplicate_sagra() falls back to name+city match when either side has NULL dates
 - [Phase 02-01]: reporters: ['verbose'] array syntax (not reporter string) required for vitest v4 type compliance
+- [Phase 02-scraping-pipeline]: scrape-sagre Edge Function deployed to Supabase Dashboard; returns HTTP 200 immediately via EdgeRuntime.waitUntil fire-and-forget pattern
+- [Phase 02-02]: normalize_text() uses extensions.unaccent() (fully qualified) to satisfy IMMUTABLE declaration on Supabase
+- [Phase 02-02]: pg_cron scraper jobs use vault.decrypted_secrets for project_url and anon_key — no hardcoded secrets in cron body
+- [Phase 02-02]: expire-sagre-daily is pure SQL in pg_cron body (no Edge Function invocation needed)
+- [Phase 02-02]: find_duplicate_sagra() falls back to name+city match when either side has NULL dates
+- [Phase 02-04]: Phase 2 pipeline confirmed end-to-end: 3 cron jobs active, 5 scraper_sources seeded, expire logic verified in production Supabase
 
 ### Pending Todos
 
@@ -105,6 +113,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-04T21:14:42.047Z
-Stopped at: 02-04 checkpoint: awaiting human verification of pg_cron schedules and scrape pipeline in Supabase SQL Editor
+Last session: 2026-03-04T21:44:08.854Z
+Stopped at: Phase 2 complete -- Phase 3 Data Enrichment is next
 Resume file: None

@@ -59,17 +59,18 @@ completed: 2026-03-04
 
 ## Performance
 
-- **Duration:** ~5 min
+- **Duration:** ~10 min
 - **Started:** 2026-03-04T21:03:01Z
-- **Completed:** 2026-03-04T21:08:00Z
-- **Tasks:** 1 automated task + 1 checkpoint (pending human verification)
+- **Completed:** 2026-03-04
+- **Tasks:** 2 (1 automated, 1 human-verify checkpoint — verified by user)
 - **Files modified:** 1
 
 ## Accomplishments
 
 - Created complete `supabase/migrations/002_scraping_pipeline.sql` with all 10 schema sections
+- Migration applied successfully in Supabase SQL Editor with zero errors — confirmed by user ("tutto corretto")
+- 5 scraper sources seeded in scraper_sources; 3 pg_cron jobs confirmed in cron.job; sagre columns added
 - Established normalize_text() IMMUTABLE SQL function matching the TypeScript normalizeText() contract
-- Seeded 5 Veneto scraper sources with CSS selector templates ready for DevTools verification
 - Configured 3 pg_cron jobs: daily expiry (pure SQL), morning scrape (06:00 UTC), evening scrape (18:00 UTC)
 
 ## Task Commits
@@ -77,8 +78,9 @@ completed: 2026-03-04
 Each task was committed atomically:
 
 1. **Task 1: Create schema migration with tables, functions, triggers, and indexes** - `1eb43a8` (feat)
+2. **Task 2: Human verification of Supabase migration** - Verified by user (no code commit — human action)
 
-**Plan metadata:** TBD (created after checkpoint verification)
+**Plan metadata:** TBD (this SUMMARY commit)
 
 ## Files Created/Modified
 
@@ -120,16 +122,16 @@ SELECT column_name, data_type FROM information_schema.columns
 WHERE table_name = 'sagre' AND column_name IN ('sources', 'is_active', 'normalized_title');
 ```
 
-## Checkpoint Pending
+## Issues Encountered
 
-This plan is paused at `checkpoint:human-verify`. The migration file has been committed to git but not yet applied to the Supabase database. The plan is complete once the human confirms the migration ran without errors in Supabase SQL Editor.
+None — migration ran successfully on first attempt. User confirmed: "migration applied, tutto corretto." All 8 verification checks passed: 5 sources seeded, 3 cron schedules created, sagre columns added.
 
 ## Next Phase Readiness
 
-- Migration file committed and ready to run manually in Supabase SQL Editor
-- Vault secrets must be set before running the pg_cron schedule statements
+- Schema fully applied in Supabase — Edge Function (Plan 02-03) can read from scraper_sources and write to sagre/scrape_logs
+- find_duplicate_sagra() RPC ready for deduplication calls
 - CSS selectors in scraper_sources are starting templates — verify against live site HTML before first scrape run
-- After migration is applied: Plan 02-03 (scrape-sagre Edge Function) can begin
+- Vault secrets (project_url, anon_key) must be confirmed present before pg_cron HTTP jobs will fire
 
 ---
 *Phase: 02-scraping-pipeline*
