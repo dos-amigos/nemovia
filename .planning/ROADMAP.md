@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Scaffold Next.js 15 with Tailwind v4, shadcn/ui brand theme, Supabase clients, and database migration
+- [x] 01-01-PLAN.md -- Scaffold Next.js 15 with Tailwind v4, shadcn/ui brand theme, Supabase clients, and database migration
 - [ ] 01-02-PLAN.md -- Build mobile BottomNav layout shell with placeholder pages and deploy to Vercel
 
 ### Phase 2: Scraping Pipeline
@@ -125,7 +125,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Design System | 0/2 | Not started | - |
+| 1. Foundation & Design System | 1/2 | In Progress | - |
 | 2. Scraping Pipeline | 0/2 | Not started | - |
 | 3. Data Enrichment | 0/2 | Not started | - |
 | 4. Discovery UI | 0/3 | Not started | - |
