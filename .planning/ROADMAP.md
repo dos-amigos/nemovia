@@ -64,7 +64,7 @@ Plans:
   2. Every sagra has food_tags (e.g., Pesce, Carne, Vino) and feature_tags assigned by Gemini 2.5 Flash
   3. Every sagra has an enriched description (max 250 characters) that reads as engaging and informative
   4. LLM calls batch 5-10 sagre per prompt to stay within the 250 RPD free tier limit
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 - [ ] 03-01-PLAN.md -- Enrichment helper library (geocode.ts, llm.ts) with Vitest unit tests for pure functions
@@ -130,7 +130,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Foundation & Design System | 2/2 | Complete | 2026-03-04 |
 | 2. Scraping Pipeline | 4/4 | Complete   | 2026-03-04 |
-| 3. Data Enrichment | 1/3 | In Progress|  |
+| 3. Data Enrichment | 2/3 | In Progress|  |
 | 4. Discovery UI | 0/3 | Not started | - |
 | 5. Map & Detail | 0/3 | Not started | - |
 | 6. SEO & Polish | 0/2 | Not started | - |
