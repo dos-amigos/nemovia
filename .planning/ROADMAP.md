@@ -31,11 +31,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Mobile layout shell renders with BottomNav (Home/Cerca/Mappa tabs) on phone viewport
   4. Brand colors (amber-600 primary, olive/green-700 accent, stone-50 bg) are applied across the shell
   5. pg_cron extension is enabled in Supabase
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md -- Scaffold Next.js 15 with Tailwind v4, shadcn/ui brand theme, Supabase clients, and database migration
+- [ ] 01-02-PLAN.md -- Build mobile BottomNav layout shell with placeholder pages and deploy to Vercel
 
 ### Phase 2: Scraping Pipeline
 **Goal**: Automated data collection that scrapes sagre from 5+ Veneto sources twice daily, deduplicates entries, and expires past events
