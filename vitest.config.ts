@@ -6,7 +6,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
-    reporter: "verbose",
+    reporters: ["verbose"],
     globals: false,
   },
 });
