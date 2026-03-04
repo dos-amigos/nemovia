@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: checkpoint
+status: ready
 stopped_at: Phase 2 complete -- Phase 3 Data Enrichment is next
-last_updated: "2026-03-04T21:44:20.673Z"
-last_activity: 2026-03-04 -- Completed 02-02-PLAN.md automated tasks
+last_updated: "2026-03-04T22:00:00Z"
+last_activity: "2026-03-04 -- Completed 02-04-PLAN.md (Phase 2 fully verified end-to-end)"
 progress:
   total_phases: 6
   completed_phases: 2
@@ -20,16 +20,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Phase 3: Data Enrichment (geocoding + LLM tagging) -- Phase 2 complete
+**Current focus:** Phase 3: Data Enrichment (Nominatim geocoding + Gemini LLM tagging)
 
 ## Current Position
 
-Phase: 2 of 6 (Scraping Pipeline) -- COMPLETE
-Plan: 4 of 4 in current phase (all complete)
-Status: Complete -- Phase 2 fully done, ready for Phase 3
-Last activity: 2026-03-04 -- Completed 02-03-PLAN.md (Edge Function deployed and human-verified)
+Phase: 3 of 6 (Data Enrichment) -- NOT STARTED
+Plan: 1 of TBD in current phase (03-01 next)
+Status: Ready -- Phase 2 fully verified end-to-end, awaiting Phase 3 plan execution
+Last activity: 2026-03-04 -- Completed Phase 2 (02-04 human verification passed: 3 cron jobs active, 5 sources seeded, expire logic confirmed in production)
 
-Progress: [██████████] 100% (6 of 6 plans completed)
+Progress: [███░░░░░░░] 33% (2 of 6 phases completed)
 
 ## Performance Metrics
 
@@ -84,17 +84,18 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Verify CSS selectors in scraper_sources against live site HTML before first scrape run (5 sources)
+- Verify CSS selectors in scraper_sources against live site HTML before first automated scrape run (5 sources)
+- Italian date format parsing may need refinement as real data volume grows across sources
 
 ### Blockers/Concerns
 
-- Target site HTML structure not yet inspected -- need to verify 5 sources are scrapable with Cheerio
+- Target site HTML structure not yet deeply inspected -- verify 5 sources are scrapable with correct CSS selectors
 - Gemini free tier limits may change (last changed Dec 2025)
-- Italian date format parsing will need custom handling (various formats across sources)
-- Vault secrets (project_url, anon_key) must be set in Supabase Dashboard before pg_cron HTTP jobs will work
+- Italian date format parsing will need monitoring across sources in Phase 3
+- Vault secrets (project_url, anon_key) confirmed set in production Supabase -- no longer a blocker
 
 ## Session Continuity
 
-Last session: 2026-03-04T21:44:08.854Z
+Last session: 2026-03-04T22:00:00Z
 Stopped at: Phase 2 complete -- Phase 3 Data Enrichment is next
 Resume file: None
