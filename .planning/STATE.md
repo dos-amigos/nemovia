@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: ready
-stopped_at: Phase 2 complete -- Phase 3 Data Enrichment is next
-last_updated: "2026-03-04T21:52:43.900Z"
+stopped_at: Completed 03-01-PLAN.md (enrichment helper library, 41/41 tests passing)
+last_updated: "2026-03-04T22:24:17.325Z"
 last_activity: "2026-03-04 -- Completed Phase 2 (02-04 human verification passed: 3 cron jobs active, 5 sources seeded, expire logic confirmed in production)"
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 9
+  completed_plans: 7
 ---
 
 ---
@@ -68,6 +68,7 @@ Progress: [███░░░░░░░] 33% (2 of 6 phases completed)
 | Phase 02 P01 | 8 | 3 tasks | 7 files |
 | Phase 02-scraping-pipeline P02 | 10 | 2 tasks | 1 files |
 | Phase 02 P04 | 10 | 2 tasks | 0 files |
+| Phase 03-data-enrichment P01 | 2 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -96,6 +97,9 @@ Recent decisions affecting current work:
 - [Phase 02-03]: Inline type definitions (no imports from src/) -- Deno Edge Functions cannot import from Next.js src/
 - [Phase 02-03]: Auto-disable source after 3 consecutive failures (consecutive_failures >= 3 sets is_active=false)
 - [Phase 02-04]: Phase 2 pipeline confirmed end-to-end: 3 cron jobs active, 5 scraper_sources seeded, expire logic verified in production Supabase
+- [Phase 03-01]: Pure function library in src/lib/enrichment/ for Vitest testing; verbatim copy pattern into Deno Edge Function (Deno cannot import from Next.js src/)
+- [Phase 03-01]: ITALY_BOUNDS bounding box (lat 36-47.5, lon 6-19) validates Nominatim geocode results and rejects out-of-Italy matches
+- [Phase 03-01]: BATCH_SIZE=8 sagre per Gemini call stays within 250 RPD free tier; validateTags generic works for both food and feature tag arrays
 
 ### Pending Todos
 
@@ -111,6 +115,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-04T22:00:00Z
-Stopped at: Phase 2 complete -- Phase 3 Data Enrichment is next
+Last session: 2026-03-04T22:24:17.320Z
+Stopped at: Completed 03-01-PLAN.md (enrichment helper library, 41/41 tests passing)
 Resume file: None
