@@ -8,11 +8,11 @@
 ### Data Pipeline
 
 - [ ] **PIPE-01**: Sistema scrapa automaticamente sagre da almeno 5 siti (SagreItaliane, EventieSagre, SoloSagre, TuttoFesta, Sagritaly)
-- [ ] **PIPE-02**: Scraper config-driven legge selettori CSS dal database per ogni fonte
+- [x] **PIPE-02**: Scraper config-driven legge selettori CSS dal database per ogni fonte
 - [ ] **PIPE-03**: Geocoding automatico citta -> coordinate GPS via Nominatim (rate limit 1 req/sec)
-- [ ] **PIPE-04**: Deduplicazione cross-fonte tramite normalizzazione nome+citta+date sovrapposte
-- [ ] **PIPE-05**: Scadenza automatica eventi passati (is_active = false)
-- [ ] **PIPE-06**: Cron scheduling via Supabase pg_cron (scraping 2x/giorno, enrichment 2x/giorno, expire 1x/giorno)
+- [x] **PIPE-04**: Deduplicazione cross-fonte tramite normalizzazione nome+citta+date sovrapposte
+- [x] **PIPE-05**: Scadenza automatica eventi passati (is_active = false)
+- [x] **PIPE-06**: Cron scheduling via Supabase pg_cron (scraping 2x/giorno, enrichment 2x/giorno, expire 1x/giorno)
 - [ ] **PIPE-07**: LLM auto-tagging con Gemini 2.5 Flash: assegna food_tags e feature_tags a ogni sagra
 - [ ] **PIPE-08**: LLM arricchimento descrizioni: genera testo coinvolgente max 250 char per sagra
 - [ ] **PIPE-09**: Batching LLM: 5-10 eventi per prompt per rispettare limite 250 RPD free tier
@@ -109,11 +109,11 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | PIPE-01 | Phase 2 | Pending |
-| PIPE-02 | Phase 2 | Pending |
+| PIPE-02 | Phase 2 | Complete |
 | PIPE-03 | Phase 3 | Pending |
-| PIPE-04 | Phase 2 | Pending |
-| PIPE-05 | Phase 2 | Pending |
-| PIPE-06 | Phase 2 | Pending |
+| PIPE-04 | Phase 2 | Complete |
+| PIPE-05 | Phase 2 | Complete |
+| PIPE-06 | Phase 2 | Complete |
 | PIPE-07 | Phase 3 | Pending |
 | PIPE-08 | Phase 3 | Pending |
 | PIPE-09 | Phase 3 | Pending |

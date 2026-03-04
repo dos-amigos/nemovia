@@ -2,31 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 2 context gathered
-last_updated: "2026-03-04T20:32:16.005Z"
-last_activity: 2026-03-04 -- Completed 01-02-PLAN.md
+status: checkpoint
+stopped_at: "02-02 awaiting human verification of Supabase migration"
+last_updated: "2026-03-04T21:08:00Z"
+last_activity: "2026-03-04 -- Completed 02-02-PLAN.md (checkpoint: migration committed, pending Supabase verification)"
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
----
-
----
-gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: completed
-stopped_at: Completed 01-02-PLAN.md (Phase 1 complete)
-last_updated: "2026-03-04T15:50:07.392Z"
-last_activity: 2026-03-04 -- Completed 01-02-PLAN.md
-progress:
-  total_phases: 6
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 100
+  total_plans: 6
+  completed_plans: 3
+  percent: 50
 ---
 
 # Project State
@@ -36,32 +21,33 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Phase 1 complete. Ready for Phase 2: Scraping Pipeline
+**Current focus:** Phase 2: Scraping Pipeline (Plan 02-02 complete, awaiting migration verification)
 
 ## Current Position
 
-Phase: 1 of 6 (Foundation & Design System) -- COMPLETE
-Plan: 2 of 2 in current phase (all done)
-Status: Phase Complete
-Last activity: 2026-03-04 -- Completed 01-02-PLAN.md
+Phase: 2 of 6 (Scraping Pipeline) -- IN PROGRESS
+Plan: 2 of 4 in current phase (02-02 at checkpoint)
+Status: Checkpoint -- awaiting human verification of Supabase migration
+Last activity: 2026-03-04 -- Completed 02-02-PLAN.md automated tasks
 
-Progress: [██████████] 100% (Phase 1)
+Progress: [█████░░░░░] 50% (3 of 6 plans completed)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 30 min
-- Total execution time: 1.0 hours
+- Total plans completed: 3
+- Average duration: 22 min
+- Total execution time: 1.1 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Foundation & Design System | 2 | 60 min | 30 min |
+| 2. Scraping Pipeline | 1/4 (in progress) | ~5 min | ~5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (42 min), 01-02 (18 min)
+- Last 5 plans: 01-01 (42 min), 01-02 (18 min), 02-02 (5 min)
 - Trend: accelerating
 
 *Updated after each plan completion*
@@ -84,19 +70,24 @@ Recent decisions affecting current work:
 - [01-02] Route group (main) for shared BottomNav layout across all tab pages
 - [01-02] usePathname() exact match for active tab detection in BottomNav
 - [01-02] Deployed to Vercel with custom domain nemovia.it
+- [02-02] normalize_text() uses extensions.unaccent() (fully qualified) to satisfy IMMUTABLE declaration on Supabase
+- [02-02] pg_cron scraper jobs use vault.decrypted_secrets for project_url and anon_key -- no hardcoded secrets in cron body
+- [02-02] expire-sagre-daily is pure SQL in pg_cron body (no Edge Function invocation needed)
+- [02-02] find_duplicate_sagra() falls back to name+city match when either side has NULL dates
 
 ### Pending Todos
 
-None yet.
+- Verify CSS selectors in scraper_sources against live site HTML before first scrape run (5 sources)
 
 ### Blockers/Concerns
 
 - Target site HTML structure not yet inspected -- need to verify 5 sources are scrapable with Cheerio
 - Gemini free tier limits may change (last changed Dec 2025)
 - Italian date format parsing will need custom handling (various formats across sources)
+- Vault secrets (project_url, anon_key) must be set in Supabase Dashboard before pg_cron HTTP jobs will work
 
 ## Session Continuity
 
-Last session: 2026-03-04T20:32:15.999Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-scraping-pipeline/02-CONTEXT.md
+Last session: 2026-03-04T21:08:00Z
+Stopped at: 02-02 awaiting human verification of Supabase migration
+Resume file: .planning/phases/02-scraping-pipeline/02-02-SUMMARY.md

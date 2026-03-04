@@ -47,11 +47,11 @@ Plans:
   3. Duplicate sagre from different sources are merged into a single record (same name + city + overlapping dates)
   4. Past events are automatically marked inactive and excluded from queries
   5. Scraping runs automatically on schedule via pg_cron + Supabase Edge Functions
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 
 Plans:
 - [ ] 02-01-PLAN.md -- Vitest setup + scraper helper library (normalizeText, parseItalianDateRange, types) with unit tests
-- [ ] 02-02-PLAN.md -- Database migration: scraper_sources, scrape_logs tables; sagre alterations; normalize_text() function; find_duplicate_sagra() RPC; pg_cron schedules; seed data
+- [x] 02-02-PLAN.md -- Database migration: scraper_sources, scrape_logs tables; sagre alterations; normalize_text() function; find_duplicate_sagra() RPC; pg_cron schedules; seed data
 - [ ] 02-03-PLAN.md -- Edge Function scrape-sagre: orchestrator with Cheerio HTML scraping, deduplication, upsert, failure tracking
 - [ ] 02-04-PLAN.md -- Verify pg_cron scheduling, expire logic, end-to-end pipeline confirmation
 
@@ -128,7 +128,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Design System | 2/2 | Complete | 2026-03-04 |
-| 2. Scraping Pipeline | 0/4 | Not started | - |
+| 2. Scraping Pipeline | 1/4 | In Progress|  |
 | 3. Data Enrichment | 0/2 | Not started | - |
 | 4. Discovery UI | 0/3 | Not started | - |
 | 5. Map & Detail | 0/3 | Not started | - |
