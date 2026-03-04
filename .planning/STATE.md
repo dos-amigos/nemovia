@@ -13,22 +13,6 @@ progress:
   completed_plans: 6
 ---
 
----
-gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: checkpoint
-stopped_at: "02-02 awaiting human verification of Supabase migration"
-last_updated: "2026-03-04T21:08:00Z"
-last_activity: "2026-03-04 -- Completed 02-02-PLAN.md (checkpoint: migration committed, pending Supabase verification)"
-progress:
-  total_phases: 6
-  completed_phases: 1
-  total_plans: 6
-  completed_plans: 3
-  percent: 50
----
-
 # Project State
 
 ## Project Reference
@@ -36,16 +20,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Phase 2: Scraping Pipeline (Plan 02-02 complete, awaiting migration verification)
+**Current focus:** Phase 3: Data Enrichment (geocoding + LLM tagging) -- Phase 2 complete
 
 ## Current Position
 
-Phase: 2 of 6 (Scraping Pipeline) -- IN PROGRESS
-Plan: 2 of 4 in current phase (02-02 at checkpoint)
-Status: Checkpoint -- awaiting human verification of Supabase migration
-Last activity: 2026-03-04 -- Completed 02-02-PLAN.md automated tasks
+Phase: 2 of 6 (Scraping Pipeline) -- COMPLETE
+Plan: 4 of 4 in current phase (all complete)
+Status: Complete -- Phase 2 fully done, ready for Phase 3
+Last activity: 2026-03-04 -- Completed 02-03-PLAN.md (Edge Function deployed and human-verified)
 
-Progress: [█████░░░░░] 50% (3 of 6 plans completed)
+Progress: [██████████] 100% (6 of 6 plans completed)
 
 ## Performance Metrics
 
@@ -93,11 +77,9 @@ Recent decisions affecting current work:
 - [02-02] expire-sagre-daily is pure SQL in pg_cron body (no Edge Function invocation needed)
 - [02-02] find_duplicate_sagra() falls back to name+city match when either side has NULL dates
 - [Phase 02-01]: reporters: ['verbose'] array syntax (not reporter string) required for vitest v4 type compliance
-- [Phase 02-scraping-pipeline]: scrape-sagre Edge Function deployed to Supabase Dashboard; returns HTTP 200 immediately via EdgeRuntime.waitUntil fire-and-forget pattern
-- [Phase 02-02]: normalize_text() uses extensions.unaccent() (fully qualified) to satisfy IMMUTABLE declaration on Supabase
-- [Phase 02-02]: pg_cron scraper jobs use vault.decrypted_secrets for project_url and anon_key — no hardcoded secrets in cron body
-- [Phase 02-02]: expire-sagre-daily is pure SQL in pg_cron body (no Edge Function invocation needed)
-- [Phase 02-02]: find_duplicate_sagra() falls back to name+city match when either side has NULL dates
+- [Phase 02-03]: scrape-sagre Edge Function deployed to Supabase Dashboard; returns HTTP 200 immediately via EdgeRuntime.waitUntil fire-and-forget pattern
+- [Phase 02-03]: Inline type definitions (no imports from src/) -- Deno Edge Functions cannot import from Next.js src/
+- [Phase 02-03]: Auto-disable source after 3 consecutive failures (consecutive_failures >= 3 sets is_active=false)
 - [Phase 02-04]: Phase 2 pipeline confirmed end-to-end: 3 cron jobs active, 5 scraper_sources seeded, expire logic verified in production Supabase
 
 ### Pending Todos
