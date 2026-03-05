@@ -81,12 +81,12 @@ Plans:
   3. Search page lets user filter by provincia, raggio km, date range, gratis/pagamento, and tipo cucina
   4. Results sort by distance when user has granted geolocation permission
   5. Enriched LLM descriptions appear as subtitles on sagra cards
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [ ] 04-01-PLAN.md -- Database migration (PostGIS RPCs) + data access layer + constants + SagraCard component
+- [ ] 04-02-PLAN.md -- Homepage with hero section, weekend sagre, emoji quick filters, and province counts
+- [ ] 04-03-PLAN.md -- Search page with nuqs-powered filters, geolocation hook, and distance sorting
 
 ### Phase 5: Map & Detail
 **Goal**: Users can discover sagre on an interactive map and view complete sagra details with directions and sharing
