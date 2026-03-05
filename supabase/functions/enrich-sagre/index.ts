@@ -187,7 +187,7 @@ async function runGeocodePass(
             const province = addr.county ?? addr.province ?? addr.state_district ?? null;
 
             await supabase.from("sagre").update({
-              location: `${lon} ${lat}`,  // PostGIS: LON LAT order (critical — reversed from lat/lon)
+              location: `SRID=4326;POINT(${lon} ${lat})`,  // PostGIS WKT: LON LAT order
               province: province,
               status: "pending_llm",
               updated_at: new Date().toISOString(),
