@@ -1,6 +1,7 @@
 import { Calendar } from "lucide-react";
 import { SagraCard } from "@/components/sagra/SagraCard";
 import { SagraGrid } from "@/components/sagra/SagraGrid";
+import { EmptyState } from "@/components/ui/EmptyState";
 import type { SagraCardData } from "@/lib/queries/types";
 
 interface WeekendSectionProps {
@@ -16,9 +17,11 @@ export function WeekendSection({ sagre }: WeekendSectionProps) {
       </h2>
 
       {sagre.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Nessuna sagra in programma per questo weekend.
-        </p>
+        <EmptyState
+          icon={<Calendar className="h-8 w-8 text-muted-foreground" />}
+          title="Nessuna sagra questo weekend"
+          description="Non ci sono sagre in programma per i prossimi giorni. Torna a controllare presto!"
+        />
       ) : (
         <SagraGrid>
           {sagre.map((sagra) => (

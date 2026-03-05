@@ -1,5 +1,7 @@
+import { Search } from "lucide-react";
 import { SagraCard } from "@/components/sagra/SagraCard";
 import { SagraGrid } from "@/components/sagra/SagraGrid";
+import { EmptyState } from "@/components/ui/EmptyState";
 import MapViewDynamic from "@/components/map/MapView.dynamic";
 import MapFilterOverlay from "@/components/map/MapFilterOverlay";
 import type { SagraCardData, MapMarkerData } from "@/lib/queries/types";
@@ -29,12 +31,11 @@ export function SearchResults({
 
   if (sagre.length === 0) {
     return (
-      <div className="py-12 text-center">
-        <h2 className="text-lg font-semibold">Nessuna sagra trovata</h2>
-        <p className="mt-1 text-muted-foreground">
-          Prova a cambiare i filtri o amplia il raggio di ricerca.
-        </p>
-      </div>
+      <EmptyState
+        icon={<Search className="h-8 w-8 text-muted-foreground" />}
+        title="Nessuna sagra trovata"
+        description="Prova a cambiare i filtri o amplia il raggio di ricerca."
+      />
     );
   }
 
