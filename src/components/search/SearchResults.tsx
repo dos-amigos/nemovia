@@ -2,6 +2,7 @@ import { Search } from "lucide-react";
 import { SagraCard } from "@/components/sagra/SagraCard";
 import { SagraGrid } from "@/components/sagra/SagraGrid";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { FadeIn } from "@/components/animations/FadeIn";
 import MapViewDynamic from "@/components/map/MapView.dynamic";
 import MapFilterOverlay from "@/components/map/MapFilterOverlay";
 import type { SagraCardData, MapMarkerData } from "@/lib/queries/types";
@@ -40,19 +41,21 @@ export function SearchResults({
   }
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">
-        {sagre.length} {sagre.length === 1 ? "sagra trovata" : "sagre trovate"}
-      </p>
-      <SagraGrid>
-        {sagre.map((sagra) => (
-          <SagraCard
-            key={sagra.id}
-            sagra={sagra}
-            distanceKm={sagra.distance_km}
-          />
-        ))}
-      </SagraGrid>
-    </div>
+    <FadeIn>
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          {sagre.length} {sagre.length === 1 ? "sagra trovata" : "sagre trovate"}
+        </p>
+        <SagraGrid>
+          {sagre.map((sagra) => (
+            <SagraCard
+              key={sagra.id}
+              sagra={sagra}
+              distanceKm={sagra.distance_km}
+            />
+          ))}
+        </SagraGrid>
+      </div>
+    </FadeIn>
   );
 }

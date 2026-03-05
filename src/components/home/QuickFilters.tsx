@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { FadeIn } from "@/components/animations/FadeIn";
 import { QUICK_FILTER_CHIPS } from "@/lib/constants/veneto";
 
 export function QuickFilters() {
@@ -22,25 +23,27 @@ export function QuickFilters() {
   }
 
   return (
-    <section className="space-y-3">
-      <h2 className="text-lg font-semibold">Cosa ti va?</h2>
+    <FadeIn delay={0.05}>
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">Cosa ti va?</h2>
 
-      <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-2">
-        {QUICK_FILTER_CHIPS.map((chip) => (
-          <button
-            key={chip.label}
-            type="button"
-            onClick={() => handleChipClick(chip.param, chip.value)}
-          >
-            <Badge
-              variant="outline"
-              className="cursor-pointer px-3 py-1.5 text-sm whitespace-nowrap hover:bg-secondary"
+        <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-2">
+          {QUICK_FILTER_CHIPS.map((chip) => (
+            <button
+              key={chip.label}
+              type="button"
+              onClick={() => handleChipClick(chip.param, chip.value)}
             >
-              {chip.emoji} {chip.label}
-            </Badge>
-          </button>
-        ))}
-      </div>
-    </section>
+              <Badge
+                variant="outline"
+                className="cursor-pointer px-3 py-1.5 text-sm whitespace-nowrap hover:bg-secondary"
+              >
+                {chip.emoji} {chip.label}
+              </Badge>
+            </button>
+          ))}
+        </div>
+      </section>
+    </FadeIn>
   );
 }

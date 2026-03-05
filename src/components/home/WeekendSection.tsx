@@ -2,6 +2,7 @@ import { Calendar } from "lucide-react";
 import { SagraCard } from "@/components/sagra/SagraCard";
 import { SagraGrid } from "@/components/sagra/SagraGrid";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { FadeIn } from "@/components/animations/FadeIn";
 import type { SagraCardData } from "@/lib/queries/types";
 
 interface WeekendSectionProps {
@@ -10,6 +11,7 @@ interface WeekendSectionProps {
 
 export function WeekendSection({ sagre }: WeekendSectionProps) {
   return (
+    <FadeIn delay={0.1}>
     <section className="space-y-3">
       <h2 className="flex items-center gap-2 text-lg font-semibold">
         <Calendar className="h-5 w-5 text-primary" />
@@ -30,5 +32,6 @@ export function WeekendSection({ sagre }: WeekendSectionProps) {
         </SagraGrid>
       )}
     </section>
+    </FadeIn>
   );
 }

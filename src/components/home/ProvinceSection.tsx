@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { FadeIn } from "@/components/animations/FadeIn";
 import { VENETO_PROVINCES } from "@/lib/constants/veneto";
 import type { ProvinceCount } from "@/lib/queries/types";
 
@@ -11,6 +12,7 @@ interface ProvinceSectionProps {
 
 export function ProvinceSection({ counts }: ProvinceSectionProps) {
   return (
+    <FadeIn delay={0.2}>
     <section className="space-y-3">
       <h2 className="text-lg font-semibold">Per provincia</h2>
 
@@ -40,5 +42,6 @@ export function ProvinceSection({ counts }: ProvinceSectionProps) {
         </div>
       )}
     </section>
+    </FadeIn>
   );
 }
