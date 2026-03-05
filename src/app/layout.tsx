@@ -9,9 +9,19 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Nemovia - Sagre del Veneto",
-  description:
-    "Scopri tutte le sagre ed eventi gastronomici del Veneto",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://nemovia.vercel.app"
+  ),
+  title: {
+    default: "Nemovia - Sagre del Veneto",
+    template: "%s | Nemovia",
+  },
+  description: "Scopri tutte le sagre ed eventi gastronomici del Veneto",
+  openGraph: {
+    siteName: "Nemovia",
+    locale: "it_IT",
+    type: "website",
+  },
 };
 
 export const viewport: Viewport = {

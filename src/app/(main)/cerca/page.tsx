@@ -1,9 +1,16 @@
+import type { Metadata } from "next";
 import { searchSagre, getMapSagre } from "@/lib/queries/sagre";
 import { SearchFilters } from "@/components/search/SearchFilters";
 import { ActiveFilters } from "@/components/search/ActiveFilters";
 import { SearchResults } from "@/components/search/SearchResults";
 import { ViewToggle } from "@/components/search/ViewToggle";
 import type { SearchFilters as SearchFiltersType } from "@/lib/queries/types";
+
+export const metadata: Metadata = {
+  title: "Cerca sagre",
+  description:
+    "Cerca e filtra sagre per provincia, tipo cucina, data e distanza",
+};
 
 export default async function CercaPage({
   searchParams,
