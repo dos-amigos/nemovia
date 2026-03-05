@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Scraping Pipeline** - Config-driven scraper collecting sagre from 5+ sources with dedup, scheduling, and expiration (completed 2026-03-04)
 - [x] **Phase 3: Data Enrichment** - LLM tagging and description enrichment via Gemini, geocoding via Nominatim (completed 2026-03-04)
 - [x] **Phase 4: Discovery UI** - Homepage, sagra cards, search page with filters, quick filter chips (completed 2026-03-05)
-- [ ] **Phase 5: Map & Detail** - Interactive Leaflet map with clustering and geolocation, sagra detail page with sharing
+- [x] **Phase 5: Map & Detail** - Interactive Leaflet map with clustering and geolocation, sagra detail page with sharing (completed 2026-03-05)
 - [ ] **Phase 6: SEO & Polish** - Dynamic metadata, sitemap, OG images, premium animations, loading states
 
 ## Phase Details
@@ -98,12 +98,12 @@ Plans:
   3. "Vicino a me" button centers map on user location and shows nearby sagre via PostGIS query
   4. Search page has a working lista/mappa toggle with filter overlay on map view
   5. Detail page shows all sagra info (title, dates, hours, address, price, description, source link) with mini-map and working "Indicazioni" (Google Maps) and "Condividi" (copy link) buttons
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 05-01-PLAN.md -- Install Leaflet packages, create MapView with clustering, popup, dynamic wrapper, and data queries
-- [ ] 05-02-PLAN.md -- Fullscreen map page with geolocation, search page lista/mappa toggle, filter overlay
-- [ ] 05-03-PLAN.md -- Sagra detail page with mini-map, directions, sharing, and source link
+- [x] 05-01-PLAN.md -- Install Leaflet packages, create MapView with clustering, popup, dynamic wrapper, and data queries
+- [x] 05-02-PLAN.md -- Fullscreen map page with geolocation, search page lista/mappa toggle, filter overlay
+- [x] 05-03-PLAN.md -- Sagra detail page with mini-map, directions, sharing, and source link
 
 ### Phase 6: SEO & Polish
 **Goal**: The app is discoverable by search engines, shareable on social media, and feels premium with smooth animations and polished edge cases
@@ -115,11 +115,12 @@ Plans:
   3. Each sagra generates a unique 1200x630 OG image via @vercel/og
   4. All routes show loading skeletons during data fetch and empty states when no results match
   5. Scroll animations (fade-in), filter transitions (spring), and loading shimmers are present throughout the app, giving a premium non-template feel
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01-PLAN.md -- SEO infrastructure: dynamic metadata for all pages, sitemap.xml, robots.txt, per-sagra OG image
+- [ ] 06-02-PLAN.md -- Loading skeletons for all routes and polished empty states for data sections
+- [ ] 06-03-PLAN.md -- Premium scroll animations and staggered card reveals with Motion library
 
 ## Progress
 
@@ -132,5 +133,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 2. Scraping Pipeline | 4/4 | Complete   | 2026-03-04 |
 | 3. Data Enrichment | 3/3 | Complete | 2026-03-04 |
 | 4. Discovery UI | 3/3 | Complete | 2026-03-05 |
-| 5. Map & Detail | 0/3 | Not started | - |
-| 6. SEO & Polish | 0/2 | Not started | - |
+| 5. Map & Detail | 3/3 | Complete | 2026-03-05 |
+| 6. SEO & Polish | 0/3 | Not started | - |
