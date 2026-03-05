@@ -38,6 +38,24 @@ export type SagraCardData = Pick<
   distance_km?: number;
 };
 
+/**
+ * Subset of Sagra fields needed by the map marker and popup.
+ * Keeps map data transfer lean -- only what pins and popups render.
+ */
+export type MapMarkerData = Pick<
+  Sagra,
+  | "id"
+  | "slug"
+  | "title"
+  | "location_text"
+  | "province"
+  | "start_date"
+  | "end_date"
+  | "food_tags"
+  | "location"
+  | "is_free"
+>;
+
 /** Province name with its active sagra count. */
 export interface ProvinceCount {
   province: string;

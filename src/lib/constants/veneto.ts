@@ -34,3 +34,16 @@ export type QuickFilterChip = (typeof QUICK_FILTER_CHIPS)[number];
  */
 export const SAGRA_CARD_FIELDS =
   "id, title, slug, location_text, province, start_date, end_date, enhanced_description, food_tags, image_url, is_free, price_info";
+
+/**
+ * Column selection string for map marker queries.
+ * Even leaner than card fields -- only what pins and popups need.
+ */
+export const MAP_MARKER_FIELDS =
+  "id, slug, title, location_text, province, start_date, end_date, food_tags, location, is_free";
+
+/** Approximate geographic center of the Veneto region. */
+export const VENETO_CENTER: [number, number] = [45.44, 12.32];
+
+/** Default zoom level showing the full Veneto region. */
+export const DEFAULT_MAP_ZOOM = 8;

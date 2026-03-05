@@ -4,8 +4,14 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { SAGRA_CARD_FIELDS } from "@/lib/constants/veneto";
-import type { SagraCardData, SearchFilters, ProvinceCount } from "./types";
+import { SAGRA_CARD_FIELDS, MAP_MARKER_FIELDS } from "@/lib/constants/veneto";
+import type { Sagra } from "@/types/database";
+import type {
+  SagraCardData,
+  MapMarkerData,
+  SearchFilters,
+  ProvinceCount,
+} from "./types";
 
 /**
  * Fetch active sagre happening this weekend (today through +3 days).
@@ -152,5 +158,58 @@ export async function getProvinceCounts(): Promise<ProvinceCount[]> {
   } catch (err) {
     console.error("getProvinceCounts unexpected error:", err);
     return [];
+  }
+}
+
+/**
+ * Fetch all active sagre with non-null location for map rendering.
+ * Returns only the lean marker fields needed by MapView.
+ */
+export async function getMapSagre(): Promise<MapMarkerData[]> {
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from("sagre")
+      .select(MAP_MARKER_FIELDS)
+      .eq("is_active", true)
+      .not("location", "is", null);
+
+    if (error) {
+      console.error("getMapSagre error:", error.message);
+      return [];
+    }
+
+    return (data as MapMarkerData[]) ?? [];
+  } catch (err) {
+    console.error("getMapSagre unexpected error:", err);
+    return [];
+  }
+}
+
+/**
+ * Fetch a single active sagra by slug.
+ * Returns the full Sagra row (all fields) for the detail page.
+ */
+export async function getSagraBySlug(slug: string): Promise<Sagra | null> {
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from("sagre")
+      .select("*")
+      .eq("slug", slug)
+      .eq("is_active", true)
+      .single();
+
+    if (error) {
+      console.error("getSagraBySlug error:", error.message);
+      return null;
+    }
+
+    return data as Sagra;
+  } catch (err) {
+    console.error("getSagraBySlug unexpected error:", err);
+    return null;
   }
 }
