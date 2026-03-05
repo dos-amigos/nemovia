@@ -98,12 +98,12 @@ Plans:
   3. "Vicino a me" button centers map on user location and shows nearby sagre via PostGIS query
   4. Search page has a working lista/mappa toggle with filter overlay on map view
   5. Detail page shows all sagra info (title, dates, hours, address, price, description, source link) with mini-map and working "Indicazioni" (Google Maps) and "Condividi" (copy link) buttons
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
-- [ ] 05-03: TBD
+- [ ] 05-01-PLAN.md -- Install Leaflet packages, create MapView with clustering, popup, dynamic wrapper, and data queries
+- [ ] 05-02-PLAN.md -- Fullscreen map page with geolocation, search page lista/mappa toggle, filter overlay
+- [ ] 05-03-PLAN.md -- Sagra detail page with mini-map, directions, sharing, and source link
 
 ### Phase 6: SEO & Polish
 **Goal**: The app is discoverable by search engines, shareable on social media, and feels premium with smooth animations and polished edge cases
