@@ -155,6 +155,23 @@ async function fetchWithTimeout(url: string, timeoutMs = 10_000): Promise<string
   }
 }
 
+// --- Section 3b: City extraction fallback ---
+// When selector_city is null, try to extract city from the full text block.
+// Handles patterns like "Veneto Cittadella (PD)", "Veneto San Donà di Piave (VE)"
+function parseCityFromText(text: string): string {
+  // Pattern: <Region> <City> (<Province>)
+  const regionCity = text.match(
+    /(?:Veneto|Lombardia|Piemonte|Emilia[\s-]Romagna|Trentino|Friuli)\s+(.+?)\s*\([A-Z]{2}\)/i
+  );
+  if (regionCity) return regionCity[1].trim();
+
+  // Fallback: any "CityName (XX)" where XX is a 2-letter province
+  const cityProv = text.match(/([A-ZÀ-Ú][a-zà-ú]+(?:\s+[a-zà-ú]+)*(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*)\s*\([A-Z]{2}\)/);
+  if (cityProv) return cityProv[1].trim();
+
+  return "";
+}
+
 // --- Section 4: Scraping logic ---
 function buildPageUrl(source: ScraperSource, page: number): string {
   if (page === 1) return source.base_url;
@@ -182,7 +199,7 @@ function extractRawEvent($: any, el: any, source: ScraperSource): RawEventData {
     : $el.text().trim();
   const city = source.selector_city
     ? $el.find(source.selector_city).first().text().trim()
-    : "";
+    : parseCityFromText($el.text());
   const price = source.selector_price
     ? $el.find(source.selector_price).first().text().trim() || null
     : null;
@@ -345,8 +362,8 @@ async function scrapeSource(supabase: SupabaseClient, source: ScraperSource): Pr
       for (let i = 0; i < items.length; i++) {
         const raw = extractRawEvent($, items[i], source);
 
-        // Skip items with no title or city
-        if (!raw.title || !raw.city) continue;
+        // Skip items with no title (city is optional — geocoding can fill it later)
+        if (!raw.title) continue;
 
         const normalized = normalizeRawEvent(raw, source.name);
         const result = await upsertEvent(supabase, normalized, source.name);
