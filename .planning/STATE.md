@@ -3,30 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-03-PLAN.md (search page)
-last_updated: "2026-03-05T11:43:21.289Z"
-last_activity: "2026-03-05 -- Completed 04-03: Search page with nuqs filters, geolocation, and SagraCard results"
+stopped_at: Completed 05-01-PLAN.md (map component library)
+last_updated: "2026-03-05T13:57:57Z"
+last_activity: "2026-03-05 -- Completed 05-01: Leaflet map with clustering, popup, dynamic wrapper, queries"
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 12
-  completed_plans: 12
----
-
----
-gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: executing
-stopped_at: Completed 04-03-PLAN.md (search page)
-last_updated: "2026-03-05T11:37:36Z"
-last_activity: "2026-03-05 -- Completed 04-03: Search page with filters, geolocation, and results display"
-progress:
-  total_phases: 6
-  completed_phases: 4
-  total_plans: 12
-  completed_plans: 12
-  percent: 100
+  total_plans: 15
+  completed_plans: 13
+  percent: 87
 ---
 
 # Project State
@@ -36,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Phase 4 complete. Phase 5: Map & Detail next.
+**Current focus:** Phase 5 in progress. Map component library complete (Plan 01). Next: fullscreen map page (Plan 02).
 
 ## Current Position
 
-Phase: 4 of 6 (Discovery UI) -- COMPLETE
-Plan: 3 of 3 complete (04-01 data layer, 04-02 homepage, 04-03 search page)
-Status: Phase 4 complete -- ready for Phase 5
-Last activity: 2026-03-05 -- Completed 04-03: Search page with nuqs filters, geolocation, and SagraCard results
+Phase: 5 of 6 (Map & Detail)
+Plan: 1 of 3 complete (05-01 map component library)
+Status: Executing Phase 5
+Last activity: 2026-03-05 -- Completed 05-01: Leaflet map with clustering, popup, dynamic wrapper, queries
 
-Progress: [████████████] 100% (12 of 12 plans completed)
+Progress: [█████████░] 87% (13 of 15 plans completed)
 
 ## Performance Metrics
 
@@ -55,12 +40,13 @@ Progress: [████████████] 100% (12 of 12 plans completed)
 | 2. Scraping Pipeline | 4/4 | Complete |
 | 3. Data Enrichment | 3/3 | Complete |
 | 4. Discovery UI | 3/3 | Complete |
-| 5. Map & Detail | 0/? | Not started |
+| 5. Map & Detail | 1/3 | In progress |
 | 6. SEO & Polish | 0/? | Not started |
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 04 | P03 | 4min | 2 | 7 |
+| 05 | P01 | 4min | 2 | 9 |
 
 ## Accumulated Context
 
@@ -69,6 +55,9 @@ Progress: [████████████] 100% (12 of 12 plans completed)
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [Phase 05-01]: CDN URLs for Leaflet marker icons (Turbopack-safe, avoids broken static asset imports)
+- [Phase 05-01]: MapReadyHandler inner component exposes map instance via onMapReady callback for programmatic control
+- [Phase 05-01]: Cluster CSS imported from react-leaflet-cluster/dist/assets/ (verified path after install)
 - [Phase 04-03]: Geolocation lat/lng stored as string URL params, parsed to float by server component
 - [Phase 04-03]: Select uses sentinel __all__ for clear option (Radix Select requires non-empty values)
 - [Phase 04-03]: Raggio km filter conditionally rendered only when geolocation active
@@ -104,6 +93,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-05T11:37:36Z
-Stopped at: Completed 04-03-PLAN.md (search page)
+Last session: 2026-03-05T13:57:57.636Z
+Stopped at: Completed 05-01-PLAN.md (map component library)
 Resume file: None
