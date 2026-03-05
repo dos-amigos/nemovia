@@ -83,7 +83,7 @@ Each task was committed atomically:
 1. **Task 1: Database migration + constants + data access layer** - `12fc8d1` (feat)
 2. **Task 2: SagraCard component + grid + skeleton + next.config.ts + formatDateRange** - `ad9f30a` (feat)
 
-**Plan metadata:** (pending) (docs: complete plan)
+**Plan metadata:** `65cf812` (docs: complete plan)
 
 ## Files Created/Modified
 - `supabase/migrations/004_discovery.sql` - PostGIS RPC functions for spatial queries and province counts
