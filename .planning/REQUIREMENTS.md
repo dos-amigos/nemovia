@@ -40,11 +40,11 @@
 
 ### Dettaglio
 
-- [ ] **DET-01**: Pagina dettaglio sagra con titolo, date, orari, indirizzo, prezzo, descrizione
-- [ ] **DET-02**: Mini mappa con singolo marker nella pagina dettaglio
-- [ ] **DET-03**: Bottone "Indicazioni" che apre Google Maps con coordinate
-- [ ] **DET-04**: Bottone "Condividi" con copia link
-- [ ] **DET-05**: Link al sito originale della sagra
+- [x] **DET-01**: Pagina dettaglio sagra con titolo, date, orari, indirizzo, prezzo, descrizione
+- [x] **DET-02**: Mini mappa con singolo marker nella pagina dettaglio
+- [x] **DET-03**: Bottone "Indicazioni" che apre Google Maps con coordinate
+- [x] **DET-04**: Bottone "Condividi" con copia link
+- [x] **DET-05**: Link al sito originale della sagra
 
 ### SEO & Polish
 
@@ -132,11 +132,11 @@
 | MAP-05 | Phase 5 | Pending |
 | MAP-06 | Phase 5 | Pending |
 | MAP-07 | Phase 5 | Pending |
-| DET-01 | Phase 5 | Pending |
-| DET-02 | Phase 5 | Pending |
-| DET-03 | Phase 5 | Pending |
-| DET-04 | Phase 5 | Pending |
-| DET-05 | Phase 5 | Pending |
+| DET-01 | Phase 5 | Complete |
+| DET-02 | Phase 5 | Complete |
+| DET-03 | Phase 5 | Complete |
+| DET-04 | Phase 5 | Complete |
+| DET-05 | Phase 5 | Complete |
 | SEO-01 | Phase 6 | Pending |
 | SEO-02 | Phase 6 | Pending |
 | SEO-03 | Phase 6 | Pending |

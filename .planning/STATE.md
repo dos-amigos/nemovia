@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-01-PLAN.md (map component library)
-last_updated: "2026-03-05T13:57:57Z"
-last_activity: "2026-03-05 -- Completed 05-01: Leaflet map with clustering, popup, dynamic wrapper, queries"
+stopped_at: Completed 05-03-PLAN.md (detail page)
+last_updated: "2026-03-05T14:03:50Z"
+last_activity: "2026-03-05 -- Completed 05-03: Detail page with mini map, directions, share button"
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 15
-  completed_plans: 13
-  percent: 87
+  completed_plans: 15
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Phase 5 in progress. Map component library complete (Plan 01). Next: fullscreen map page (Plan 02).
+**Current focus:** Phase 5 complete. All 3 plans done (map library, fullscreen map, detail page). Ready for Phase 6: SEO & Polish.
 
 ## Current Position
 
 Phase: 5 of 6 (Map & Detail)
-Plan: 1 of 3 complete (05-01 map component library)
-Status: Executing Phase 5
-Last activity: 2026-03-05 -- Completed 05-01: Leaflet map with clustering, popup, dynamic wrapper, queries
+Plan: 3 of 3 complete (05-03 detail page)
+Status: Phase 5 complete
+Last activity: 2026-03-05 -- Completed 05-03: Detail page with mini map, directions, share button
 
-Progress: [█████████░] 87% (13 of 15 plans completed)
+Progress: [██████████] 100% (15 of 15 plans completed)
 
 ## Performance Metrics
 
@@ -40,13 +40,14 @@ Progress: [█████████░] 87% (13 of 15 plans completed)
 | 2. Scraping Pipeline | 4/4 | Complete |
 | 3. Data Enrichment | 3/3 | Complete |
 | 4. Discovery UI | 3/3 | Complete |
-| 5. Map & Detail | 1/3 | In progress |
+| 5. Map & Detail | 3/3 | Complete |
 | 6. SEO & Polish | 0/? | Not started |
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 04 | P03 | 4min | 2 | 7 |
 | 05 | P01 | 4min | 2 | 9 |
+| 05 | P03 | 4min | 2 | 6 |
 
 ## Accumulated Context
 
@@ -55,6 +56,9 @@ Progress: [█████████░] 87% (13 of 15 plans completed)
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [Phase 05-03]: DirectionsButton uses plain <a> tag with buttonVariants (no JS needed, better accessibility)
+- [Phase 05-03]: DetailMiniMap.dynamic.tsx needs "use client" for ssr:false with Turbopack
+- [Phase 05-03]: ShareButton clipboard API with Web Share API fallback for mobile
 - [Phase 05-01]: CDN URLs for Leaflet marker icons (Turbopack-safe, avoids broken static asset imports)
 - [Phase 05-01]: MapReadyHandler inner component exposes map instance via onMapReady callback for programmatic control
 - [Phase 05-01]: Cluster CSS imported from react-leaflet-cluster/dist/assets/ (verified path after install)
@@ -93,6 +97,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-05T13:57:57.636Z
-Stopped at: Completed 05-01-PLAN.md (map component library)
+Last session: 2026-03-05T14:03:50Z
+Stopped at: Completed 05-03-PLAN.md (detail page)
 Resume file: None

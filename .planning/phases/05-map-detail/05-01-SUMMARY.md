@@ -77,7 +77,7 @@ Each task was committed atomically:
 1. **Task 1: Install Leaflet packages and add types, queries, and constants** - `4a8df29` (feat)
 2. **Task 2: Create MapView component with clustering, popup, and dynamic wrapper** - `77d345f` (feat)
 
-**Plan metadata:** pending (docs: complete plan)
+**Plan metadata:** `b420d37` (docs: complete plan)
 
 ## Files Created/Modified
 - `src/components/map/MapView.tsx` - Client-side Leaflet map with clustering, markers, and popups
