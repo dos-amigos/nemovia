@@ -22,10 +22,10 @@
 - [ ] **DISC-01**: Homepage con hero "Scopri le sagre del Veneto" e barra ricerca
 - [ ] **DISC-02**: Sezione "Questo weekend" con sagre dei prossimi 3 giorni
 - [ ] **DISC-03**: Quick filter chips emoji (Pesce, Carne, Formaggi, Vino, Radicchio, Funghi, Gratis, Oggi)
-- [ ] **DISC-04**: SagraCard con immagine, titolo, citta(provincia), date, food tags (max 3), prezzo, distanza
-- [ ] **DISC-05**: Enriched description come sottotitolo nella card (se disponibile)
+- [x] **DISC-04**: SagraCard con immagine, titolo, citta(provincia), date, food tags (max 3), prezzo, distanza
+- [x] **DISC-05**: Enriched description come sottotitolo nella card (se disponibile)
 - [ ] **DISC-06**: Pagina ricerca con filtri: provincia, raggio km, date, gratis/pagamento, tipo cucina
-- [ ] **DISC-07**: Ordinamento risultati per distanza quando geolocalizzazione attiva
+- [x] **DISC-07**: Ordinamento risultati per distanza quando geolocalizzazione attiva
 - [ ] **DISC-08**: Sezione "Per provincia" in homepage con conteggio sagre
 
 ### Mappa
@@ -120,10 +120,10 @@
 | DISC-01 | Phase 4 | Pending |
 | DISC-02 | Phase 4 | Pending |
 | DISC-03 | Phase 4 | Pending |
-| DISC-04 | Phase 4 | Pending |
-| DISC-05 | Phase 4 | Pending |
+| DISC-04 | Phase 4 | Complete |
+| DISC-05 | Phase 4 | Complete |
 | DISC-06 | Phase 4 | Pending |
-| DISC-07 | Phase 4 | Pending |
+| DISC-07 | Phase 4 | Complete |
 | DISC-08 | Phase 4 | Pending |
 | MAP-01 | Phase 5 | Pending |
 | MAP-02 | Phase 5 | Pending |

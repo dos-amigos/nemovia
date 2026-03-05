@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready
-stopped_at: Phase 3 complete -- Phase 4 Discovery UI is next
-last_updated: "2026-03-05T09:16:05.661Z"
-last_activity: "2026-03-05 -- Completed Phase 3 (enrichment pipeline verified: 140 scraped, 25 geocoded, 5 enriched with LLM)"
+status: executing
+stopped_at: Completed 04-01-PLAN.md (discovery data layer)
+last_updated: "2026-03-05T10:03:43Z"
+last_activity: "2026-03-05 -- Completed 04-01: PostGIS RPCs, query layer, SagraCard component, domain constants"
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
+  total_plans: 12
+  completed_plans: 10
 ---
 
 # Project State
@@ -24,12 +24,12 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 
 ## Current Position
 
-Phase: 4 of 6 (Discovery UI) -- NOT STARTED
-Plan: TBD (phase not yet planned)
-Status: Ready -- Phase 3 verified end-to-end, enriched data available in production
-Last activity: 2026-03-05 -- Completed Phase 3 (enrichment pipeline: 140 scraped, 25 geocoded, 5 LLM-enriched)
+Phase: 4 of 6 (Discovery UI) -- IN PROGRESS
+Plan: 1 of 3 complete (04-01 data layer done, 04-02 homepage next)
+Status: Executing -- discovery data layer shipped, homepage build next
+Last activity: 2026-03-05 -- Completed 04-01: PostGIS RPCs, query layer, SagraCard, constants
 
-Progress: [█████░░░░░] 50% (3 of 6 phases completed)
+Progress: [█████████░] 83% (10 of 12 plans completed)
 
 ## Performance Metrics
 
@@ -38,7 +38,7 @@ Progress: [█████░░░░░] 50% (3 of 6 phases completed)
 | 1. Foundation & Design System | 2/2 | Complete |
 | 2. Scraping Pipeline | 4/4 | Complete |
 | 3. Data Enrichment | 3/3 | Complete |
-| 4. Discovery UI | 0/? | Not started |
+| 4. Discovery UI | 1/3 | In progress |
 | 5. Map & Detail | 0/? | Not started |
 | 6. SEO & Polish | 0/? | Not started |
 
@@ -49,6 +49,10 @@ Progress: [█████░░░░░] 50% (3 of 6 phases completed)
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [Phase 04-01]: PostGIS RPC uses SET search_path = '' with fully qualified extensions.*/public.* (Supabase security)
+- [Phase 04-01]: SagraCard is server component (no 'use client') -- SSR-friendly prop-driven rendering
+- [Phase 04-01]: next.config.ts catch-all hostname ** for remote images (MVP with unpredictable CDN domains)
+- [Phase 04-01]: searchSagre in-memory filtering after PostGIS RPC for combined spatial + attribute queries
 - [Phase 03-03]: Relaxed city requirement in scraper -- events without city accepted (geocoding fills later)
 - [Phase 03-03]: Added parseCityFromText() fallback for eventiesagre's "Region City (Province)" pattern
 - [Phase 03-03]: Disabled 4 non-working scraper sources -- only eventiesagre active (~140 events)
@@ -73,6 +77,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-05T09:16:05.661Z
-Stopped at: Phase 3 complete -- proceeding to Phase 4 Discovery UI
+Last session: 2026-03-05T10:03:43Z
+Stopped at: Completed 04-01-PLAN.md (discovery data layer)
 Resume file: None
