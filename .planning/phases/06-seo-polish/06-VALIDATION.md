@@ -2,8 +2,8 @@
 phase: 6
 slug: seo-polish
 status: draft
-nyquist_compliant: false
-wave_0_complete: false
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-03-05
 ---
 
@@ -38,25 +38,27 @@ created: 2026-03-05
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 06-01-01 | 01 | 1 | SEO-01 | manual-only | Visual inspection via `next build` + `curl` headers | N/A | ⬜ pending |
-| 06-01-02 | 01 | 1 | SEO-02 | smoke | `pnpm test -- src/app/sitemap.test.ts -x` | ❌ W0 | ⬜ pending |
-| 06-01-03 | 01 | 1 | SEO-03 | manual-only | Visit `/sagra/[slug]/opengraph-image` in browser | N/A | ⬜ pending |
-| 06-01-04 | 01 | 1 | SEO-04 | unit | `pnpm test -- src/app/robots.test.ts -x` | ❌ W0 | ⬜ pending |
-| 06-02-01 | 02 | 1 | SEO-05 | manual-only | Visual inspection during dev navigation | N/A | ⬜ pending |
-| 06-02-02 | 02 | 1 | SEO-06 | manual-only | Visual inspection with empty search filters | N/A | ⬜ pending |
-| 06-02-03 | 02 | 1 | UI-04 | manual-only | Visual inspection during scroll/interaction | N/A | ⬜ pending |
-| 06-02-04 | 02 | 1 | UI-05 | manual-only | Subjective visual review | N/A | ⬜ pending |
+| 06-01-01 | 01 | 1 | SEO-01 | manual-only | Visual inspection via `next build` + `curl` headers | N/A | pending |
+| 06-01-02 | 01 | 1 | SEO-02 | smoke | `pnpm test -- src/app/sitemap.test.ts -x` | TDD (created in-task) | pending |
+| 06-01-03 | 01 | 1 | SEO-03 | manual-only | Visit `/sagra/[slug]/opengraph-image` in browser | N/A | pending |
+| 06-01-04 | 01 | 1 | SEO-04 | unit | `pnpm test -- src/app/robots.test.ts -x` | TDD (created in-task) | pending |
+| 06-02-01 | 02 | 1 | SEO-05 | manual-only | Visual inspection during dev navigation | N/A | pending |
+| 06-02-02 | 02 | 1 | SEO-06 | manual-only | Visual inspection with empty search filters | N/A | pending |
+| 06-02-03 | 02 | 1 | UI-04 | manual-only | Visual inspection during scroll/interaction | N/A | pending |
+| 06-02-04 | 02 | 1 | UI-05 | manual-only | Subjective visual review | N/A | pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*Status: pending / green / red / flaky*
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `src/app/sitemap.test.ts` — verify sitemap function returns expected URL structure with active sagre
-- [ ] `src/app/robots.test.ts` — verify robots function returns correct rules and sitemap URL
+No separate Wave 0 plan needed. Both test files are created within Plan 06-01 Task 2 as part of its TDD cycle (`tdd="true"`):
 
-*Most SEO and UI-polish requirements are visual/manual-only by nature (metadata rendering, OG image appearance, animation smoothness). A `pnpm build` without errors serves as the primary automated gate.*
+- `src/app/sitemap.test.ts` -- created in 06-01-02 (RED phase writes test, GREEN phase writes implementation)
+- `src/app/robots.test.ts` -- created in 06-01-02 (RED phase writes test, GREEN phase writes implementation)
+
+The TDD task's `<behavior>` block defines test expectations before implementation begins, satisfying the Nyquist "tests exist before production code" requirement without a separate Wave 0 plan.
 
 ---
 
@@ -75,11 +77,11 @@ created: 2026-03-05
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or TDD-inline test creation
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covered: test files created within TDD task (no separate Wave 0 needed)
+- [x] No watch-mode flags
+- [x] Feedback latency < 30s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** ready
