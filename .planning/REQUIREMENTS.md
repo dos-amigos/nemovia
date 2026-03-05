@@ -33,10 +33,10 @@
 - [x] **MAP-01**: Mappa interattiva con Leaflet + OpenStreetMap con pin per ogni sagra
 - [x] **MAP-02**: Marker clustering quando sagre vicine
 - [x] **MAP-03**: Popup al click su marker con mini-info sagra
-- [ ] **MAP-04**: "Vicino a me" con geolocalizzazione browser via API PostGIS find_nearby_sagre
-- [ ] **MAP-05**: Pagina mappa fullscreen dedicata
-- [ ] **MAP-06**: Toggle lista/mappa nella pagina ricerca
-- [ ] **MAP-07**: Filtri overlay sulla mappa
+- [x] **MAP-04**: "Vicino a me" con geolocalizzazione browser via API PostGIS find_nearby_sagre
+- [x] **MAP-05**: Pagina mappa fullscreen dedicata
+- [x] **MAP-06**: Toggle lista/mappa nella pagina ricerca
+- [x] **MAP-07**: Filtri overlay sulla mappa
 
 ### Dettaglio
 
@@ -128,10 +128,10 @@
 | MAP-01 | Phase 5 | Complete |
 | MAP-02 | Phase 5 | Complete |
 | MAP-03 | Phase 5 | Complete |
-| MAP-04 | Phase 5 | Pending |
-| MAP-05 | Phase 5 | Pending |
-| MAP-06 | Phase 5 | Pending |
-| MAP-07 | Phase 5 | Pending |
+| MAP-04 | Phase 5 | Complete |
+| MAP-05 | Phase 5 | Complete |
+| MAP-06 | Phase 5 | Complete |
+| MAP-07 | Phase 5 | Complete |
 | DET-01 | Phase 5 | Complete |
 | DET-02 | Phase 5 | Complete |
 | DET-03 | Phase 5 | Complete |

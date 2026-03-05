@@ -3,6 +3,21 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
+stopped_at: Completed 05-02-PLAN.md (map pages and search toggle)
+last_updated: "2026-03-05T14:07:02.347Z"
+last_activity: "2026-03-05 -- Completed 05-03: Detail page with mini map, directions, share button"
+progress:
+  total_phases: 6
+  completed_phases: 5
+  total_plans: 15
+  completed_plans: 15
+---
+
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: executing
 stopped_at: Completed 05-03-PLAN.md (detail page)
 last_updated: "2026-03-05T14:03:50Z"
 last_activity: "2026-03-05 -- Completed 05-03: Detail page with mini map, directions, share button"
@@ -48,6 +63,7 @@ Progress: [██████████] 100% (15 of 15 plans completed)
 | 04 | P03 | 4min | 2 | 7 |
 | 05 | P01 | 4min | 2 | 9 |
 | 05 | P03 | 4min | 2 | 6 |
+| Phase 05 P02 | 5min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -81,6 +97,9 @@ Recent decisions affecting current work:
 - [Phase 03-02]: Inline pure function copy pattern for Deno Edge Functions
 - [Phase 03-01]: Pure function library in src/lib/enrichment/ for Vitest testing
 - [Phase 03-01]: BATCH_SIZE=8 sagre per Gemini call stays within 250 RPD free tier
+- [Phase 05-02]: Server/client split for /mappa: server component fetches, client wrapper holds map ref for flyTo
+- [Phase 05-02]: Dynamic import wrappers with ssr:false need use client for server component import compatibility
+- [Phase 05-02]: Search page fetches both searchSagre and getMapSagre in parallel when vista=mappa
 
 ### Pending Todos
 
@@ -97,6 +116,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-05T14:03:50Z
-Stopped at: Completed 05-03-PLAN.md (detail page)
+Last session: 2026-03-05T14:07:02.342Z
+Stopped at: Completed 05-02-PLAN.md (map pages and search toggle)
 Resume file: None
