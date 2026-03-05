@@ -24,7 +24,7 @@
 - [ ] **DISC-03**: Quick filter chips emoji (Pesce, Carne, Formaggi, Vino, Radicchio, Funghi, Gratis, Oggi)
 - [x] **DISC-04**: SagraCard con immagine, titolo, citta(provincia), date, food tags (max 3), prezzo, distanza
 - [x] **DISC-05**: Enriched description come sottotitolo nella card (se disponibile)
-- [ ] **DISC-06**: Pagina ricerca con filtri: provincia, raggio km, date, gratis/pagamento, tipo cucina
+- [x] **DISC-06**: Pagina ricerca con filtri: provincia, raggio km, date, gratis/pagamento, tipo cucina
 - [x] **DISC-07**: Ordinamento risultati per distanza quando geolocalizzazione attiva
 - [ ] **DISC-08**: Sezione "Per provincia" in homepage con conteggio sagre
 
@@ -122,7 +122,7 @@
 | DISC-03 | Phase 4 | Pending |
 | DISC-04 | Phase 4 | Complete |
 | DISC-05 | Phase 4 | Complete |
-| DISC-06 | Phase 4 | Pending |
+| DISC-06 | Phase 4 | Complete |
 | DISC-07 | Phase 4 | Complete |
 | DISC-08 | Phase 4 | Pending |
 | MAP-01 | Phase 5 | Pending |

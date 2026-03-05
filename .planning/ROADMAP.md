@@ -14,8 +14,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Design System** - Project scaffolding, Supabase with PostGIS, Vercel deploy, mobile-first layout with brand design system
 - [x] **Phase 2: Scraping Pipeline** - Config-driven scraper collecting sagre from 5+ sources with dedup, scheduling, and expiration (completed 2026-03-04)
-- [ ] **Phase 3: Data Enrichment** - LLM tagging and description enrichment via Gemini, geocoding via Nominatim
-- [ ] **Phase 4: Discovery UI** - Homepage, sagra cards, search page with filters, quick filter chips
+- [x] **Phase 3: Data Enrichment** - LLM tagging and description enrichment via Gemini, geocoding via Nominatim (completed 2026-03-04)
+- [x] **Phase 4: Discovery UI** - Homepage, sagra cards, search page with filters, quick filter chips (completed 2026-03-05)
 - [ ] **Phase 5: Map & Detail** - Interactive Leaflet map with clustering and geolocation, sagra detail page with sharing
 - [ ] **Phase 6: SEO & Polish** - Dynamic metadata, sitemap, OG images, premium animations, loading states
 
@@ -64,12 +64,12 @@ Plans:
   2. Every sagra has food_tags (e.g., Pesce, Carne, Vino) and feature_tags assigned by Gemini 2.5 Flash
   3. Every sagra has an enriched description (max 250 characters) that reads as engaging and informative
   4. LLM calls batch 5-10 sagre per prompt to stay within the 250 RPD free tier limit
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 03-01-PLAN.md -- Enrichment helper library (geocode.ts, llm.ts) with Vitest unit tests for pure functions
-- [ ] 03-02-PLAN.md -- Database migration 003_enrichment.sql + enrich-sagre Edge Function (Nominatim geocoding + Gemini LLM batching)
-- [ ] 03-03-PLAN.md -- Deploy to production and verify end-to-end enrichment pipeline
+- [x] 03-01-PLAN.md -- Enrichment helper library (geocode.ts, llm.ts) with Vitest unit tests for pure functions
+- [x] 03-02-PLAN.md -- Database migration 003_enrichment.sql + enrich-sagre Edge Function (Nominatim geocoding + Gemini LLM batching)
+- [x] 03-03-PLAN.md -- Deploy to production and verify end-to-end enrichment pipeline
 
 ### Phase 4: Discovery UI
 **Goal**: Users can open the homepage, see weekend sagre, filter by food type and location, and browse results as cards
@@ -81,12 +81,12 @@ Plans:
   3. Search page lets user filter by provincia, raggio km, date range, gratis/pagamento, and tipo cucina
   4. Results sort by distance when user has granted geolocation permission
   5. Enriched LLM descriptions appear as subtitles on sagra cards
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 04-01-PLAN.md -- Database migration (PostGIS RPCs) + data access layer + constants + SagraCard component
-- [ ] 04-02-PLAN.md -- Homepage with hero section, weekend sagre, emoji quick filters, and province counts
-- [ ] 04-03-PLAN.md -- Search page with nuqs-powered filters, geolocation hook, and distance sorting
+- [x] 04-01-PLAN.md -- Database migration (PostGIS RPCs) + data access layer + constants + SagraCard component
+- [x] 04-02-PLAN.md -- Homepage with hero section, weekend sagre, emoji quick filters, and province counts
+- [x] 04-03-PLAN.md -- Search page with nuqs-powered filters, geolocation hook, and distance sorting
 
 ### Phase 5: Map & Detail
 **Goal**: Users can discover sagre on an interactive map and view complete sagra details with directions and sharing
@@ -130,7 +130,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Foundation & Design System | 2/2 | Complete | 2026-03-04 |
 | 2. Scraping Pipeline | 4/4 | Complete   | 2026-03-04 |
-| 3. Data Enrichment | 2/3 | In Progress|  |
-| 4. Discovery UI | 0/3 | Not started | - |
+| 3. Data Enrichment | 3/3 | Complete | 2026-03-04 |
+| 4. Discovery UI | 3/3 | Complete | 2026-03-05 |
 | 5. Map & Detail | 0/3 | Not started | - |
 | 6. SEO & Polish | 0/2 | Not started | - |
