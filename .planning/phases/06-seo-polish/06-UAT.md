@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 06-seo-polish
 source: 06-01-SUMMARY.md, 06-02-SUMMARY.md, 06-03-SUMMARY.md
 started: 2026-03-05T15:10:00Z
@@ -66,11 +66,14 @@ skipped: 4
 ## Gaps
 
 - truth: "Loading skeletons show gray pulsing placeholders during data fetch on all routes"
-  status: failed
+  status: resolved
   reason: "User reported: skeletons are green instead of gray on cerca/mappa. Homepage shows white page then brief green flash. Skeletons should be neutral gray with pulsing animation."
   severity: cosmetic
   test: 5
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Skeleton component used bg-accent (green-700) instead of bg-muted (stone-100/gray)"
+  artifacts:
+    - path: "src/components/ui/skeleton.tsx"
+      issue: "bg-accent class instead of bg-muted"
+  missing:
+    - "Changed bg-accent to bg-muted — fix applied in commit db0584f"
+  debug_session: ".planning/debug/skeleton-green-color.md"
