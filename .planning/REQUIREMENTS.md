@@ -52,8 +52,8 @@
 - [ ] **SEO-02**: Sitemap.xml dinamica con tutte le sagre attive
 - [ ] **SEO-03**: OG image dinamica per ogni sagra (1200x630, @vercel/og)
 - [ ] **SEO-04**: robots.txt
-- [ ] **SEO-05**: Loading skeleton per ogni route
-- [ ] **SEO-06**: Empty states per ricerche senza risultati
+- [x] **SEO-05**: Loading skeleton per ogni route
+- [x] **SEO-06**: Empty states per ricerche senza risultati
 
 ### UI & Design
 
@@ -141,8 +141,8 @@
 | SEO-02 | Phase 6 | Pending |
 | SEO-03 | Phase 6 | Pending |
 | SEO-04 | Phase 6 | Pending |
-| SEO-05 | Phase 6 | Pending |
-| SEO-06 | Phase 6 | Pending |
+| SEO-05 | Phase 6 | Complete |
+| SEO-06 | Phase 6 | Complete |
 | UI-01 | Phase 1 | Complete |
 | UI-02 | Phase 1 | Complete |
 | UI-03 | Phase 1 | Complete |

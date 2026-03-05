@@ -3,30 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-02-PLAN.md (map pages and search toggle)
-last_updated: "2026-03-05T14:13:04.231Z"
-last_activity: "2026-03-05 -- Completed 05-03: Detail page with mini map, directions, share button"
+stopped_at: Completed 06-02-PLAN.md (loading skeletons and empty states)
+last_updated: "2026-03-05T14:48:00Z"
+last_activity: "2026-03-05 -- Completed 06-02: Loading skeletons for all routes + EmptyState component"
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 15
-  completed_plans: 15
----
-
----
-gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: executing
-stopped_at: Completed 05-03-PLAN.md (detail page)
-last_updated: "2026-03-05T14:03:50Z"
-last_activity: "2026-03-05 -- Completed 05-03: Detail page with mini map, directions, share button"
-progress:
-  total_phases: 6
-  completed_phases: 5
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_plans: 18
+  completed_plans: 17
+  percent: 94
 ---
 
 # Project State
@@ -36,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Phase 5 complete. All 3 plans done (map library, fullscreen map, detail page). Ready for Phase 6: SEO & Polish.
+**Current focus:** Phase 6 in progress. Plan 02 (loading skeletons & empty states) complete. Plan 03 remaining.
 
 ## Current Position
 
-Phase: 5 of 6 (Map & Detail)
-Plan: 3 of 3 complete (05-03 detail page)
-Status: Phase 5 complete
-Last activity: 2026-03-05 -- Completed 05-03: Detail page with mini map, directions, share button
+Phase: 6 of 6 (SEO & Polish)
+Plan: 2 of 3 complete (06-02 loading skeletons & empty states)
+Status: Phase 6 in progress
+Last activity: 2026-03-05 -- Completed 06-02: Loading skeletons for all routes + EmptyState component
 
-Progress: [██████████] 100% (15 of 15 plans completed)
+Progress: [█████████░] 94% (17 of 18 plans completed)
 
 ## Performance Metrics
 
@@ -56,7 +41,7 @@ Progress: [██████████] 100% (15 of 15 plans completed)
 | 3. Data Enrichment | 3/3 | Complete |
 | 4. Discovery UI | 3/3 | Complete |
 | 5. Map & Detail | 3/3 | Complete |
-| 6. SEO & Polish | 0/? | Not started |
+| 6. SEO & Polish | 2/3 | In progress |
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
@@ -64,6 +49,7 @@ Progress: [██████████] 100% (15 of 15 plans completed)
 | 05 | P01 | 4min | 2 | 9 |
 | 05 | P03 | 4min | 2 | 6 |
 | Phase 05 P02 | 5min | 2 tasks | 9 files |
+| Phase 06 PP02 | 4min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -100,6 +86,8 @@ Recent decisions affecting current work:
 - [Phase 05-02]: Server/client split for /mappa: server component fetches, client wrapper holds map ref for flyTo
 - [Phase 05-02]: Dynamic import wrappers with ssr:false need use client for server component import compatibility
 - [Phase 05-02]: Search page fetches both searchSagre and getMapSagre in parallel when vista=mappa
+- [Phase 06-02]: EmptyState uses UtensilsCrossed as default icon (food-themed fallback)
+- [Phase 06-02]: ProvinceSection checks counts.length for empty state (not VENETO_PROVINCES.length)
 
 ### Pending Todos
 
@@ -116,6 +104,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-05T14:07:02.342Z
-Stopped at: Completed 05-02-PLAN.md (map pages and search toggle)
+Last session: 2026-03-05T14:48:00Z
+Stopped at: Completed 06-02-PLAN.md (loading skeletons and empty states)
 Resume file: None
