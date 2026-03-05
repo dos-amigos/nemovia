@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 06-01-PLAN.md (SEO infrastructure)
-last_updated: "2026-03-05T14:48:27Z"
-last_activity: "2026-03-05 -- Completed 06-01: SEO metadata, sitemap, robots, OG images"
+status: completed
+stopped_at: Completed 06-03-PLAN.md (scroll animations)
+last_updated: "2026-03-05T14:58:40Z"
+last_activity: "2026-03-05 -- Completed 06-03: scroll animations with motion/react"
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 18
-  completed_plans: 17
-  percent: 94
+  completed_plans: 18
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Phase 6 in progress. Plans 01 (SEO) and 02 (loading/empty states) complete. Plan 03 remaining.
+**Current focus:** All 6 phases complete. v1.0 milestone reached.
 
 ## Current Position
 
 Phase: 6 of 6 (SEO & Polish)
-Plan: 2 of 3 complete (06-01 SEO + 06-02 loading/empty states)
-Status: Phase 6 in progress
-Last activity: 2026-03-05 -- Completed 06-01: SEO metadata, sitemap, robots, OG images
+Plan: 3 of 3 complete (06-01 SEO + 06-02 loading/empty states + 06-03 animations)
+Status: v1.0 milestone complete
+Last activity: 2026-03-05 -- Completed 06-03: scroll animations with motion/react
 
-Progress: [█████████░] 94% (17 of 18 plans completed)
+Progress: [██████████] 100% (18 of 18 plans completed)
 
 ## Performance Metrics
 
@@ -41,7 +41,7 @@ Progress: [█████████░] 94% (17 of 18 plans completed)
 | 3. Data Enrichment | 3/3 | Complete |
 | 4. Discovery UI | 3/3 | Complete |
 | 5. Map & Detail | 3/3 | Complete |
-| 6. SEO & Polish | 2/3 | In progress |
+| 6. SEO & Polish | 3/3 | Complete |
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
@@ -51,6 +51,7 @@ Progress: [█████████░] 94% (17 of 18 plans completed)
 | Phase 05 P02 | 5min | 2 tasks | 9 files |
 | Phase 06 PP02 | 4min | 2 tasks | 8 files |
 | 06 | P01 | 5min | 2 | 10 |
+| 06 | P03 | 5min | 2 | 9 |
 
 ## Accumulated Context
 
@@ -59,6 +60,10 @@ Progress: [█████████░] 94% (17 of 18 plans completed)
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [Phase 06-03]: motion/react import path (not framer-motion) -- renamed package
+- [Phase 06-03]: as const for spring type literal to satisfy TypeScript strict mode
+- [Phase 06-03]: viewport.once: true on all animations -- fire once per visit
+- [Phase 06-03]: Server components stay server -- FadeIn/StaggerGrid are client wrappers
 - [Phase 05-03]: DirectionsButton uses plain <a> tag with buttonVariants (no JS needed, better accessibility)
 - [Phase 05-03]: DetailMiniMap.dynamic.tsx needs "use client" for ssr:false with Turbopack
 - [Phase 05-03]: ShareButton clipboard API with Web Share API fallback for mobile
@@ -109,6 +114,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-05T14:48:27Z
-Stopped at: Completed 06-01-PLAN.md (SEO infrastructure)
+Last session: 2026-03-05T14:58:38.682Z
+Stopped at: Completed 06-03-PLAN.md (scroll animations)
 Resume file: None

@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Data Enrichment** - LLM tagging and description enrichment via Gemini, geocoding via Nominatim (completed 2026-03-04)
 - [x] **Phase 4: Discovery UI** - Homepage, sagra cards, search page with filters, quick filter chips (completed 2026-03-05)
 - [x] **Phase 5: Map & Detail** - Interactive Leaflet map with clustering and geolocation, sagra detail page with sharing (completed 2026-03-05)
-- [ ] **Phase 6: SEO & Polish** - Dynamic metadata, sitemap, OG images, premium animations, loading states
+- [x] **Phase 6: SEO & Polish** - Dynamic metadata, sitemap, OG images, premium animations, loading states (completed 2026-03-05)
 
 ## Phase Details
 
@@ -115,12 +115,12 @@ Plans:
   3. Each sagra generates a unique 1200x630 OG image via @vercel/og
   4. All routes show loading skeletons during data fetch and empty states when no results match
   5. Scroll animations (fade-in), filter transitions (spring), and loading shimmers are present throughout the app, giving a premium non-template feel
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 06-01-PLAN.md -- SEO infrastructure: dynamic metadata for all pages, sitemap.xml, robots.txt, per-sagra OG image
-- [ ] 06-02-PLAN.md -- Loading skeletons for all routes and polished empty states for data sections
-- [ ] 06-03-PLAN.md -- Premium scroll animations and staggered card reveals with Motion library
+- [x] 06-01-PLAN.md -- SEO infrastructure: dynamic metadata for all pages, sitemap.xml, robots.txt, per-sagra OG image
+- [x] 06-02-PLAN.md -- Loading skeletons for all routes and polished empty states for data sections
+- [x] 06-03-PLAN.md -- Premium scroll animations and staggered card reveals with Motion library
 
 ## Progress
 
@@ -134,4 +134,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 3. Data Enrichment | 3/3 | Complete | 2026-03-04 |
 | 4. Discovery UI | 3/3 | Complete | 2026-03-05 |
 | 5. Map & Detail | 3/3 | Complete | 2026-03-05 |
-| 6. SEO & Polish | 0/3 | Not started | - |
+| 6. SEO & Polish | 3/3 | Complete | 2026-03-05 |

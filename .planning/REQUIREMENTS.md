@@ -60,8 +60,8 @@
 - [x] **UI-01**: Design mobile-first, perfetto su iPhone
 - [x] **UI-02**: BottomNav mobile con tab Home/Cerca/Mappa
 - [x] **UI-03**: Colori brand: primary amber-600, accent olive/green-700, bg stone-50
-- [ ] **UI-04**: Animazioni premium con Motion + Magic UI (fade-in scroll, spring filters, shimmer loading)
-- [ ] **UI-05**: Grafica modernissima -- "non sembra un template"
+- [x] **UI-04**: Animazioni premium con Motion + Magic UI (fade-in scroll, spring filters, shimmer loading)
+- [x] **UI-05**: Grafica modernissima -- "non sembra un template"
 
 ## v2 Requirements
 
@@ -146,8 +146,8 @@
 | UI-01 | Phase 1 | Complete |
 | UI-02 | Phase 1 | Complete |
 | UI-03 | Phase 1 | Complete |
-| UI-04 | Phase 6 | Pending |
-| UI-05 | Phase 6 | Pending |
+| UI-04 | Phase 6 | Complete |
+| UI-05 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 40 total
