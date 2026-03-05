@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-02-PLAN.md (loading skeletons and empty states)
-last_updated: "2026-03-05T14:48:00Z"
-last_activity: "2026-03-05 -- Completed 06-02: Loading skeletons for all routes + EmptyState component"
+stopped_at: Completed 06-01-PLAN.md (SEO infrastructure)
+last_updated: "2026-03-05T14:48:27Z"
+last_activity: "2026-03-05 -- Completed 06-01: SEO metadata, sitemap, robots, OG images"
 progress:
   total_phases: 6
   completed_phases: 5
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Phase 6 in progress. Plan 02 (loading skeletons & empty states) complete. Plan 03 remaining.
+**Current focus:** Phase 6 in progress. Plans 01 (SEO) and 02 (loading/empty states) complete. Plan 03 remaining.
 
 ## Current Position
 
 Phase: 6 of 6 (SEO & Polish)
-Plan: 2 of 3 complete (06-02 loading skeletons & empty states)
+Plan: 2 of 3 complete (06-01 SEO + 06-02 loading/empty states)
 Status: Phase 6 in progress
-Last activity: 2026-03-05 -- Completed 06-02: Loading skeletons for all routes + EmptyState component
+Last activity: 2026-03-05 -- Completed 06-01: SEO metadata, sitemap, robots, OG images
 
 Progress: [█████████░] 94% (17 of 18 plans completed)
 
@@ -50,6 +50,7 @@ Progress: [█████████░] 94% (17 of 18 plans completed)
 | 05 | P03 | 4min | 2 | 6 |
 | Phase 05 P02 | 5min | 2 tasks | 9 files |
 | Phase 06 PP02 | 4min | 2 tasks | 8 files |
+| 06 | P01 | 5min | 2 | 10 |
 
 ## Accumulated Context
 
@@ -86,6 +87,10 @@ Recent decisions affecting current work:
 - [Phase 05-02]: Server/client split for /mappa: server component fetches, client wrapper holds map ref for flyTo
 - [Phase 05-02]: Dynamic import wrappers with ssr:false need use client for server component import compatibility
 - [Phase 05-02]: Search page fetches both searchSagre and getMapSagre in parallel when vista=mappa
+- [Phase 06-01]: metadataBase uses NEXT_PUBLIC_SITE_URL env var with nemovia.vercel.app fallback
+- [Phase 06-01]: title.template pattern '%s | Nemovia' for consistent branding suffix
+- [Phase 06-01]: OG image uses default sans-serif font (no custom font for MVP)
+- [Phase 06-01]: sitemap.ts revalidates hourly (revalidate = 3600)
 - [Phase 06-02]: EmptyState uses UtensilsCrossed as default icon (food-themed fallback)
 - [Phase 06-02]: ProvinceSection checks counts.length for empty state (not VENETO_PROVINCES.length)
 
@@ -104,6 +109,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-05T14:48:00Z
-Stopped at: Completed 06-02-PLAN.md (loading skeletons and empty states)
+Last session: 2026-03-05T14:48:27Z
+Stopped at: Completed 06-01-PLAN.md (SEO infrastructure)
 Resume file: None

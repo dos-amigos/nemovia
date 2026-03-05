@@ -48,10 +48,10 @@
 
 ### SEO & Polish
 
-- [ ] **SEO-01**: generateMetadata dinamici per ogni pagina (titolo, description, OG)
-- [ ] **SEO-02**: Sitemap.xml dinamica con tutte le sagre attive
-- [ ] **SEO-03**: OG image dinamica per ogni sagra (1200x630, @vercel/og)
-- [ ] **SEO-04**: robots.txt
+- [x] **SEO-01**: generateMetadata dinamici per ogni pagina (titolo, description, OG)
+- [x] **SEO-02**: Sitemap.xml dinamica con tutte le sagre attive
+- [x] **SEO-03**: OG image dinamica per ogni sagra (1200x630, @vercel/og)
+- [x] **SEO-04**: robots.txt
 - [x] **SEO-05**: Loading skeleton per ogni route
 - [x] **SEO-06**: Empty states per ricerche senza risultati
 
@@ -137,10 +137,10 @@
 | DET-03 | Phase 5 | Complete |
 | DET-04 | Phase 5 | Complete |
 | DET-05 | Phase 5 | Complete |
-| SEO-01 | Phase 6 | Pending |
-| SEO-02 | Phase 6 | Pending |
-| SEO-03 | Phase 6 | Pending |
-| SEO-04 | Phase 6 | Pending |
+| SEO-01 | Phase 6 | Complete |
+| SEO-02 | Phase 6 | Complete |
+| SEO-03 | Phase 6 | Complete |
+| SEO-04 | Phase 6 | Complete |
 | SEO-05 | Phase 6 | Complete |
 | SEO-06 | Phase 6 | Complete |
 | UI-01 | Phase 1 | Complete |
