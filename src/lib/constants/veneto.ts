@@ -1,0 +1,36 @@
+/**
+ * Domain constants for the Veneto sagra discovery UI.
+ * Provinces, quick filter chips, and shared field selections.
+ */
+
+export const VENETO_PROVINCES = [
+  { name: "Belluno", code: "BL" },
+  { name: "Padova", code: "PD" },
+  { name: "Rovigo", code: "RO" },
+  { name: "Treviso", code: "TV" },
+  { name: "Venezia", code: "VE" },
+  { name: "Verona", code: "VR" },
+  { name: "Vicenza", code: "VI" },
+] as const;
+
+export type VenetoProvince = (typeof VENETO_PROVINCES)[number];
+
+export const QUICK_FILTER_CHIPS = [
+  { label: "Pesce", emoji: "\uD83D\uDC1F", param: "cucina", value: "Pesce" },
+  { label: "Carne", emoji: "\uD83E\uDD69", param: "cucina", value: "Carne" },
+  { label: "Formaggi", emoji: "\uD83E\uDDC0", param: "cucina", value: "Formaggi" },
+  { label: "Vino", emoji: "\uD83C\uDF77", param: "cucina", value: "Vino" },
+  { label: "Radicchio", emoji: "\uD83E\uDD6C", param: "cucina", value: "Radicchio" },
+  { label: "Funghi", emoji: "\uD83C\uDF44", param: "cucina", value: "Funghi" },
+  { label: "Gratis", emoji: "\uD83C\uDD93", param: "gratis", value: "true" },
+  { label: "Oggi", emoji: "\uD83D\uDCC5", param: "da", value: "today" },
+] as const;
+
+export type QuickFilterChip = (typeof QUICK_FILTER_CHIPS)[number];
+
+/**
+ * Column selection string for sagra card queries.
+ * Keeps network payloads lean -- only fields the SagraCard component needs.
+ */
+export const SAGRA_CARD_FIELDS =
+  "id, title, slug, location_text, province, start_date, end_date, enhanced_description, food_tags, image_url, is_free, price_info";
