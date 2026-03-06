@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Dati Reali
 status: executing
-stopped_at: Completed 08-01-PLAN.md
-last_updated: "2026-03-06T14:28:00Z"
-last_activity: 2026-03-06 -- Fixed assosagre scraper, 15 sagre ingested
+stopped_at: Completed 08-02-PLAN.md
+last_updated: "2026-03-06T15:16:04Z"
+last_activity: 2026-03-06 -- Fixed solosagre scraper, 1 sagra ingested
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 4
-  completed_plans: 2
-  percent: 50
+  completed_plans: 3
+  percent: 75
 ---
 
 # Project State
@@ -21,31 +21,31 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Phase 8 -- Fix Cheerio Scrapers (plan 2 of 3 next)
+**Current focus:** Phase 8 -- Fix Cheerio Scrapers (plan 3 of 3 next)
 
 ## Current Position
 
 Phase: 8 of 10 (Fix Cheerio Scrapers) -- IN PROGRESS
-Plan: 1/3 complete
-Status: 08-01 (assosagre) complete, ready for 08-02 (solosagre)
-Last activity: 2026-03-06 -- Fixed assosagre scraper, 15 sagre ingested
+Plan: 2/3 complete
+Status: 08-02 (solosagre) complete, ready for 08-03 (venetoinfesta)
+Last activity: 2026-03-06 -- Fixed solosagre scraper, 1 sagra ingested
 
-Progress: [█████░░░░░] 50% (v1.1 overall: 2/4 plans)
+Progress: [████████░░] 75% (v1.1 overall: 3/4 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18 (v1.0) + 2 (v1.1)
-- v1.1 plans completed: 2
-- Average duration: ~17min
-- Total execution time: ~35min
+- Total plans completed: 18 (v1.0) + 3 (v1.1)
+- v1.1 plans completed: 3
+- Average duration: ~20min
+- Total execution time: ~60min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 7. Deploy & Verify Baseline | 1/1 | ~15min | ~15min |
-| 8. Fix Cheerio Scrapers | 1/3 | ~20min | ~20min |
+| 8. Fix Cheerio Scrapers | 2/3 | ~45min | ~22min |
 
 *Updated after each plan completion*
 
@@ -61,6 +61,8 @@ All v1.0 decisions archived to PROJECT.md Key Decisions table with outcomes.
 - Added assosagre-specific branch in extractRawEvent() for table-based HTML layout
 - Extended parseItalianDateRange() to handle multi-day Italian date formats
 - Updated scraper_sources DB row via REST API with corrected CSS selectors
+- Used schema.org itemprop selectors for solosagre structured data extraction
+- Added relative image URL resolution generically for all sources
 
 ### Pending Todos
 
@@ -75,5 +77,5 @@ All v1.0 decisions archived to PROJECT.md Key Decisions table with outcomes.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Completed 08-01-PLAN.md
+Stopped at: Completed 08-02-PLAN.md
 Resume file: None
