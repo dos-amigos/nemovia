@@ -3,6 +3,21 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Dati Reali
 status: executing
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-03-06T13:08:47.962Z"
+last_activity: 2026-03-06 -- Deployed enrich-sagre, verified end-to-end pipeline
+progress:
+  total_phases: 4
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
+---
+
+---
+gsd_state_version: 1.0
+milestone: v1.1
+milestone_name: Dati Reali
+status: executing
 stopped_at: "Completed 07-01-PLAN.md"
 last_updated: "2026-03-06T13:05:00Z"
 last_activity: "2026-03-06 -- Completed Phase 7 Plan 1: Deploy & Verify Baseline"

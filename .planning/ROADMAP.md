@@ -88,7 +88,7 @@ Phases 7 through 10. Phase 8 and Phase 9 can run in parallel (both depend on Pha
 | 4. Discovery UI | v1.0 | 3/3 | Complete | 2026-03-05 |
 | 5. Map & Detail | v1.0 | 3/3 | Complete | 2026-03-05 |
 | 6. SEO & Polish | v1.0 | 3/3 | Complete | 2026-03-05 |
-| 7. Deploy & Verify Baseline | v1.1 | 1/1 | Complete | 2026-03-06 |
+| 7. Deploy & Verify Baseline | v1.1 | Complete    | 2026-03-06 | 2026-03-06 |
 | 8. Fix Cheerio Scrapers | v1.1 | 0/? | Not started | - |
 | 9. Sagritaly Ingestion | v1.1 | 0/? | Not started | - |
 | 10. Data Quality Filters | v1.1 | 0/? | Not started | - |
