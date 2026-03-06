@@ -203,6 +203,10 @@ function parseCityFromText(text: string): string {
   const cityProv = text.match(/([A-ZÀ-Ú][a-zà-ú]+(?:\s+[a-zà-ú]+)*(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*)\s*\([A-Z]{2}\)/);
   if (cityProv) return cityProv[1].trim();
 
+  // Fallback: "CityName - XX" where XX is a 2-letter province (venetoinfesta format)
+  const cityDash = text.match(/([A-ZÀ-Ú][a-zà-ú]+(?:\s+[a-zà-ú]+)*(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*)\s*-\s*[A-Z]{2}\b/);
+  if (cityDash) return cityDash[1].trim();
+
   return "";
 }
 
@@ -227,6 +231,59 @@ interface RawEventData {
 // deno-lint-ignore no-explicit-any
 function extractRawEvent($: any, el: any, source: ScraperSource): RawEventData {
   const $el = $(el);
+
+  // --- venetoinfesta-specific extraction ---
+  // Events are in div.box_evento with structured date spans and category/city in p.comments
+  if (source.name === "venetoinfesta") {
+    const title = $el.find("h2.tit a").first().text().trim();
+
+    // Date: div.data_singola has span.month, span.day, span.year
+    //        div.data_doppia has start (span.month/day/year) and end (span.month_to/day_to/year_to)
+    let dateText = "";
+    const $dataSingola = $el.find("div.data_singola");
+    const $dataDoppia = $el.find("div.data_doppia");
+    if ($dataDoppia.length > 0) {
+      // Date range: reconstruct as "DD/MM/YYYY al DD/MM/YYYY" for parseItalianDateRange
+      const d1 = $dataDoppia.find("span.day").first().text().trim();
+      const m1 = $dataDoppia.find("span.month").first().text().trim();
+      const y1 = $dataDoppia.find("span.year").first().text().trim();
+      const d2 = $dataDoppia.find("span.day_to").first().text().trim();
+      const m2 = $dataDoppia.find("span.month_to").first().text().trim();
+      const y2 = $dataDoppia.find("span.year_to").first().text().trim();
+      // Convert month abbreviation to number
+      const m1Num = ITALIAN_MONTHS[m1.toLowerCase()] ?? 0;
+      const m2Num = ITALIAN_MONTHS[m2.toLowerCase()] ?? 0;
+      dateText = `${d1}/${m1Num}/${y1} al ${d2}/${m2Num}/${y2}`;
+    } else if ($dataSingola.length > 0) {
+      const d = $dataSingola.find("span.day").first().text().trim();
+      const m = $dataSingola.find("span.month").first().text().trim();
+      const y = $dataSingola.find("span.year").first().text().trim();
+      const mNum = ITALIAN_MONTHS[m.toLowerCase()] ?? 0;
+      dateText = `${d}/${mNum}/${y}`;
+    }
+
+    // City: from p.comments a[href*="/eventi/comune/"] — text format "CityName - XX"
+    const cityRaw = $el.find('p.comments a[href*="/eventi/comune/"]').first().text().trim();
+    // Extract just the city name, stripping " - XX" province suffix
+    const cityMatch = cityRaw.match(/^(.+?)\s*-\s*[A-Z]{2}$/);
+    const city = cityMatch ? cityMatch[1].trim() : cityRaw;
+
+    // URL: from the h2 title link
+    let url = $el.find("h2.tit a").first().attr("href") ?? null;
+    if (url && !url.startsWith("http")) {
+      try { url = new URL(url, source.base_url).href; } catch { /* */ }
+    }
+
+    // Image
+    let image = $el.find("img.img_evt_list").first().attr("src") ?? null;
+    if (image && !image.startsWith("http")) {
+      try { image = new URL(image, source.base_url).href; } catch { /* */ }
+    }
+
+    return { title, dateText, city, price: null, url, image };
+  }
+
+  // --- Generic extraction for other sources ---
   const title = $el.find(source.selector_title).first().text().trim();
   const dateText = source.selector_start_date
     ? $el.find(source.selector_start_date).first().text().trim()
