@@ -102,7 +102,7 @@ function toIso(day: number, month: number, year: number): string {
 
 function parseItalianDateRange(raw: string): { start: string | null; end: string | null } {
   if (!raw) return { start: null, end: null };
-  const s = raw.toLowerCase().trim();
+  const s = raw.toLowerCase().replace(/\s+/g, " ").trim();
 
   // Pattern 1: DD/MM/YYYY [al DD/MM/YYYY]
   // Handles: "24/04/2026 al 26/04/2026", "Dal 08/03/2026 Al 08/03/2026", "Il 08/03/2026"
@@ -115,6 +115,40 @@ function parseItalianDateRange(raw: string): { start: string | null; end: string
     return { start, end };
   }
 
+  // Pattern 2b: Cross-month multi-day range (assosagre format)
+  // e.g. "29-30-31 maggio 1-2 giugno 2026" or "16-17-18-22-23-24-25-29-30-31 ottobre 1 novembre 2026"
+  // Strategy: find ALL "days month" segments + trailing year, take first day of first segment as start,
+  // last day of last segment as end.
+  const segments: { days: number[]; month: number }[] = [];
+  let year: number | null = null;
+
+  // Extract year from end of string
+  const yearMatch = s.match(/(\d{4})\s*$/);
+  if (yearMatch) year = +yearMatch[1];
+
+  // Find all "D[-D[-D...]] MonthName" segments
+  const segRegex = /([\d]+(?:-[\d]+)*)\s+([a-z]+)/g;
+  let segMatch: RegExpExecArray | null;
+  while ((segMatch = segRegex.exec(s)) !== null) {
+    const monthNum = ITALIAN_MONTHS[segMatch[2]];
+    if (!monthNum) continue;
+    const days = segMatch[1].split("-").map(Number).filter((d) => d > 0 && d <= 31);
+    if (days.length > 0) {
+      segments.push({ days, month: monthNum });
+    }
+  }
+
+  if (segments.length > 0 && year) {
+    const firstSeg = segments[0];
+    const lastSeg = segments[segments.length - 1];
+    const startDay = Math.min(...firstSeg.days);
+    const endDay = Math.max(...lastSeg.days);
+    return {
+      start: toIso(startDay, firstSeg.month, year),
+      end: toIso(endDay, lastSeg.month, year),
+    };
+  }
+
   // Pattern 2: DD[-DD] MonthName YYYY (e.g. "24 Aprile 2026", "24-26 Aprile 2026")
   const wordMatch = s.match(/(\d{1,2})(?:-(\d{1,2}))?\s+([a-z]+)\s+(\d{4})/);
   if (wordMatch) {
@@ -122,10 +156,10 @@ function parseItalianDateRange(raw: string): { start: string | null; end: string
     if (monthNum) {
       const startDay = +wordMatch[1];
       const endDay = wordMatch[2] ? +wordMatch[2] : startDay;
-      const year = +wordMatch[4];
+      const yr = +wordMatch[4];
       return {
-        start: toIso(startDay, monthNum, year),
-        end: toIso(endDay, monthNum, year),
+        start: toIso(startDay, monthNum, yr),
+        end: toIso(endDay, monthNum, yr),
       };
     }
   }
@@ -208,7 +242,21 @@ function extractRawEvent($: any, el: any, source: ScraperSource): RawEventData {
   if (source.selector_url === null && $el.is("a")) {
     url = $el.attr("href") ?? null;
   } else if (source.selector_url) {
+    // First try finding within the element
     url = $el.find(source.selector_url).first().attr("href") ?? null;
+    // If not found, check if a parent matches the selector (e.g. assosagre wraps .datiSagra in an <a>)
+    if (!url) {
+      url = $el.closest(source.selector_url).attr("href") ?? null;
+    }
+  }
+
+  // Resolve relative URLs against the source's base_url
+  if (url && !url.startsWith("http")) {
+    try {
+      url = new URL(url, source.base_url).href;
+    } catch {
+      // leave as-is if URL parsing fails
+    }
   }
 
   const image = source.selector_image
