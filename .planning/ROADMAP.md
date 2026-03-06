@@ -39,7 +39,9 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   2. Sagre geocoded after the deploy have valid PostGIS coordinates (not null, not 0,0) visible on the map
   3. eventiesagre scraper runs on its cron schedule and inserts new sagre rows with title, dates, location_text, and source_url populated
   4. End-to-end pipeline confirmed: a sagra scraped from eventiesagre appears on nemovia.vercel.app with coordinates, tags, and description within one cron cycle
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 07-01-PLAN.md — Deploy enrich-sagre fix, trigger pipeline, verify end-to-end data flow
 
 ### Phase 8: Fix Cheerio Scrapers
 **Goal**: All three broken Cheerio-based scraper sources (assosagre, solosagre, venetoinfesta) produce valid sagre data from their live sites
@@ -86,7 +88,7 @@ Phases 7 through 10. Phase 8 and Phase 9 can run in parallel (both depend on Pha
 | 4. Discovery UI | v1.0 | 3/3 | Complete | 2026-03-05 |
 | 5. Map & Detail | v1.0 | 3/3 | Complete | 2026-03-05 |
 | 6. SEO & Polish | v1.0 | 3/3 | Complete | 2026-03-05 |
-| 7. Deploy & Verify Baseline | v1.1 | 0/? | Not started | - |
+| 7. Deploy & Verify Baseline | v1.1 | 0/1 | Planned | - |
 | 8. Fix Cheerio Scrapers | v1.1 | 0/? | Not started | - |
 | 9. Sagritaly Ingestion | v1.1 | 0/? | Not started | - |
 | 10. Data Quality Filters | v1.1 | 0/? | Not started | - |
