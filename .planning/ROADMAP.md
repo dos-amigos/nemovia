@@ -54,7 +54,7 @@ Plans:
   4. All three sources' sagre appear on the live site after enrichment (geocoded, tagged, with descriptions)
 **Plans:** 3 plans
 Plans:
-- [ ] 08-01-PLAN.md — Fix assosagre scraper CSS selectors and extraction logic
+- [x] 08-01-PLAN.md — Fix assosagre scraper CSS selectors and extraction logic
 - [ ] 08-02-PLAN.md — Fix solosagre scraper CSS selectors and extraction logic
 - [ ] 08-03-PLAN.md — Fix venetoinfesta scraper CSS selectors, base URL, and extraction logic
 
@@ -93,6 +93,6 @@ Phases 7 through 10. Phase 8 and Phase 9 can run in parallel (both depend on Pha
 | 5. Map & Detail | v1.0 | 3/3 | Complete | 2026-03-05 |
 | 6. SEO & Polish | v1.0 | 3/3 | Complete | 2026-03-05 |
 | 7. Deploy & Verify Baseline | v1.1 | Complete    | 2026-03-06 | 2026-03-06 |
-| 8. Fix Cheerio Scrapers | v1.1 | 0/3 | Not started | - |
+| 8. Fix Cheerio Scrapers | v1.1 | 1/3 | In progress | - |
 | 9. Sagritaly Ingestion | v1.1 | 0/? | Not started | - |
 | 10. Data Quality Filters | v1.1 | 0/? | Not started | - |
