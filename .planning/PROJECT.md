@@ -33,11 +33,21 @@ Mostrare TUTTE le sagre del Veneto in un unico posto — dove sono, quando sono,
 
 ### Active
 
-- [ ] Fix remaining 4 scraper sources (assosagre, solosagre, venetoinfesta CSS selectors; sagritaly JS-rendering)
+- [ ] Deploy enrich-sagre Edge Function fix (PostGIS geocoding WKT format)
+- [ ] Fix eventiesagre scraper (verify still working, improve reliability)
+- [ ] Fix assosagre CSS selectors
+- [ ] Fix solosagre CSS selectors
+- [ ] Fix venetoinfesta CSS selectors
+- [ ] Handle sagritaly JS-rendering (alternative approach to Cheerio)
 - [ ] Data quality filtering: exclude non-Veneto events and noise entries
+- [ ] Data quality: clean location_text for accurate geocoding
+
+### Future
+
 - [ ] User authentication (Google OAuth, Magic Link)
 - [ ] Preferiti / salva sagra
 - [ ] Recensioni e foto utenti
+- [ ] Expand to new scraper sources beyond the initial 5
 
 ### Out of Scope
 
@@ -49,6 +59,16 @@ Mostrare TUTTE le sagre del Veneto in un unico posto — dove sono, quando sono,
 - Cache ricerche — ottimizzazione prematura
 - App nativa mobile — web app mobile-first è sufficiente
 - Prenotazione tavoli — fuori scope, l'app mostra info
+
+## Current Milestone: v1.1 "Dati Reali"
+
+**Goal:** Far funzionare tutti i 5 scraper source configurati con dati reali e qualità accettabile — nessun frontend, solo pipeline dati.
+
+**Target features:**
+- Deploy del fix PostGIS geocoding (già committato)
+- Fix CSS selectors per assosagre, solosagre, venetoinfesta
+- Soluzione per sagritaly (JS-rendered)
+- Filtro qualità dati: escludere non-Veneto, noise titles, location_text sporco
 
 ## Context
 
@@ -104,4 +124,4 @@ Italiano, informale ma competente. L'app deve sembrare curata, non un template.
 | next.config catch-all hostname ** for images | Unpredictable CDN domains from scraped sources | ✓ Good for MVP — revisit if security concerns arise |
 
 ---
-*Last updated: 2026-03-05 after v1.0 milestone*
+*Last updated: 2026-03-06 after v1.1 milestone start*
