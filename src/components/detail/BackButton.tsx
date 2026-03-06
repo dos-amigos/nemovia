@@ -1,0 +1,18 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+
+export default function BackButton() {
+  const router = useRouter();
+
+  return (
+    <button
+      onClick={() => router.back()}
+      className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 backdrop-blur-sm shadow-sm transition-colors hover:bg-background"
+      aria-label="Torna indietro"
+    >
+      <ArrowLeft className="size-5" />
+    </button>
+  );
+}

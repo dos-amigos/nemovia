@@ -5,11 +5,14 @@ import {
   Tag,
   Euro,
   ExternalLink,
+  ArrowLeft,
+  UtensilsCrossed,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { formatDateRange } from "@/lib/utils";
 import type { Sagra } from "@/types/database";
+import BackButton from "./BackButton";
 import DirectionsButton from "./DirectionsButton";
 import ShareButton from "./ShareButton";
 import DetailMiniMapDynamic from "./DetailMiniMap.dynamic";
@@ -30,9 +33,9 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
 
   return (
     <div className="space-y-6">
-      {/* Hero image */}
-      {sagra.image_url && (
-        <div className="relative -mx-4 -mt-4 h-48 w-[calc(100%+2rem)]">
+      {/* Hero image with back button */}
+      <div className="relative -mx-4 -mt-4 h-48 w-[calc(100%+2rem)]">
+        {sagra.image_url ? (
           <Image
             src={sagra.image_url}
             alt={sagra.title}
@@ -40,8 +43,13 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
             className="object-cover"
             priority
           />
-        </div>
-      )}
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-100 to-green-100">
+            <UtensilsCrossed className="h-12 w-12 text-muted-foreground/30" />
+          </div>
+        )}
+        <BackButton />
+      </div>
 
       {/* Title & location/date info */}
       <FadeIn>
