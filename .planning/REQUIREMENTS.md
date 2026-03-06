@@ -9,11 +9,11 @@ Requirements for v1.1 "Dati Reali". Each maps to roadmap phases.
 
 ### Deploy
 
-- [ ] **DEPLOY-01**: enrich-sagre Edge Function deployed with PostGIS WKT geocoding fix
+- [x] **DEPLOY-01**: enrich-sagre Edge Function deployed with PostGIS WKT geocoding fix
 
 ### Scraping
 
-- [ ] **SCRAPE-01**: eventiesagre scraper verified working and producing valid sagre data
+- [x] **SCRAPE-01**: eventiesagre scraper verified working and producing valid sagre data
 - [ ] **SCRAPE-02**: assosagre CSS selectors updated to match live site and produce valid data
 - [ ] **SCRAPE-03**: solosagre CSS selectors updated to match live site and produce valid data
 - [ ] **SCRAPE-04**: venetoinfesta CSS selectors updated to match live site and produce valid data
@@ -60,8 +60,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DEPLOY-01 | Phase 7 | Pending |
-| SCRAPE-01 | Phase 7 | Pending |
+| DEPLOY-01 | Phase 7 | Complete |
+| SCRAPE-01 | Phase 7 | Complete |
 | SCRAPE-02 | Phase 8 | Pending |
 | SCRAPE-03 | Phase 8 | Pending |
 | SCRAPE-04 | Phase 8 | Pending |
