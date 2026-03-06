@@ -259,9 +259,18 @@ function extractRawEvent($: any, el: any, source: ScraperSource): RawEventData {
     }
   }
 
-  const image = source.selector_image
+  let image = source.selector_image
     ? $el.find(source.selector_image).first().attr("src") ?? null
     : null;
+
+  // Resolve relative image URLs against the source's base_url
+  if (image && !image.startsWith("http")) {
+    try {
+      image = new URL(image, source.base_url).href;
+    } catch {
+      // leave as-is if URL parsing fails
+    }
+  }
 
   return { title, dateText, city, price, url, image };
 }
