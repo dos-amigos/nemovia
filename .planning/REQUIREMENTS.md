@@ -1,7 +1,7 @@
 # Requirements: Nemovia
 
 **Defined:** 2026-03-06
-**Core Value:** Mostrare TUTTE le sagre del Veneto in un unico posto — dove sono, quando sono, cosa offrono — con un'esperienza mobile-first che nessun portale esistente offre.
+**Core Value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
 
 ## v1.1 Requirements
 
@@ -47,7 +47,7 @@ Deferred to v1.2+. Tracked but not in current roadmap.
 
 | Feature | Reason |
 |---------|--------|
-| Frontend UI changes | v1.1 is data pipeline only — user preference |
+| Frontend UI changes | v1.1 is data pipeline only -- user preference |
 | User authentication | Requires separate milestone, premature |
 | Profili utente e gamification | Requires auth, premature |
 | Notifiche push | Requires auth + infrastructure |
@@ -60,21 +60,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DEPLOY-01 | — | Pending |
-| SCRAPE-01 | — | Pending |
-| SCRAPE-02 | — | Pending |
-| SCRAPE-03 | — | Pending |
-| SCRAPE-04 | — | Pending |
-| SCRAPE-05 | — | Pending |
-| QUAL-01 | — | Pending |
-| QUAL-02 | — | Pending |
-| QUAL-03 | — | Pending |
+| DEPLOY-01 | Phase 7 | Pending |
+| SCRAPE-01 | Phase 7 | Pending |
+| SCRAPE-02 | Phase 8 | Pending |
+| SCRAPE-03 | Phase 8 | Pending |
+| SCRAPE-04 | Phase 8 | Pending |
+| SCRAPE-05 | Phase 9 | Pending |
+| QUAL-01 | Phase 10 | Pending |
+| QUAL-02 | Phase 10 | Pending |
+| QUAL-03 | Phase 10 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 9 total
-- Mapped to phases: 0
-- Unmapped: 9
+- Mapped to phases: 9
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-06*
-*Last updated: 2026-03-06 after initial definition*
+*Last updated: 2026-03-06 after roadmap creation*
