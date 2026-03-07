@@ -38,7 +38,7 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 
 **Milestone Goal:** Fix UX bugs and add polish -- page transitions, responsive desktop layout, micro-interazioni -- per un'esperienza premium su ogni device.
 
-- [x] **Phase 11: Bug Fixes + Foundation** - Fix 4 broken UX flows and establish accessibility baseline for all animation work (completed 2026-03-07)
+- [x] **Phase 11: Bug Fixes + Foundation** - Fix 4 broken UX flows and establish accessibility baseline for all animation work (completed 2026-03-07)
 - [ ] **Phase 12: Responsive Desktop Layout** - Desktop-optimized layout with navigation, grids, and breakpoint-aware skeletons
 - [ ] **Phase 13: Transitions + Micro-Interactions** - Page transitions, hover/tap effects, scroll animations, and shimmer loaders for premium feel
 
@@ -69,11 +69,11 @@ Plans:
   2. User on lg+ screens sees a top navigation bar instead of BottomNav, with the same Home/Cerca/Mappa destinations
   3. User on desktop sees the sagra detail page with side-by-side layout (image and map on one side, info on the other) and sees sagra name tooltips on map marker hover
   4. User sees skeleton loading shapes that match the actual content layout at every breakpoint (single column on mobile, multi-column on tablet/desktop), preventing layout shift when content loads
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 12-01: TBD
-- [ ] 12-02: TBD
+- [ ] 12-01-PLAN.md -- Navigation & layout shell (TopNav, BottomNav hide, responsive padding, map height)
+- [ ] 12-02-PLAN.md -- Responsive content & skeletons (multi-column grids, detail side-by-side, map tooltips, breakpoint-aware skeletons)
 
 ### Phase 13: Transitions + Micro-Interactions
 **Goal**: Users experience smooth, premium-feeling interactions that make Nemovia feel like a native app
@@ -109,6 +109,6 @@ Phases execute in numeric order: 11 -> 12 -> 13
 | 8. Fix Cheerio Scrapers | v1.1 | 3/3 | Complete | 2026-03-07 |
 | 9. Sagritaly Ingestion | v1.1 | 1/1 | Complete | 2026-03-07 |
 | 10. Data Quality Filters | v1.1 | 2/2 | Complete | 2026-03-07 |
-| 11. Bug Fixes + Foundation | v1.2 | Complete    | 2026-03-07 | 2026-03-07 |
-| 12. Responsive Desktop Layout | v1.2 | 0/? | Not started | - |
+| 11. Bug Fixes + Foundation | v1.2 | 2/2 | Complete | 2026-03-07 |
+| 12. Responsive Desktop Layout | v1.2 | 0/2 | Not started | - |
 | 13. Transitions + Micro-Interactions | v1.2 | 0/? | Not started | - |
