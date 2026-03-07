@@ -64,7 +64,7 @@ export default function MapView({
       />
       <MarkerClusterGroup chunkedLoading>
         {sagre.map((sagra) => {
-          if (!sagra.location) return null;
+          if (!sagra.location?.coordinates || sagra.location.coordinates.length < 2) return null;
           const position: [number, number] = [
             sagra.location.coordinates[1],
             sagra.location.coordinates[0],
