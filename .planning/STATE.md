@@ -2,6 +2,21 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Dati Reali
+status: completed
+stopped_at: Completed 10-02-PLAN.md (v1.1 milestone complete)
+last_updated: "2026-03-07T11:27:29.718Z"
+last_activity: 2026-03-07 -- Completed Phase 10 Plan 02, deploy and retroactive cleanup
+progress:
+  total_phases: 4
+  completed_phases: 4
+  total_plans: 7
+  completed_plans: 7
+---
+
+---
+gsd_state_version: 1.0
+milestone: v1.1
+milestone_name: Dati Reali
 status: complete
 stopped_at: Completed 10-02-PLAN.md (v1.1 milestone complete)
 last_updated: "2026-03-07T11:08:18Z"
