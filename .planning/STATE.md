@@ -56,6 +56,9 @@ All v1.0/v1.1 decisions archived to PROJECT.md Key Decisions table.
 - [Roadmap]: 3 phases derived -- bug fixes first, then desktop layout, then animation polish
 - [Roadmap]: A11Y requirements grouped with bug fixes (Phase 11) because reduced-motion gates all animation work
 - [Roadmap]: SKEL-02 (breakpoint-aware skeletons) in Phase 12 with layout; SKEL-01 (shimmer animation) in Phase 13 with visual polish
+- [11-01]: BUG-01 and BUG-02 confirmed already working, no code changes needed
+- [11-01]: Used max-w-7xl (1280px) as desktop max-width, preserving mobile px-4 padding
+- [11-01]: Used __all__ sentinel as Select default value for visual pre-selection of "Tutte"
 - [11-02]: Used single Providers.tsx wrapping both MotionConfig and NuqsAdapter to keep layout.tsx as Server Component
 - [11-02]: Global CSS @media rule for animate-pulse/spin rather than per-component motion-reduce classes
 - [11-02]: Consistent focus ring pattern: focus-visible:ring-[3px] focus-visible:ring-ring/50 matching Shadcn/UI conventions
