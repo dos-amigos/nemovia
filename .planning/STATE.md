@@ -4,6 +4,21 @@ milestone: v1.1
 milestone_name: Dati Reali
 status: executing
 stopped_at: Phase 9 complete, ready for Phase 10
+last_updated: "2026-03-07T10:23:04.534Z"
+last_activity: 2026-03-07 -- Completed Phase 9, created 09-01-SUMMARY.md
+progress:
+  total_phases: 4
+  completed_phases: 3
+  total_plans: 5
+  completed_plans: 5
+---
+
+---
+gsd_state_version: 1.0
+milestone: v1.1
+milestone_name: Dati Reali
+status: executing
+stopped_at: Phase 9 complete, ready for Phase 10
 last_updated: "2026-03-07T10:17:38Z"
 last_activity: 2026-03-07 -- Completed Phase 9 (sagritaly ingestion)
 progress:
