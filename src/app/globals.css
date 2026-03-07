@@ -113,3 +113,12 @@
     scrollbar-width: none;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse {
+    animation: none;
+  }
+  .animate-spin {
+    animation: none;
+  }
+}
