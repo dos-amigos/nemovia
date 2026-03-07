@@ -95,36 +95,36 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUG-01 | — | Pending |
-| BUG-02 | — | Pending |
-| BUG-03 | — | Pending |
-| BUG-04 | — | Pending |
-| DESK-01 | — | Pending |
-| DESK-02 | — | Pending |
-| DESK-03 | — | Pending |
-| DESK-04 | — | Pending |
-| DESK-05 | — | Pending |
-| TRANS-01 | — | Pending |
-| TRANS-02 | — | Pending |
-| MICRO-01 | — | Pending |
-| MICRO-02 | — | Pending |
-| MICRO-03 | — | Pending |
-| MICRO-04 | — | Pending |
-| MICRO-05 | — | Pending |
-| MICRO-06 | — | Pending |
-| SKEL-01 | — | Pending |
-| SKEL-02 | — | Pending |
-| SCRL-01 | — | Pending |
-| SCRL-02 | — | Pending |
-| SCRL-03 | — | Pending |
-| A11Y-01 | — | Pending |
-| A11Y-02 | — | Pending |
+| BUG-01 | Phase 11 | Pending |
+| BUG-02 | Phase 11 | Pending |
+| BUG-03 | Phase 11 | Pending |
+| BUG-04 | Phase 11 | Pending |
+| DESK-01 | Phase 12 | Pending |
+| DESK-02 | Phase 12 | Pending |
+| DESK-03 | Phase 12 | Pending |
+| DESK-04 | Phase 12 | Pending |
+| DESK-05 | Phase 12 | Pending |
+| TRANS-01 | Phase 13 | Pending |
+| TRANS-02 | Phase 13 | Pending |
+| MICRO-01 | Phase 13 | Pending |
+| MICRO-02 | Phase 13 | Pending |
+| MICRO-03 | Phase 13 | Pending |
+| MICRO-04 | Phase 13 | Pending |
+| MICRO-05 | Phase 13 | Pending |
+| MICRO-06 | Phase 13 | Pending |
+| SKEL-01 | Phase 13 | Pending |
+| SKEL-02 | Phase 12 | Pending |
+| SCRL-01 | Phase 13 | Pending |
+| SCRL-02 | Phase 13 | Pending |
+| SCRL-03 | Phase 13 | Pending |
+| A11Y-01 | Phase 11 | Pending |
+| A11Y-02 | Phase 11 | Pending |
 
 **Coverage:**
 - v1 requirements: 24 total
-- Mapped to phases: 0
-- Unmapped: 24
+- Mapped to phases: 24
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after initial definition*
+*Last updated: 2026-03-07 after roadmap creation*

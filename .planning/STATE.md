@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Polish
 status: active
-stopped_at: Defining requirements
-last_updated: "2026-03-07T18:00:00Z"
-last_activity: 2026-03-07 -- Milestone v1.2 started
+stopped_at: Roadmap created, ready to plan Phase 11
+last_updated: "2026-03-07T19:00:00Z"
+last_activity: 2026-03-07 -- Roadmap created for v1.2
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,21 +21,41 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** v1.2 "Polish" — bug fix + transizioni + desktop layout + micro-interazioni
+**Current focus:** Phase 11 - Bug Fixes + Foundation
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-07 — Milestone v1.2 started
+Phase: 11 of 13 (Bug Fixes + Foundation)
+Plan: 0 of ? in current phase
+Status: Ready to plan
+Last activity: 2026-03-07 -- Roadmap created with 3 phases, 24 requirements mapped
+
+Progress: [░░░░░░░░░░] 0%
+
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 0 (v1.2)
+- Average duration: --
+- Total execution time: --
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| - | - | - | - |
+
+*Updated after each plan completion*
 
 ## Accumulated Context
 
 ### Decisions
 
-All v1.0 decisions archived to PROJECT.md Key Decisions table.
-All v1.1 decisions archived to PROJECT.md Key Decisions table and milestones/v1.1-ROADMAP.md.
+All v1.0/v1.1 decisions archived to PROJECT.md Key Decisions table.
+
+- [Roadmap]: 3 phases derived -- bug fixes first, then desktop layout, then animation polish
+- [Roadmap]: A11Y requirements grouped with bug fixes (Phase 11) because reduced-motion gates all animation work
+- [Roadmap]: SKEL-02 (breakpoint-aware skeletons) in Phase 12 with layout; SKEL-01 (shimmer animation) in Phase 13 with visual polish
 
 ### Pending Todos
 
@@ -50,5 +70,5 @@ None active.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Defining requirements for v1.2
+Stopped at: Roadmap created for v1.2 Polish milestone
 Resume file: None
