@@ -21,8 +21,8 @@ export default function CercaLoading() {
       <Skeleton className="h-9 w-24 rounded-md" />
 
       {/* Results skeleton */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
           <SagraCardSkeleton key={i} />
         ))}
       </div>
