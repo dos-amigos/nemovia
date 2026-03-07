@@ -167,6 +167,22 @@ function parseItalianDateRange(raw: string): { start: string | null; end: string
   return { start: null, end: null };
 }
 
+// --- Section 2b: Noise title detection ---
+// Detects non-event entries that scrapers pick up (calendar pages, navigation text, etc.)
+function isNoiseTitle(title: string): boolean {
+  if (!title || title.length < 5 || title.length > 150) return true;
+  const t = title.toLowerCase();
+  // Known noise patterns
+  if (/calendario\s.*(mensile|regioni|italian)/i.test(t)) return true;
+  if (/cookie|privacy\s*policy|termini\s*(e\s*)?condizion/i.test(t)) return true;
+  if (/cerca\s+sagr|ricerca\s+event/i.test(t)) return true;
+  if (/^(menu|navigazione|home)\b/i.test(t)) return true;
+  if (/^[\d\s\-\/\.]+$/.test(title.trim())) return true; // all numeric/punct
+  if (/tutte le sagre|elenco sagre|lista sagre/i.test(t)) return true;
+  if (/gennaio.*dicembre|dicembre.*gennaio/i.test(t)) return true;
+  return false;
+}
+
 // --- Section 3: HTTP fetch helper ---
 async function fetchWithTimeout(url: string, timeoutMs = 10_000): Promise<string | null> {
   const controller = new AbortController();
@@ -510,6 +526,9 @@ async function scrapeSource(supabase: SupabaseClient, source: ScraperSource): Pr
 
         // Skip items with no title (city is optional — geocoding can fill it later)
         if (!raw.title) continue;
+
+        // Skip noise entries (calendar pages, navigation text, generic non-event strings)
+        if (isNoiseTitle(raw.title)) continue;
 
         const normalized = normalizeRawEvent(raw, source.name);
         const result = await upsertEvent(supabase, normalized, source.name);

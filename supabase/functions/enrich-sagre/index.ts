@@ -21,15 +21,47 @@ const SLEEP_MS = 1100;      // 1.1s between Nominatim calls (policy: 1 req/sec)
 // Italy bounding box — coordinates outside this range are invalid geocode results
 const ITALY_BOUNDS = { lat: { min: 36.0, max: 47.5 }, lon: { min: 6.0, max: 19.0 } };
 
+// Veneto province names as returned by Nominatim addressdetails (county/province/state_district)
+// Used to filter out non-Veneto sagre after geocoding
+const VENETO_PROVINCES = [
+  "belluno", "padova", "rovigo", "treviso", "venezia", "verona", "vicenza",
+  // Nominatim sometimes returns the full form
+  "provincia di belluno", "provincia di padova", "provincia di rovigo",
+  "provincia di treviso", "provincia di venezia", "provincia di verona",
+  "provincia di vicenza",
+];
+
+function isVenetoProvince(province: string | null): boolean {
+  if (!province) return false;
+  return VENETO_PROVINCES.includes(province.toLowerCase().trim());
+}
+
 /**
- * Strip Italian province codes from city strings before geocoding.
- * Nominatim handles bare city names better than "Verona (VR)" or "Verona - VR".
+ * Normalize location_text for better Nominatim geocoding results.
+ * Handles: province codes, region prefixes, extra whitespace, common noise.
  */
+function normalizeLocationText(raw: string): string {
+  let s = raw.trim();
+  if (!s) return "";
+  // Remove province codes: "(VR)", "- VR", ", VR"
+  s = s.replace(/\s*\([A-Z]{2}\)\s*/g, "");
+  s = s.replace(/\s*[-,]\s*[A-Z]{2}\s*$/g, "");
+  // Remove region prefixes: "Veneto ", "Veneto - ", etc.
+  s = s.replace(/^(Veneto|Lombardia|Piemonte|Emilia[\s-]?Romagna|Trentino|Friuli[\s-]?Venezia[\s-]?Giulia)\s*[-:,]?\s*/i, "");
+  // Remove "Provincia di " prefix
+  s = s.replace(/^Provincia\s+di\s+/i, "");
+  // Collapse multiple spaces
+  s = s.replace(/\s+/g, " ").trim();
+  // Append ", Veneto" for Nominatim disambiguation if the result is a bare city name
+  if (s && !s.includes(",")) {
+    s = s + ", Veneto";
+  }
+  return s;
+}
+
+// Keep cleanCityName as alias for compatibility
 function cleanCityName(raw: string): string {
-  return raw
-    .replace(/\s*\([A-Z]{2}\)\s*/g, "")  // remove "(VR)" style codes
-    .replace(/\s*-\s*[A-Z]{2}$/g, "")    // remove " - VR" suffix
-    .trim();
+  return normalizeLocationText(raw);
 }
 
 /**
@@ -186,13 +218,27 @@ async function runGeocodePass(
             const addr = results[0].address ?? {};
             const province = addr.county ?? addr.province ?? addr.state_district ?? null;
 
-            await supabase.from("sagre").update({
-              location: `SRID=4326;POINT(${lon} ${lat})`,  // PostGIS WKT: LON LAT order
-              province: province,
-              status: "pending_llm",
-              updated_at: new Date().toISOString(),
-            }).eq("id", sagra.id);
-            geocoded++;
+            if (isVenetoProvince(province)) {
+              // Veneto sagra — geocode and continue to LLM enrichment
+              await supabase.from("sagre").update({
+                location: `SRID=4326;POINT(${lon} ${lat})`,  // PostGIS WKT: LON LAT order
+                province: province,
+                status: "pending_llm",
+                updated_at: new Date().toISOString(),
+              }).eq("id", sagra.id);
+              geocoded++;
+            } else {
+              // Non-Veneto sagra — deactivate it
+              console.log(`Non-Veneto sagra deactivated: ${sagra.id} (province: ${province})`);
+              await supabase.from("sagre").update({
+                location: `SRID=4326;POINT(${lon} ${lat})`,
+                province: province,
+                is_active: false,
+                status: "geocode_failed",
+                updated_at: new Date().toISOString(),
+              }).eq("id", sagra.id);
+              failed++;
+            }
           } else {
             // Coordinates outside Italy bounding box — treat as failed
             await supabase.from("sagre").update({
