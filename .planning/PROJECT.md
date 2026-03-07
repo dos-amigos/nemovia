@@ -38,14 +38,16 @@ Mostrare TUTTE le sagre del Veneto in un unico posto — dove sono, quando sono,
 
 ### Active
 
-- [ ] User authentication (Google OAuth, Magic Link)
-- [ ] Preferiti / salva sagra
-- [ ] Recensioni e foto utenti
-- [ ] Expand to new scraper sources beyond the initial 5
-- [ ] UI/UX overhaul — modern "wow effect" design, responsive desktop layout
 - [ ] Back button on sagra detail page
 - [ ] Image placeholder on sagra detail page
 - [ ] Cerca page: "TUTTE" province filter selected by default
+- [ ] Responsive desktop layout (grid/sidebar per schermi grandi)
+- [ ] Page transitions (Motion / View Transitions API)
+- [ ] Micro-interazioni (hover effects, skeleton loaders, scroll animations)
+- [ ] User authentication (Google OAuth, Magic Link) — deferred to v1.3+
+- [ ] Preferiti / salva sagra — deferred to v1.3+
+- [ ] Recensioni e foto utenti — deferred to v1.3+
+- [ ] Expand to new scraper sources beyond the initial 5 — deferred to future
 
 ### Out of Scope
 
@@ -57,6 +59,16 @@ Mostrare TUTTE le sagre del Veneto in un unico posto — dove sono, quando sono,
 - Cache ricerche — ottimizzazione prematura
 - App nativa mobile — web app mobile-first è sufficiente
 - Prenotazione tavoli — fuori scope, l'app mostra info
+
+## Current Milestone: v1.2 "Polish"
+
+**Goal:** Fix UX bugs and add polish — page transitions, responsive desktop layout, micro-interazioni — per un'esperienza premium su ogni device.
+
+**Target features:**
+- Fix 4 bug noti (back button, image placeholder, responsive, TUTTE default)
+- Page transitions smooth tra le pagine
+- Layout desktop curato (grid/sidebar)
+- Micro-interazioni (hover, skeleton loaders, feedback tattile, scroll animations)
 
 ## Latest Milestone: v1.1 "Dati Reali" (Shipped 2026-03-07)
 
@@ -72,7 +84,7 @@ Deployed on Vercel at nemovia.vercel.app.
 
 Pipeline: All 5 scraper sources active (eventiesagre, assosagre, solosagre, venetoinfesta, sagritaly). 735 clean active sagre. Enrichment runs 2x/day via pg_cron. Geocoding via Nominatim with location normalization. Noise title filtering and Veneto province gating in place.
 
-Known UI issues: no back button on detail page, missing image placeholder on detail, not responsive for desktop, Cerca page default province filter.
+Known UI issues being addressed in v1.2: back button on detail page, image placeholder on detail, responsive desktop layout, Cerca page default province filter.
 
 ### Il problema
 
@@ -120,4 +132,4 @@ Italiano, informale ma competente. L'app deve sembrare curata, non un template.
 | Location normalization + Veneto gating | Append ", Veneto" for disambiguation, deactivate non-Veneto after geocoding | ✓ Good — 36 dirty rows caught, 735 clean remaining |
 
 ---
-*Last updated: 2026-03-07 after v1.1 milestone*
+*Last updated: 2026-03-07 after v1.2 milestone start*
