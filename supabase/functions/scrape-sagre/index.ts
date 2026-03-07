@@ -283,6 +283,38 @@ function extractRawEvent($: any, el: any, source: ScraperSource): RawEventData {
     return { title, dateText, city, price: null, url, image };
   }
 
+  // --- sagritaly-specific extraction ---
+  // WordPress/WooCommerce site with structured custom fields for dates and location
+  if (source.name === "sagritaly") {
+    const $el = $(el);
+
+    // Title: h5 on active events page, h3 on passati page
+    const title = $el.find("h5.post_title a, h3.post_title a").first().text().trim();
+
+    // Dates: custom fields with class containing data_inizio / data_fine
+    // Format is DD/MM/YYYY which parseItalianDateRange() handles via Pattern 1
+    const startDateRaw = $el.find("div[class*='data_inizio'] span.w-post-elm-value").first().text().trim();
+    const endDateRaw = $el.find("div[class*='data_fine'] span.w-post-elm-value").first().text().trim();
+    const dateText = endDateRaw ? `${startDateRaw} al ${endDateRaw}` : startDateRaw;
+
+    // City: custom field with class containing luogo_evento
+    const city = $el.find("div[class*='luogo_evento'] span.w-post-elm-value").first().text().trim();
+
+    // URL: from the title link (sagritaly.com detail page)
+    let url = $el.find("h5.post_title a, h3.post_title a").first().attr("href") ?? null;
+    if (url && !url.startsWith("http")) {
+      try { url = new URL(url, source.base_url).href; } catch { /* */ }
+    }
+
+    // Image: WordPress post thumbnail
+    let image = $el.find("img.wp-post-image").first().attr("src") ?? null;
+    if (image && !image.startsWith("http")) {
+      try { image = new URL(image, source.base_url).href; } catch { /* */ }
+    }
+
+    return { title, dateText, city, price: null, url, image };
+  }
+
   // --- Generic extraction for other sources ---
   const title = $el.find(source.selector_title).first().text().trim();
   const dateText = source.selector_start_date
