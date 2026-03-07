@@ -1,622 +1,662 @@
 # Architecture Patterns
 
-**Domain:** Event aggregator with web scraping, LLM enrichment, and geo-search
-**Project:** Nemovia -- Italian food festival (sagre) aggregator for Veneto
-**Researched:** 2026-03-04
+**Domain:** UI/UX Polish -- Page transitions, responsive desktop layout, skeleton loaders, micro-interactions
+**Project:** Nemovia v1.2 "Polish" -- Integrating into existing Next.js 15 App Router architecture
+**Researched:** 2026-03-07
 
-## Recommended Architecture
+## Existing Architecture Summary
 
-Nemovia follows a **pipeline-and-serve** architecture: data flows through a multi-stage ingestion pipeline (scrape, geocode, enrich) into a PostGIS-enabled database, then gets served to a mobile-first Next.js frontend via server components and RPC functions.
-
-The system has three distinct runtime contexts:
-1. **Scheduled Pipeline** -- Background jobs that scrape, geocode, and enrich data
-2. **Server Rendering** -- Next.js server components fetching from Supabase for SSR pages
-3. **Client Interactivity** -- Browser-side map rendering, geolocation, and filtering
+Nemovia is a Next.js 15 App Router application with this structure:
 
 ```
-[Cron Trigger] --> [Scrape Handler] --> [Raw Events Table]
-                                              |
-                                     [Geocode Handler] --> [Geocoded Events]
-                                                                  |
-                                                          [Enrich Handler] --> [Enriched Events]
-                                                                                      |
-                                                                    [Next.js Server Components]
-                                                                              |
-                                                                    [Client: Map + Filters]
+src/app/layout.tsx              -- Root: <html>, Inter font, NuqsAdapter
+  src/app/(main)/layout.tsx     -- Main: max-w-lg container, pb-20, BottomNav
+    src/app/(main)/page.tsx     -- Home (Server Component)
+    src/app/(main)/cerca/       -- Search (Server + Client)
+    src/app/(main)/mappa/       -- Map (Client-heavy)
+    src/app/(main)/sagra/[slug] -- Detail (Server Component)
 ```
 
-### Component Boundaries
+Key characteristics:
+- **Server-first**: Pages are async server components fetching from Supabase RPC
+- **Client islands**: BottomNav, SearchFilters, MapView, QuickFilters, BackButton are "use client"
+- **Animation layer**: FadeIn and StaggerGrid wrappers use `motion/react` (Motion v12)
+- **Loading states**: Each route has a `loading.tsx` with Skeleton components
+- **Mobile-only layout**: `max-w-lg` on the main container, BottomNav fixed at bottom
+- **No template.tsx**: None exists -- pages share persistent layouts only
 
-| Component | Responsibility | Communicates With | Runtime |
-|-----------|---------------|-------------------|---------|
-| **Scraper Engine** | Fetch HTML from source sites, parse with Cheerio, extract raw event data, deduplicate | Source websites (HTTP), Supabase (write) | Vercel Function (cron) or Supabase Edge Function |
-| **Scraper Config Store** | Hold CSS selectors, URLs, and parsing rules per source site | Scraper Engine (read) | Supabase table (`scraper_configs`) |
-| **Geocoder** | Convert city/address strings to lat/lng coordinates via Nominatim | Nominatim API (HTTP), Supabase (read/write) | Vercel Function (cron) or Supabase Edge Function |
-| **LLM Enricher** | Classify events by cuisine type, generate engaging descriptions | Gemini 2.5 Flash API, Supabase (read/write) | Vercel Function (cron) or Supabase Edge Function |
-| **PostGIS Database** | Store events with geography points, support spatial queries, manage scraper configs | All backend components | Supabase PostgreSQL |
-| **Geo-Query RPC** | Expose `find_nearby_sagre` and distance-sorted queries as Postgres functions | Next.js server components (via Supabase client) | Supabase RPC |
-| **Next.js Server Components** | Fetch and render event listings, detail pages, SEO metadata | Supabase (read), Client components (props) | Vercel SSR |
-| **Next.js Route Handlers** | API endpoints for client-side filtering, search, and geo-queries | Supabase (read), Client components (fetch) | Vercel Functions |
-| **Map Component** | Render Leaflet map with marker clusters, popups, geolocation | Client-side only, receives data via props/API | Browser (dynamic import, no SSR) |
-| **Filter/Search UI** | Province, radius, date, cuisine type, free/paid filters | Route Handlers or Server Actions | Browser + Server |
+## Recommended Architecture for v1.2 Polish
 
-### Data Flow
+The polish features split into four integration domains, each with distinct architectural concerns:
 
-#### Ingestion Pipeline (Background)
+### 1. Page Transitions
+### 2. Responsive Desktop Layout
+### 3. Skeleton Loaders (Enhancement)
+### 4. Micro-Interactions
 
-```
-1. SCRAPE (daily cron)
-   For each source in scraper_configs:
-     - Fetch HTML page(s) via fetch()
-     - Parse with Cheerio using configured CSS selectors
-     - Extract: title, dates, location_text, description, price, image_url
-     - Generate content_hash = hash(title + dates + location_text)
-     - UPSERT into raw_events (deduplicate by content_hash + source_id)
-     - Mark new/changed events with status = 'pending_geocode'
+---
 
-2. GEOCODE (runs after scrape, or separate cron)
-   SELECT events WHERE status = 'pending_geocode'
-   For each event (rate-limited 1 req/sec):
-     - Call Nominatim: location_text + ", Veneto, Italia"
-     - Parse lat/lng from response
-     - UPDATE event SET location = ST_MakePoint(lng, lat)::geography
-     - SET status = 'pending_enrichment'
-     - Cache geocode results (same city = same coordinates)
+## Integration Domain 1: Page Transitions
 
-3. ENRICH (runs after geocode, or separate cron)
-   SELECT events WHERE status = 'pending_enrichment'
-   For each event (rate-limited ~10 req/min for free tier):
-     - Send title + description + location to Gemini 2.5 Flash
-     - Parse response: cuisine_tags[], enhanced_description (max 250 char)
-     - UPDATE event SET tags, enhanced_description
-     - SET status = 'active'
+**Confidence: MEDIUM** -- Well-researched patterns exist but Next.js App Router has a known architectural limitation (issue #49279, still open as of Dec 2025) that prevents standard AnimatePresence exit animations.
 
-4. EXPIRE (daily)
-   UPDATE events SET status = 'expired' WHERE end_date < NOW()
-```
+### The Problem
 
-#### Serving Pipeline (Request-time)
+Next.js App Router inserts an `OuterLayoutRouter` component between layouts and templates. During navigation, it performs full content swaps that unmount the old page before Motion's AnimatePresence can run exit animations. The standard `AnimatePresence` + `key={pathname}` pattern does not work reliably.
+
+### Recommended Approach: next-view-transitions
+
+Use the `next-view-transitions` library (v0.3.5, by Shu Ding / Vercel core team) for CSS View Transitions API integration. This is the right choice because:
+
+1. **Works with App Router natively** -- wraps the `<html>` element, intercepts Next.js navigation
+2. **No FrozenRouter hacks** -- uses browser-native View Transitions API, not React component lifecycle tricks
+3. **GPU-accelerated** -- transitions run on the compositor, not the main thread
+4. **Zero conflict with existing Motion animations** -- View Transitions are CSS-level, Motion animations are JS-level, they operate on different layers
+5. **Progressive enhancement** -- falls back gracefully on unsupported browsers (Firefox)
+6. **Tiny footprint** -- no additional animation library, just CSS
+
+**Browser support**: Chrome, Edge, Safari 18+. Firefox lacks support but degrades to instant navigation (acceptable for a Veneto sagre app where the audience is primarily mobile Chrome/Safari).
+
+### Architecture: What Changes
 
 ```
-1. Homepage (Server Component)
-   - Fetch "this weekend" events via date filter
-   - Fetch "popular" events (by province or trending)
-   - Render SagraCards server-side for SEO
+BEFORE:
+src/app/layout.tsx
+  <html>
+    <body>
+      <NuqsAdapter>{children}</NuqsAdapter>
+    </body>
+  </html>
 
-2. Search Page (Server + Client)
-   - Server: Initial load with default filters (SSR)
-   - Client: Filter changes trigger API call to Route Handler
-   - Route Handler calls Supabase with PostGIS queries
-   - Returns filtered events + distances
-
-3. Map Page (Client-only rendering)
-   - Dynamic import Leaflet (ssr: false)
-   - Fetch events via API (with bounding box or radius)
-   - Render MarkerCluster groups
-   - Popup shows SagraCard preview
-
-4. Detail Page (Server Component)
-   - Fetch single event by slug
-   - Render full details, mini-map, share links
-   - Generate dynamic OG metadata for social sharing
+AFTER:
+src/app/layout.tsx
+  <ViewTransitions>         <-- NEW: wraps <html>
+    <html>
+      <body>
+        <NuqsAdapter>{children}</NuqsAdapter>
+      </body>
+    </html>
+  </ViewTransitions>
 ```
 
-## Critical Architecture Decision: Scheduling Strategy
+**Modified files:**
 
-**Confidence: HIGH** (verified against official Vercel and Supabase docs)
+| File | Change | Why |
+|------|--------|-----|
+| `src/app/layout.tsx` | Wrap with `<ViewTransitions>` from `next-view-transitions` | Enable CSS View Transitions for all route changes |
+| `src/app/globals.css` | Add `::view-transition-*` CSS rules | Define transition animations (crossfade, slide) |
+| `src/components/layout/BottomNav.tsx` | Replace `next/link` with `Link` from `next-view-transitions` | Trigger transitions on tab navigation |
+| `src/components/sagra/SagraCard.tsx` | Replace `next/link` with `Link` from `next-view-transitions` | Trigger transitions when opening detail pages |
+| `src/components/home/HeroSection.tsx` | Replace `next/link` with `Link` from `next-view-transitions` | Trigger transition on search bar click |
+| `src/components/home/ProvinceSection.tsx` | Replace `next/link` with `Link` from `next-view-transitions` | Trigger transition on province link click |
 
-### The Vercel Hobby Plan Cron Limitation
+**New files:**
 
-This is the single most important architectural constraint. The PROJECT.md specifies "Cron jobs: scraping 2x/giorno, enrichment 2x/giorno, expire eventi passati" -- but **Vercel Hobby plan cron jobs can only run once per day**, with hourly timing precision (could fire anywhere in a 59-minute window).
+None required -- CSS View Transitions are controlled entirely through CSS `::view-transition-*` pseudo-elements and the `<ViewTransitions>` wrapper.
 
-Sources: [Vercel Cron Jobs Usage & Pricing](https://vercel.com/docs/cron-jobs/usage-and-pricing)
+**CSS transition definitions** (added to `globals.css`):
 
-### Recommended Approach: Single Daily Orchestrator + Supabase pg_cron
-
-Use a **hybrid scheduling strategy**:
-
-1. **Vercel Cron (1x/day)**: A single "orchestrator" endpoint that kicks off the full pipeline: scrape all sources, then geocode new events, then enrich new events. With Fluid Compute, Hobby functions get up to 300s (5 minutes) per invocation.
-
-2. **Supabase pg_cron (sub-minute intervals)**: For the expire job and any lightweight database maintenance. pg_cron runs SQL directly in the database with zero network latency, supports sub-minute intervals, and is included in the free tier.
-
-3. **Chain pattern within the orchestrator**: The single Vercel cron endpoint calls scrape, waits, calls geocode, waits, calls enrich -- all within one 5-minute function execution. If 5 minutes is insufficient for all sources, split into multiple sequential calls using Supabase pg_cron + pg_net to invoke Supabase Edge Functions.
-
-**Alternative if more frequency is needed**: Use Supabase pg_cron + pg_net extension to call Supabase Edge Functions on a schedule. This bypasses Vercel cron limits entirely. Edge Functions have a 150s timeout on free tier but no frequency restrictions when triggered by pg_cron.
-
-### Function Timeout Budget (5 minutes = 300s)
-
-| Step | Estimated Time | Notes |
-|------|---------------|-------|
-| Scrape 5 sources | ~60-90s | Sequential fetch + parse, ~12-18s per source |
-| Geocode new events | ~30-60s | ~30-60 new events/day at 1 req/sec |
-| Enrich new events | ~90-180s | ~30-60 events at 10 RPM = 3-6 minutes |
-
-**Problem**: Enrichment alone can exceed the 5-minute budget if there are many new events. **Solution**: Split into two daily Vercel cron jobs (allowed: up to 100 per project, each once/day):
-- **Morning cron** (e.g., 06:00 UTC): Scrape + Geocode
-- **Afternoon cron** (e.g., 14:00 UTC): Enrich pending events + Expire old events
-
-This fits within Hobby plan limits (2 cron jobs, each once/day, each up to 300s).
-
-## Patterns to Follow
-
-### Pattern 1: Config-Driven Generic Scraper
-
-**What:** Store CSS selectors and URL patterns in a database table, not in code. One scraper function reads the config and applies it.
-
-**When:** Always -- this is core to the project's extensibility.
-
-**Why:** Adding a new source site means inserting a row, not deploying code. Different sites have different HTML structures but the same data model (title, dates, location, description).
-
-```typescript
-// Database table: scraper_configs
-interface ScraperConfig {
-  id: string;
-  source_name: string;          // "SagreItaliane"
-  base_url: string;             // "https://www.sagreitaliane.it/veneto"
-  list_selector: string;        // ".event-card"
-  title_selector: string;       // ".event-card h3"
-  date_selector: string;        // ".event-card .dates"
-  location_selector: string;    // ".event-card .location"
-  description_selector: string; // ".event-card .desc"
-  image_selector: string;       // ".event-card img@src"
-  pagination_selector: string;  // ".next-page@href"
-  date_format: string;          // "DD/MM/YYYY"
-  is_active: boolean;
-  last_scraped_at: string;
+```css
+/* Page transition: crossfade with subtle slide */
+::view-transition-old(root) {
+  animation: fade-out 200ms ease-in forwards,
+             slide-out 200ms ease-in forwards;
+}
+::view-transition-new(root) {
+  animation: fade-in 300ms ease-out forwards,
+             slide-in 300ms ease-out forwards;
 }
 
-// Generic scraper function
-async function scrapeSource(config: ScraperConfig): Promise<RawEvent[]> {
-  const html = await fetch(config.base_url).then(r => r.text());
-  const $ = cheerio.load(html);
-  const events: RawEvent[] = [];
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes slide-out { to { transform: translateY(-8px); } }
+@keyframes slide-in { from { transform: translateY(8px); } }
 
-  $(config.list_selector).each((_, el) => {
-    events.push({
-      title: $(el).find(config.title_selector).text().trim(),
-      dates: $(el).find(config.date_selector).text().trim(),
-      location_text: $(el).find(config.location_selector).text().trim(),
-      description: $(el).find(config.description_selector).text().trim(),
-      image_url: $(el).find(config.image_selector).attr('src'),
-      source_id: config.id,
-      content_hash: generateHash(/* title + dates + location */),
-    });
-  });
-  return events;
-}
-```
-
-### Pattern 2: Status-Based Pipeline Processing
-
-**What:** Each event has a `status` field that tracks its position in the pipeline. Each processing stage queries for events in its input status and advances them.
-
-**When:** Always -- this decouples pipeline stages and enables retry.
-
-**Why:** If geocoding fails halfway, you restart and it picks up where it left off. If enrichment hits rate limits, pending events wait for the next run. No complex job queue needed.
-
-```typescript
-type EventStatus =
-  | 'pending_geocode'    // Just scraped, needs coordinates
-  | 'geocode_failed'     // Nominatim couldn't resolve (retry later)
-  | 'pending_enrichment' // Has coordinates, needs LLM tags
-  | 'enrichment_failed'  // Gemini failed (retry later)
-  | 'active'             // Fully processed, visible to users
-  | 'expired';           // Past end_date, hidden from listings
-
-// Each pipeline stage:
-// 1. SELECT WHERE status = 'my_input_status' LIMIT batch_size
-// 2. Process each event
-// 3. UPDATE SET status = 'next_status' (or 'failed_status' on error)
-```
-
-### Pattern 3: Content-Hash Deduplication
-
-**What:** Generate a hash from the event's core identifying fields (title + normalized dates + normalized location). Use this as a unique constraint for upserts.
-
-**When:** Every scrape run, since the same event appears on multiple source sites and across multiple scrape runs.
-
-**Why:** Events from SagreItaliane and EventieSagre may describe the same festival with slightly different wording. Exact hash catches same-source duplicates; fuzzy matching (deferred to post-MVP) catches cross-source duplicates.
-
-```typescript
-function generateContentHash(title: string, dates: string, location: string): string {
-  const normalized = [
-    title.toLowerCase().trim(),
-    dates.replace(/\s+/g, ''),
-    location.toLowerCase().trim()
-  ].join('|');
-  return createHash('sha256').update(normalized).digest('hex').slice(0, 16);
-}
-
-// UPSERT pattern:
-// INSERT INTO events (...) VALUES (...)
-// ON CONFLICT (content_hash, source_id) DO UPDATE SET
-//   description = EXCLUDED.description,
-//   updated_at = NOW()
-```
-
-### Pattern 4: Supabase Client Factory for Next.js App Router
-
-**What:** Create separate Supabase client factories for server components, route handlers, and client components using `@supabase/ssr`.
-
-**When:** Every Supabase interaction in the Next.js app.
-
-**Why:** Server components need cookie-aware clients for potential future auth. Client components need browser clients for real-time features. Service role clients are used only in cron/pipeline functions where no user context exists.
-
-```
-src/
-  lib/
-    supabase/
-      server.ts       -- createServerClient() for Server Components + Route Handlers
-      client.ts        -- createBrowserClient() for Client Components
-      service-role.ts  -- createServiceRoleClient() for cron jobs / pipeline
-```
-
-### Pattern 5: PostGIS RPC for Geo-Queries
-
-**What:** Define Postgres functions for spatial queries and call them via Supabase RPC from Next.js.
-
-**When:** All proximity-based searches ("nearby", "within X km", distance sorting).
-
-**Why:** PostGIS spatial indexes (GIST) make these queries fast. The `<->` operator uses the spatial index for nearest-neighbor sorting. Wrapping in an RPC function keeps the query logic in the database and provides a clean API.
-
-```sql
-CREATE OR REPLACE FUNCTION find_nearby_sagre(
-  user_lat FLOAT,
-  user_lng FLOAT,
-  radius_meters FLOAT DEFAULT 50000,  -- 50km default
-  max_results INT DEFAULT 50
-)
-RETURNS TABLE (
-  id UUID,
-  title TEXT,
-  location_text TEXT,
-  start_date DATE,
-  end_date DATE,
-  cuisine_tags TEXT[],
-  enhanced_description TEXT,
-  image_url TEXT,
-  lat FLOAT,
-  lng FLOAT,
-  distance_meters FLOAT
-)
-SET search_path = ''
-LANGUAGE sql STABLE
-AS $$
-  SELECT
-    e.id, e.title, e.location_text,
-    e.start_date, e.end_date,
-    e.cuisine_tags, e.enhanced_description, e.image_url,
-    extensions.st_y(e.location::extensions.geometry) AS lat,
-    extensions.st_x(e.location::extensions.geometry) AS lng,
-    extensions.st_distance(
-      e.location,
-      extensions.st_point(user_lng, user_lat)::extensions.geography
-    ) AS distance_meters
-  FROM public.events e
-  WHERE e.status = 'active'
-    AND extensions.st_dwithin(
-      e.location,
-      extensions.st_point(user_lng, user_lat)::extensions.geography,
-      radius_meters
-    )
-  ORDER BY e.location OPERATOR(extensions.<->)
-    extensions.st_point(user_lng, user_lat)::extensions.geography
-  LIMIT max_results;
-$$;
-```
-
-### Pattern 6: Leaflet Dynamic Import with SSR Bypass
-
-**What:** All Leaflet/react-leaflet components must be dynamically imported with `ssr: false` because Leaflet accesses the DOM directly during initialization.
-
-**When:** Every map component in the application.
-
-**Why:** Leaflet crashes during SSR because `window` is undefined on the server. This is a well-known constraint with a standard solution.
-
-```typescript
-// src/components/map/index.tsx (wrapper)
-"use client";
-import dynamic from "next/dynamic";
-
-export const MapView = dynamic(
-  () => import("./MapView"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-[60vh] bg-stone-100 animate-pulse rounded-lg flex items-center justify-center">
-        <p className="text-stone-400">Caricamento mappa...</p>
-      </div>
-    ),
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
   }
-);
-
-// src/components/map/MapView.tsx (actual implementation)
-"use client";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import MarkerClusterGroup from "react-leaflet-cluster";
-import "leaflet/dist/leaflet.css";
-// ... marker icon fix for Next.js build
+}
 ```
 
-### Pattern 7: Geocode Cache Layer
+### Why NOT next-transition-router or FrozenRouter
 
-**What:** Cache Nominatim geocoding results by normalized location string. Many events from the same city produce the same coordinates.
+| Approach | Verdict | Reason |
+|----------|---------|--------|
+| `next-transition-router` | Rejected | Adds 8KB, requires wrapping app in `TransitionRouter` provider, overkill for crossfade transitions |
+| FrozenRouter + AnimatePresence | Rejected | Relies on internal `LayoutRouterContext` which is not a public API -- breaks on Next.js upgrades |
+| `experimental: { viewTransition: true }` | Rejected for now | Requires React Canary channel, Next.js 16+, not stable yet |
+| Custom `template.tsx` with Motion | Rejected | Only gives entrance animations (template remounts), no exit animations without FrozenRouter hack |
 
-**When:** During the geocoding pipeline stage.
+### Why NOT Motion's layoutId for shared element transitions
 
-**Why:** Nominatim has a strict 1 request/second rate limit. If 20 events are in "Padova", you should only geocode "Padova" once. A simple database lookup table dramatically reduces API calls.
+Motion's `layoutId` prop enables shared element transitions (e.g., card image morphing into detail page image). However, this requires both the source and target `motion.div` to exist in the same React tree simultaneously during the transition. Next.js App Router's navigation fully unmounts the old page before mounting the new one, breaking this requirement (issue #49279). CSS View Transitions handle the "snapshot old, animate to new" pattern natively without this constraint.
 
-```sql
-CREATE TABLE geocode_cache (
-  location_key TEXT PRIMARY KEY,  -- normalized: "padova, veneto, italia"
-  lat FLOAT NOT NULL,
-  lng FLOAT NOT NULL,
-  raw_response JSONB,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+---
+
+## Integration Domain 2: Responsive Desktop Layout
+
+**Confidence: HIGH** -- Standard Tailwind responsive patterns, no library dependencies.
+
+### The Problem
+
+The current main layout uses `max-w-lg` (512px) which is appropriate for mobile but wastes space on desktop screens. The BottomNav is mobile-only; desktop needs a different navigation pattern.
+
+### Recommended Approach: Breakpoint-Based Layout Shift
+
+At `lg` (1024px+), switch from single-column mobile layout to a wider content area. At `xl` (1280px+), optionally show a sidebar. Keep BottomNav on mobile, hide it on desktop and show a top navigation or sidebar instead.
+
+### Architecture: What Changes
+
+```
+MOBILE (<1024px):                    DESKTOP (>=1024px):
++---------------------------+        +---------------------------+
+| [BottomNav sticky bottom] |        | [TopNav / DesktopNav]     |
+|                           |        +--------+------------------+
+|  max-w-lg, px-4           |        |        |                  |
+|  Single column content    |        |        |  max-w-4xl       |
+|                           |        |        |  Multi-column    |
+|                           |        |        |  content grid    |
++---------------------------+        +--------+------------------+
+```
+
+**Modified files:**
+
+| File | Change | Why |
+|------|--------|-----|
+| `src/app/(main)/layout.tsx` | Change `max-w-lg` to responsive: `max-w-lg lg:max-w-4xl xl:max-w-6xl` | Wider content area on desktop |
+| `src/components/layout/BottomNav.tsx` | Add `lg:hidden` | Hide mobile nav on desktop |
+| `src/components/sagra/SagraCard.tsx` | Add responsive image height, horizontal layout variant | Better card presentation on desktop |
+| `src/components/search/SearchFilters.tsx` | Already responsive (`grid-cols-2 sm:grid-cols-3 lg:grid-cols-4`) | Minimal changes needed |
+| `src/app/(main)/page.tsx` | Adjust section spacing for wider layout | Better use of horizontal space |
+| `src/app/(main)/cerca/page.tsx` | Add desktop grid layout for filters + results side-by-side | Utilize horizontal space |
+
+**New files:**
+
+| File | Purpose |
+|------|---------|
+| `src/components/layout/DesktopNav.tsx` | Top navigation bar for desktop with logo, nav links, hidden on mobile (`hidden lg:flex`) |
+
+### Component: DesktopNav
+
+```typescript
+// src/components/layout/DesktopNav.tsx
+"use client";
+
+import { Link } from "next-view-transitions"; // reuse transition-aware Link
+import { usePathname } from "next/navigation";
+import { Home, Search, Map } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const navItems = [
+  { href: "/", label: "Home", icon: Home },
+  { href: "/cerca", label: "Cerca", icon: Search },
+  { href: "/mappa", label: "Mappa", icon: Map },
+] as const;
+
+export function DesktopNav() {
+  const pathname = usePathname();
+
+  return (
+    <header className="hidden lg:flex sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
+      <nav className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-6">
+        <Link href="/" className="text-lg font-bold text-primary">
+          Nemovia
+        </Link>
+        <div className="flex items-center gap-6">
+          {navItems.map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "flex items-center gap-2 text-sm transition-colors",
+                pathname === href
+                  ? "text-primary font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </Link>
+          ))}
+        </div>
+      </nav>
+    </header>
+  );
+}
+```
+
+### Layout Change: (main)/layout.tsx
+
+```typescript
+// BEFORE:
+<div className="min-h-screen bg-background pb-20">
+  <main className="mx-auto max-w-lg px-4 py-4">{children}</main>
+  <BottomNav />
+</div>
+
+// AFTER:
+<div className="min-h-screen bg-background pb-20 lg:pb-0">
+  <DesktopNav />
+  <main className="mx-auto max-w-lg px-4 py-4 lg:max-w-4xl lg:px-6 lg:py-6 xl:max-w-6xl">
+    {children}
+  </main>
+  <BottomNav /> {/* Already gets lg:hidden */}
+</div>
+```
+
+### Grid Changes for Desktop
+
+**StaggerGrid** currently uses `grid-cols-1 sm:grid-cols-2` as default. For desktop, extend:
+
+```typescript
+// BEFORE:
+className = "grid grid-cols-1 gap-4 sm:grid-cols-2"
+
+// AFTER:
+className = "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+```
+
+**Cerca page** desktop layout: filters as a sidebar, results as the main content area:
+
+```
+MOBILE:                         DESKTOP (lg+):
++------------------+            +----------+------------------+
+| Filters (stacked)|            | Filters  | Results grid     |
+| Results (below)  |            | (sidebar)| 3-col cards      |
++------------------+            +----------+------------------+
+```
+
+This requires restructuring the cerca page to use a `lg:grid lg:grid-cols-[280px_1fr] lg:gap-6` layout.
+
+---
+
+## Integration Domain 3: Skeleton Loaders (Enhancement)
+
+**Confidence: HIGH** -- Existing pattern is solid, enhancements are straightforward.
+
+### Current State
+
+Every route already has a `loading.tsx` with appropriate skeletons. The existing `Skeleton` component uses `animate-pulse`. The `SagraCardSkeleton` matches the card layout structure.
+
+### What to Improve
+
+1. **Shimmer effect** instead of pulse -- more modern, gives directional movement that implies loading progress
+2. **Suspense boundaries within pages** -- currently, entire pages show loading state; individual sections could stream independently
+3. **Skeleton for the detail page image** -- currently shows a plain rectangle, should match the full-bleed hero pattern
+
+### Architecture: What Changes
+
+**Modified files:**
+
+| File | Change | Why |
+|------|--------|-----|
+| `src/components/ui/skeleton.tsx` | Add shimmer animation variant | Modern loading feel |
+| `src/app/globals.css` | Add `@keyframes shimmer` CSS animation | GPU-accelerated shimmer effect |
+| `src/app/(main)/page.tsx` | Wrap WeekendSection and ProvinceSection in individual `<Suspense>` boundaries | Independent streaming -- hero + filters load first, then data sections stream in |
+| `src/app/(main)/sagra/[slug]/loading.tsx` | Update image skeleton to match full-bleed hero layout (`-mx-4 -mt-4`) | Consistent skeleton shape prevents layout shift |
+
+**New files:**
+
+| File | Purpose |
+|------|---------|
+| `src/components/home/WeekendSectionSkeleton.tsx` | Suspense fallback for WeekendSection (replaces part of HomeLoading) |
+| `src/components/home/ProvinceSectionSkeleton.tsx` | Suspense fallback for ProvinceSection |
+
+### Suspense Streaming Pattern for Homepage
+
+```typescript
+// BEFORE (src/app/(main)/page.tsx):
+export default async function HomePage() {
+  const [weekendSagre, provinceCounts] = await Promise.all([
+    getWeekendSagre(),
+    getProvinceCounts(),
+  ]);
+  return (
+    <div className="space-y-8">
+      <HeroSection />
+      <QuickFilters />
+      <WeekendSection sagre={weekendSagre} />
+      <ProvinceSection counts={provinceCounts} />
+    </div>
+  );
+}
+
+// AFTER:
+export default function HomePage() {  // No longer async at top level
+  return (
+    <div className="space-y-8">
+      <HeroSection />
+      <QuickFilters />
+      <Suspense fallback={<WeekendSectionSkeleton />}>
+        <WeekendSectionLoader />  {/* async server component */}
+      </Suspense>
+      <Suspense fallback={<ProvinceSectionSkeleton />}>
+        <ProvinceSectionLoader />  {/* async server component */}
+      </Suspense>
+    </div>
+  );
+}
+
+// New: src/components/home/WeekendSectionLoader.tsx (Server Component)
+async function WeekendSectionLoader() {
+  const sagre = await getWeekendSagre();
+  return <WeekendSection sagre={sagre} />;
+}
+```
+
+This pattern makes the hero and quick filters appear instantly, then the weekend section and province section stream in independently with their own skeleton fallbacks.
+
+### Shimmer Animation
+
+```css
+/* globals.css addition */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 25%,
+    oklch(0.95 0.001 106.424) 50%,
+    var(--muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+```
+
+---
+
+## Integration Domain 4: Micro-Interactions
+
+**Confidence: HIGH** -- Motion v12 is already installed and used. These are additive, low-risk changes.
+
+### Strategy
+
+Use Motion's `whileHover`, `whileTap`, and `whileInView` props for declarative micro-interactions. All values should use `transform` properties (scale, y, rotate) which are GPU-accelerated and do not trigger layout reflow.
+
+### What Gets Micro-Interactions
+
+| Component | Interaction | Motion Props |
+|-----------|-------------|-------------|
+| `SagraCard` | Hover lift + shadow, tap press | `whileHover={{ y: -4, scale: 1.02 }}` `whileTap={{ scale: 0.98 }}` |
+| `BottomNav` tab icons | Tap bounce | `whileTap={{ scale: 0.9 }}` spring transition |
+| `Badge` (food tags) | Hover highlight | `whileHover={{ scale: 1.05 }}` |
+| `QuickFilters` chips | Tap press | `whileTap={{ scale: 0.95 }}` |
+| `ProvinceSection` links | Hover lift | `whileHover={{ y: -2 }}` |
+| `BackButton` | Tap scale | `whileTap={{ scale: 0.9 }}` |
+| `DirectionsButton` / `ShareButton` | Tap press + bounce | `whileTap={{ scale: 0.95 }}` spring |
+| `HeroSection` search bar | Hover shadow grow | `whileHover={{ scale: 1.01 }}` |
+
+### Architecture: What Changes
+
+**Modified files:**
+
+| File | Change | Why |
+|------|--------|-----|
+| `src/components/sagra/SagraCard.tsx` | Wrap Card in `motion.div` with hover/tap props | Tactile card interaction |
+| `src/components/layout/BottomNav.tsx` | Wrap tab icons in `motion.div` with tap spring | Bounce feedback on navigation |
+| `src/components/home/QuickFilters.tsx` | Wrap Badge buttons in `motion.button` with tap scale | Press feedback on filter chips |
+| `src/components/home/ProvinceSection.tsx` | Wrap province links in `motion.div` with hover lift | Hover affordance |
+| `src/components/detail/BackButton.tsx` | Use `motion.button` instead of `button` | Tap feedback |
+| `src/components/detail/DirectionsButton.tsx` | Use `motion.button` | Tap feedback |
+| `src/components/detail/ShareButton.tsx` | Use `motion.button` | Tap feedback |
+| `src/components/home/HeroSection.tsx` | Wrap search bar Link in `motion.div` with hover scale | Subtle hover invitation |
+
+**New files:**
+
+| File | Purpose |
+|------|---------|
+| `src/components/animations/PressScale.tsx` | Reusable wrapper for `whileTap={{ scale }}` to avoid repeating motion props everywhere |
+| `src/components/animations/HoverLift.tsx` | Reusable wrapper for `whileHover={{ y, scale }}` pattern |
+
+### Reusable Animation Wrappers
+
+```typescript
+// src/components/animations/PressScale.tsx
+"use client";
+import { motion, type HTMLMotionProps } from "motion/react";
+
+interface PressScaleProps extends HTMLMotionProps<"div"> {
+  scale?: number;
+  children: React.ReactNode;
+}
+
+export function PressScale({ scale = 0.97, children, ...props }: PressScaleProps) {
+  return (
+    <motion.div
+      whileTap={{ scale }}
+      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  );
+}
 ```
 
 ```typescript
-async function geocodeLocation(locationText: string): Promise<{lat: number, lng: number} | null> {
-  const key = normalizeLocation(locationText); // lowercase, trim, append ", Veneto, Italia"
+// src/components/animations/HoverLift.tsx
+"use client";
+import { motion, type HTMLMotionProps } from "motion/react";
 
-  // Check cache first
-  const cached = await supabase.from('geocode_cache').select().eq('location_key', key).single();
-  if (cached.data) return { lat: cached.data.lat, lng: cached.data.lng };
+interface HoverLiftProps extends HTMLMotionProps<"div"> {
+  y?: number;
+  children: React.ReactNode;
+}
 
-  // Rate-limited API call
-  await rateLimiter.wait(); // Ensure 1 req/sec
-  const result = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(key)}&format=json&limit=1`);
-  // ... parse and cache result
+export function HoverLift({ y = -4, children, ...props }: HoverLiftProps) {
+  return (
+    <motion.div
+      whileHover={{ y, transition: { type: "spring", stiffness: 300, damping: 20 } }}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  );
 }
 ```
+
+### Accessibility: Reduced Motion
+
+All Motion animations respect `prefers-reduced-motion` by default since Motion v11. Motion skips animations when the user has enabled reduced motion in their OS settings. No additional code needed for this.
+
+---
+
+## Complete Component Map: New vs Modified
+
+### New Components (6)
+
+| Component | Path | Type | Purpose |
+|-----------|------|------|---------|
+| `DesktopNav` | `src/components/layout/DesktopNav.tsx` | Client | Top navigation bar for lg+ screens |
+| `PressScale` | `src/components/animations/PressScale.tsx` | Client | Reusable tap-to-scale wrapper |
+| `HoverLift` | `src/components/animations/HoverLift.tsx` | Client | Reusable hover-to-lift wrapper |
+| `WeekendSectionSkeleton` | `src/components/home/WeekendSectionSkeleton.tsx` | Server | Suspense fallback for weekend section |
+| `ProvinceSectionSkeleton` | `src/components/home/ProvinceSectionSkeleton.tsx` | Server | Suspense fallback for province section |
+| `WeekendSectionLoader` | `src/components/home/WeekendSectionLoader.tsx` | Server (async) | Data-fetching wrapper for Suspense pattern |
+
+### Modified Components (15)
+
+| Component | Path | Changes |
+|-----------|------|---------|
+| Root Layout | `src/app/layout.tsx` | Wrap with `<ViewTransitions>` |
+| Main Layout | `src/app/(main)/layout.tsx` | Responsive width, add DesktopNav |
+| BottomNav | `src/components/layout/BottomNav.tsx` | `lg:hidden`, transition Link, motion tap icons |
+| SagraCard | `src/components/sagra/SagraCard.tsx` | Transition Link, motion hover/tap, responsive image |
+| StaggerGrid | `src/components/animations/StaggerGrid.tsx` | Responsive grid columns for lg/xl |
+| HeroSection | `src/components/home/HeroSection.tsx` | Transition Link, motion hover on search bar |
+| QuickFilters | `src/components/home/QuickFilters.tsx` | Motion tap on chips |
+| ProvinceSection | `src/components/home/ProvinceSection.tsx` | Transition Link, motion hover lift |
+| SearchFilters | `src/components/search/SearchFilters.tsx` | Already responsive, minor desktop tweaks |
+| BackButton | `src/components/detail/BackButton.tsx` | motion.button |
+| DirectionsButton | `src/components/detail/DirectionsButton.tsx` | motion.button |
+| ShareButton | `src/components/detail/ShareButton.tsx` | motion.button |
+| Home page | `src/app/(main)/page.tsx` | Suspense boundaries around data sections |
+| globals.css | `src/app/globals.css` | View transition CSS, shimmer keyframes |
+| Skeleton | `src/components/ui/skeleton.tsx` | Add shimmer variant |
+| Sagra detail loading | `src/app/(main)/sagra/[slug]/loading.tsx` | Match full-bleed hero skeleton shape |
+
+---
+
+## Data Flow Changes
+
+### No Backend Changes
+
+This milestone introduces zero changes to:
+- Database schema
+- Supabase RPC functions
+- Scraper pipeline
+- API routes / server actions
+- Data types
+
+All changes are purely in the rendering and interaction layer.
+
+### New Dependency
+
+One new npm package: `next-view-transitions` (v0.3.5, ~3KB gzipped).
+
+```bash
+npm install next-view-transitions
+```
+
+No other new dependencies. All micro-interactions use the existing `motion` package (v12.35.0). All responsive layout changes use existing Tailwind v4 utilities.
+
+---
+
+## Suggested Build Order
+
+Dependencies flow in one direction: responsive layout first (changes the container everything lives in), then page transitions (changes how navigation works), then skeletons (streaming optimization), then micro-interactions (pure additive).
+
+### Phase 1: Bug Fixes (No Dependencies)
+**Rationale:** Fix broken UX before adding polish -- users need back buttons and working defaults before they appreciate animations.
+
+1. BackButton on detail page -- already exists, may need visibility fix
+2. Image placeholder on detail page -- already handled in SagraDetail.tsx (UtensilsCrossed icon)
+3. "TUTTE" province filter default on Cerca page
+4. Any other quick UX fixes
+
+### Phase 2: Responsive Desktop Layout
+**Rationale:** Must come before page transitions because the layout container width changes affect how view transitions look. Build the container first, then animate within it.
+
+1. Create `DesktopNav` component
+2. Modify `(main)/layout.tsx` -- responsive widths, DesktopNav, BottomNav `lg:hidden`
+3. Update `StaggerGrid` default columns for lg/xl breakpoints
+4. Adapt Cerca page for sidebar filter layout on desktop
+5. Test all pages at mobile, tablet, and desktop widths
+
+### Phase 3: Page Transitions
+**Rationale:** Depends on layout being stable. Changes Link imports across multiple components -- do it once when the layout is settled.
+
+1. Install `next-view-transitions`
+2. Wrap root layout with `<ViewTransitions>`
+3. Add `::view-transition-*` CSS to globals.css
+4. Replace `next/link` imports with `next-view-transitions` Link in all navigation components
+5. Test transitions between all route pairs
+
+### Phase 4: Skeleton & Streaming Enhancements
+**Rationale:** Independent of transitions but builds on the responsive layout (skeletons need to match the new wider layouts).
+
+1. Add shimmer animation to globals.css
+2. Create shimmer variant in Skeleton component
+3. Create WeekendSectionSkeleton and ProvinceSectionSkeleton
+4. Refactor HomePage to use Suspense boundaries with async loader components
+5. Fix detail page loading skeleton to match full-bleed hero
+
+### Phase 5: Micro-Interactions
+**Rationale:** Pure additive, depends on nothing. But better to add last so you can see the full app flow without distractions while building earlier phases.
+
+1. Create PressScale and HoverLift animation wrappers
+2. Add motion props to SagraCard (hover lift + tap press)
+3. Add motion props to BottomNav icons (tap bounce)
+4. Add motion props to QuickFilters, ProvinceSection, HeroSection
+5. Add motion.button to BackButton, DirectionsButton, ShareButton
+6. Test all interactions on mobile (touch) and desktop (mouse)
+
+---
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: LLM-Powered Scraping
+### Anti-Pattern 1: FrozenRouter / Internal API Hacks
 
-**What:** Using Gemini to parse HTML instead of Cheerio with CSS selectors.
+**What:** Using React's internal `LayoutRouterContext` to freeze router state during exit animations.
 
-**Why bad:** 10x slower, burns API quota on parsing (not enrichment), unreliable output structure, unnecessary cost. Cheerio parses HTML deterministically in milliseconds. LLMs should only be used for tasks requiring understanding (classification, rewriting), not mechanical extraction.
+**Why bad:** `LayoutRouterContext` is not a public API. Next.js can (and does) change its internal component tree between minor versions. Code that depends on it breaks silently on upgrades. The Nemovia project uses `next: 15.5.12` and will want to upgrade -- internal API dependencies make this risky.
 
-**Instead:** Use Cheerio with config-driven CSS selectors for scraping. Reserve Gemini exclusively for enrichment (tagging, description enhancement).
+**Instead:** Use CSS View Transitions via `next-view-transitions` which operates at the browser level, not the React component level.
 
-### Anti-Pattern 2: Scraping at Request Time
+### Anti-Pattern 2: Global Motion LayoutGroup for Page Transitions
 
-**What:** Fetching and parsing source websites when a user loads a page.
+**What:** Wrapping the entire app in a Motion `<LayoutGroup>` and using `layoutId` props to create shared element transitions between pages.
 
-**Why bad:** Adds 2-10 seconds to page load, breaks if source sites are slow/down, hammers source sites with traffic, Vercel function timeout risk, terrible UX.
+**Why bad:** Requires both the old and new page to be mounted simultaneously in the same React tree. Next.js App Router does not support this (issue #49279). The old page is fully unmounted before the new page mounts. Attempting this results in no animation at all, or flickering.
 
-**Instead:** All scraping happens in background cron jobs. Users always see pre-processed data from the database.
+**Instead:** If shared element transitions are desired in the future, CSS View Transitions with `view-transition-name` CSS property on matching elements is the correct approach.
 
-### Anti-Pattern 3: Storing Coordinates as Separate lat/lng Columns
+### Anti-Pattern 3: Animating Layout Properties
 
-**What:** Using `latitude FLOAT, longitude FLOAT` columns instead of PostGIS geography type.
+**What:** Using `whileHover={{ width: "100%", height: "auto" }}` or animating margin/padding in micro-interactions.
 
-**Why bad:** Cannot use spatial indexes (GIST), cannot use `ST_DWithin` or `<->` operator, every distance calculation becomes a slow full-table scan with Haversine formula in application code.
+**Why bad:** Width, height, margin, and padding changes trigger browser layout reflow (expensive). On a page with 20+ SagraCards, simultaneous hover animations on layout properties cause visible jank on mid-range mobile devices.
 
-**Instead:** Use `location GEOGRAPHY(POINT)` with a GIST index. PostGIS handles the math correctly (accounting for Earth's curvature) and uses the index.
+**Instead:** Only animate `transform` properties (scale, translateX/Y, rotate) and `opacity`. These are GPU-composited and never trigger reflow. Motion handles this correctly when you use `scale`, `x`, `y`, `rotate`, and `opacity`.
 
-### Anti-Pattern 4: Monolithic Pipeline Function
+### Anti-Pattern 4: Excessive Animation Duration
 
-**What:** One giant function that scrapes all sources, geocodes everything, and enriches everything in a single execution.
+**What:** Page transitions lasting 500ms+ or hover animations lasting 300ms+.
 
-**Why bad:** Exceeds function timeout (5 minutes on Hobby). If enrichment fails at event #45, you lose progress on events 1-44. No observability into which stage failed.
+**Why bad:** Users perceive animations >200ms as sluggish. Nemovia is a utility app (find sagre quickly), not a portfolio site. Long animations impede the core task.
 
-**Instead:** Status-based pipeline where each stage is independently retriable. Even if running in a single cron invocation, structure the code as separate async functions that commit progress after each event.
+**Instead:** Page transitions: 200-300ms total. Hover/tap micro-interactions: 100-150ms. Spring-based interactions feel instant because they start fast (high stiffness).
 
-### Anti-Pattern 5: Client-Side Supabase Queries with Exposed Logic
+### Anti-Pattern 5: Desktop Layout Via Media Queries in CSS Modules
 
-**What:** Calling Supabase directly from client components with complex query logic exposed in the browser.
+**What:** Creating separate CSS files with `@media` queries for desktop layout instead of using Tailwind responsive prefixes.
 
-**Why bad:** Query patterns visible in browser DevTools, no server-side validation, harder to optimize, potential RLS complexity.
+**Why bad:** Introduces a parallel styling system alongside Tailwind, makes responsive behavior harder to reason about, and creates specificity conflicts with Tailwind's utility classes.
 
-**Instead:** Use Next.js Route Handlers or Server Actions as an API layer. Client components call `/api/search?...`, the Route Handler builds the Supabase query server-side. Keep Supabase service role key server-side only.
+**Instead:** Use Tailwind's responsive prefixes (`lg:`, `xl:`) exclusively. The project already uses Tailwind v4 -- adding media queries outside of it creates maintenance burden.
 
-## Database Schema Overview
-
-```sql
--- Core tables
-events (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title TEXT NOT NULL,
-  slug TEXT UNIQUE NOT NULL,
-  location_text TEXT NOT NULL,
-  location GEOGRAPHY(POINT),          -- PostGIS
-  province TEXT,                       -- e.g., "PD", "VI", "TV"
-  start_date DATE,
-  end_date DATE,
-  description TEXT,                    -- raw from source
-  enhanced_description TEXT,           -- LLM-generated
-  cuisine_tags TEXT[],                 -- LLM-classified: ["pesce", "baccala"]
-  image_url TEXT,
-  source_url TEXT,
-  is_free BOOLEAN,
-  price_info TEXT,
-  status TEXT DEFAULT 'pending_geocode',
-  content_hash TEXT NOT NULL,
-  source_id UUID REFERENCES scraper_configs(id),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(content_hash, source_id)
-);
-
-CREATE INDEX events_location_idx ON events USING GIST (location);
-CREATE INDEX events_status_idx ON events (status);
-CREATE INDEX events_dates_idx ON events (start_date, end_date);
-CREATE INDEX events_province_idx ON events (province);
-CREATE INDEX events_slug_idx ON events (slug);
-
-scraper_configs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  source_name TEXT NOT NULL,
-  base_url TEXT NOT NULL,
-  list_selector TEXT NOT NULL,
-  title_selector TEXT,
-  date_selector TEXT,
-  location_selector TEXT,
-  description_selector TEXT,
-  image_selector TEXT,
-  pagination_selector TEXT,
-  date_format TEXT DEFAULT 'DD/MM/YYYY',
-  is_active BOOLEAN DEFAULT true,
-  last_scraped_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-geocode_cache (
-  location_key TEXT PRIMARY KEY,
-  lat FLOAT NOT NULL,
-  lng FLOAT NOT NULL,
-  province TEXT,
-  raw_response JSONB,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-## Project Structure
-
-```
-src/
-  app/
-    (main)/
-      page.tsx                    -- Homepage (Server Component)
-      layout.tsx                  -- Main layout with BottomNav
-    sagra/
-      [slug]/
-        page.tsx                  -- Detail page (Server Component)
-    cerca/
-      page.tsx                    -- Search/filter page (Server + Client)
-    mappa/
-      page.tsx                    -- Full map page (Client-heavy)
-    api/
-      cron/
-        scrape/route.ts           -- Cron: scrape + geocode
-        enrich/route.ts           -- Cron: enrich + expire
-      search/route.ts             -- API: filtered search
-      nearby/route.ts             -- API: geo-proximity search
-  components/
-    map/
-      index.tsx                   -- Dynamic import wrapper (ssr: false)
-      MapView.tsx                 -- Leaflet implementation
-      MarkerPopup.tsx             -- Popup card content
-    sagra/
-      SagraCard.tsx               -- Event card component
-      SagraGrid.tsx               -- Card grid layout
-      SagraFilters.tsx            -- Filter controls
-    layout/
-      BottomNav.tsx               -- Mobile navigation
-      Header.tsx                  -- Desktop header
-  lib/
-    supabase/
-      server.ts                   -- Server-side Supabase client
-      client.ts                   -- Browser-side Supabase client
-      service-role.ts             -- Service role client (cron only)
-    scraper/
-      engine.ts                   -- Generic scraper with Cheerio
-      geocoder.ts                 -- Nominatim geocoding with cache
-      enricher.ts                 -- Gemini 2.5 Flash enrichment
-      rate-limiter.ts             -- Rate limiting utility
-    utils/
-      dates.ts                    -- Date parsing/formatting (Italian)
-      slug.ts                     -- Slug generation
-      hash.ts                     -- Content hashing
-  types/
-    events.ts                     -- Event type definitions
-    scraper.ts                    -- Scraper config types
-```
+---
 
 ## Scalability Considerations
 
-| Concern | At 100 events | At 1,000 events | At 10,000 events |
-|---------|--------------|-----------------|-------------------|
-| Scraping time | ~30s (5 sources) | ~60s (still 5 sources, more pages) | ~2-3min (pagination needed) |
-| Geocoding | ~10s (most cached) | ~30s (city cache helps) | ~100s (more unique locations) |
-| LLM enrichment | ~60s (10 RPM) | ~6min (exceeds single function) | ~60min (needs queue/batch API) |
-| PostGIS queries | <50ms | <100ms (with GIST index) | <200ms (with GIST index) |
-| Map rendering | Instant | ~200ms with clustering | Needs viewport-based loading |
-| Storage (Supabase) | <1MB | ~10MB | ~100MB (within free tier) |
+| Concern | Mobile | Tablet (md) | Desktop (lg+) |
+|---------|--------|-------------|----------------|
+| Card grid columns | 1 | 2 | 3-4 |
+| Navigation | BottomNav | BottomNav | DesktopNav (top) |
+| Content width | max-w-lg (512px) | max-w-lg (512px) | max-w-4xl to max-w-6xl |
+| Page transitions | Crossfade only | Crossfade only | Crossfade + optional slide |
+| Micro-interactions | whileTap only | whileTap + whileHover | whileHover primary |
+| Skeleton streaming | Full page loading.tsx | Full page loading.tsx | Sectional Suspense |
 
-**Scaling inflection points:**
-- **>500 events/day new**: LLM enrichment exceeds single function timeout. Move to Gemini Batch API or Supabase Edge Functions with pg_cron scheduling.
-- **>5,000 total active events**: Map needs viewport-based loading (only fetch events in visible bounding box) instead of loading all events at once.
-- **>10 source sites**: Scraping may need parallelization or multiple cron windows.
-
-For MVP with ~5 sources and the Veneto region (~200-500 active sagre at any time), the single-orchestrator architecture is sufficient.
-
-## Suggested Build Order (Dependencies)
-
-The architecture implies this build sequence based on component dependencies:
-
-### Phase 1: Foundation (Database + Core Infra)
-Must be built first because everything depends on the database schema and Supabase client setup.
-- Supabase project setup with PostGIS extension
-- Database schema (events, scraper_configs, geocode_cache)
-- PostGIS RPC functions (find_nearby_sagre)
-- Supabase client factories (server, client, service-role)
-- TypeScript type definitions
-
-### Phase 2: Data Pipeline (Scrape + Geocode + Enrich)
-Depends on Phase 1 (database schema). Must exist before the frontend has data to display.
-- Generic scraper engine with Cheerio
-- Scraper configs for first 2-3 sources
-- Rate limiter utility
-- Nominatim geocoder with cache layer
-- Gemini enricher (tagging + description)
-- Status-based pipeline orchestration
-- Cron route handlers
-
-### Phase 3: Core Frontend (Pages + Components)
-Depends on Phase 1 (Supabase client) and Phase 2 (data in database).
-- App layout with mobile BottomNav
-- Homepage with SagraCards
-- SagraCard component
-- Search page with filters
-- Detail page with SEO metadata
-- Route Handlers for search API
-
-### Phase 4: Map Integration
-Depends on Phase 3 (layout exists) and Phase 1 (PostGIS RPC).
-- Leaflet dynamic import wrapper
-- MapView with tile layer
-- MarkerCluster integration
-- Marker popups with SagraCard preview
-- "Vicino a me" geolocation
-- Map/list toggle on search page
-
-### Phase 5: Polish + Production
-Depends on all previous phases.
-- Remaining scraper configs (all 5+ sources)
-- SEO: sitemap, OG images, structured data
-- UI polish: animations (Framer Motion, Magic UI)
-- Vercel cron deployment config (vercel.json)
-- Error handling and retry logic
-- Performance optimization
+---
 
 ## Sources
 
-### Vercel Platform
-- [Vercel Cron Jobs](https://vercel.com/docs/cron-jobs) -- cron configuration and behavior
-- [Vercel Cron Usage & Pricing](https://vercel.com/docs/cron-jobs/usage-and-pricing) -- Hobby: 100 crons, once/day only, hourly precision
-- [Vercel Functions Limits](https://vercel.com/docs/functions/limitations) -- Hobby: 300s max duration with Fluid Compute
-- [Vercel Cron Job Changelog](https://vercel.com/changelog/cron-jobs-now-support-100-per-project-on-every-plan) -- 100 crons per project on all plans
+### Page Transitions
+- [Next.js viewTransition config docs](https://nextjs.org/docs/app/api-reference/config/next-config-js/viewTransition) -- experimental flag, requires React Canary, not recommended for production yet
+- [next-view-transitions on GitHub](https://github.com/shuding/next-view-transitions) -- v0.3.5, by Shu Ding (Vercel), MIT license
+- [next-view-transitions on npm](https://www.npmjs.com/package/next-view-transitions) -- API surface: ViewTransitions, Link, useTransitionRouter
+- [Next.js issue #49279](https://github.com/vercel/next.js/issues/49279) -- App Router breaks Framer Motion shared layout animations (OPEN)
+- [FrozenRouter pattern](https://www.imcorfitz.com/posts/adding-framer-motion-page-transitions-to-next-js-app-router) -- workaround using internal LayoutRouterContext (fragile)
+- [next-transition-router](https://github.com/ismamz/next-transition-router) -- alternative, 8KB, flexible but heavier
 
-### Supabase + PostGIS
-- [Supabase PostGIS Docs](https://supabase.com/docs/guides/database/extensions/postgis) -- geography type, RPC pattern, spatial index
-- [Supabase PostGIS on GitHub](https://github.com/supabase/supabase/blob/master/apps/docs/content/guides/database/extensions/postgis.mdx) -- code examples
-- [Supabase Cron Module](https://supabase.com/docs/guides/cron) -- pg_cron for database-level scheduling
-- [Supabase Discussion #5390](https://github.com/orgs/supabase/discussions/5390) -- geo queries and distance sorting patterns
+### Responsive Layout
+- [Tailwind CSS responsive design docs](https://tailwindcss.com/docs/responsive-design) -- breakpoint system, mobile-first
+- [Tailwind CSS v4 container queries](https://www.sitepoint.com/tailwind-css-v4-container-queries-modern-layouts/) -- @container support
 
-### Leaflet + Next.js
-- [React Leaflet on Next.js 15](https://xxlsteve.net/blog/react-leaflet-on-next-15/) -- dynamic import pattern for App Router
-- [PlaceKit: React-Leaflet with NextJS](https://placekit.io/blog/articles/making-react-leaflet-work-with-nextjs-493i) -- SSR bypass patterns
-- [react-leaflet-cluster npm](https://www.npmjs.com/package/react-leaflet-cluster) -- marker clustering wrapper
+### Skeleton / Streaming
+- [Next.js streaming docs](https://nextjs.org/docs/14/app/building-your-application/routing/loading-ui-and-streaming) -- loading.tsx, Suspense boundaries
+- [Next.js 15 streaming handbook](https://www.freecodecamp.org/news/the-nextjs-15-streaming-handbook/) -- SSR, Suspense, skeleton patterns
 
-### Gemini API
-- [Gemini API Rate Limits](https://ai.google.dev/gemini-api/docs/rate-limits) -- rate limit structure
-- [Gemini API Free Tier Limits (2025)](https://www.aifreeapi.com/en/posts/gemini-api-free-quota) -- 2.5 Flash: 10 RPM, 250 RPD, 250K TPM on free tier
-
-### Scraping + Pipeline Patterns
-- [Nominatim Usage Policy](https://operations.osmfoundation.org/policies/nominatim/) -- 1 req/sec, cache required
-- [Data Deduplication Techniques](https://scrapingproxies.best/blog/web-data/data-deduplication-techniques/) -- hash-based and fuzzy dedup
-- [Supabase @supabase/ssr Client Setup](https://supabase.com/docs/guides/auth/server-side/creating-a-client) -- createServerClient / createBrowserClient pattern
+### Micro-Interactions
+- [Motion gesture docs](https://motion.dev/docs/react-gestures) -- whileHover, whileTap, whileFocus, whileDrag
+- [Motion layout animation docs](https://motion.dev/docs/react-layout-animations) -- layoutId, LayoutGroup
+- [Motion react component docs](https://motion.dev/docs/react-motion-component) -- motion.div, motion.button
+- [Micro-interactions best practices](https://medium.com/better-dev-nextjs-react/micro-interactions-and-micro-animations-that-actually-boost-engagement-not-just-eye-candy-26322653898a) -- engagement patterns

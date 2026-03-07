@@ -1,321 +1,319 @@
 # Technology Stack
 
-**Project:** Nemovia -- Italian Sagre Aggregator
-**Researched:** 2026-03-04
+**Project:** Nemovia v1.2 "Polish"
+**Researched:** 2026-03-07
 **Overall Confidence:** HIGH
 
-## Executive Summary
+## Existing Stack (DO NOT change)
 
-The team's pre-selected stack is solid and well-validated for this use case. Every choice aligns with the zero-budget constraint and the domain requirements (scraping, LLM enrichment, geo-search, interactive maps). Two critical corrections surfaced during research:
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Next.js | 15.5.12 | App Router, SSR, routing |
+| React | 19.1.0 | UI framework |
+| Tailwind CSS | v4 | Utility-first styling |
+| Shadcn/UI | latest | Component library (Card, Badge, Skeleton, etc.) |
+| Motion | 12.35.0 | Animations (FadeIn, StaggerGrid already built) |
+| Leaflet | 1.9.4 | Maps |
+| nuqs | 2.8.9 | URL search param state |
+| tw-animate-css | 1.4.0 | Tailwind animation utilities |
 
-1. **Framer Motion has been renamed to Motion** (package: `motion`, not `framer-motion`). The old package is deprecated.
-2. **The `@google/generative-ai` package is deprecated** (support ended August 2025). Use `@google/genai` instead.
-3. **Vercel free tier crons run only once/day** -- use Supabase pg_cron + pg_net to trigger scraping/enrichment at any frequency, bypassing Vercel's limitation entirely.
-4. **Supabase free tier pauses projects after 7 days of inactivity** -- not an issue here since pg_cron will keep the database active, but worth knowing.
+## Recommended Additions for v1.2
 
-## Recommended Stack
+### View Transitions API (native, via Next.js experimental flag)
 
-### Core Framework
+| Property | Value |
+|----------|-------|
+| **What** | Native browser API for page-to-page transitions |
+| **Install** | Nothing -- built into Next.js 15.2+ and modern browsers |
+| **Config** | `experimental: { viewTransition: true }` in next.config.ts |
+| **Browser support** | 89.25% global: Chrome 111+, Firefox 144+, Safari 18+, Edge 111+ |
+| **Confidence** | HIGH -- verified via official Next.js docs and Can I Use |
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| Next.js | 15.x (latest stable) | Full-stack React framework | Stable, production-proven, excellent Vercel integration. Use 15.x over 16.x for stability -- 16 is newer but 15 has a longer track record. Turbopack dev is stable in 15.5+. | HIGH |
-| React | 19.x | UI rendering | Required by Next.js 15, required by react-leaflet 5.x. Stable since late 2024. | HIGH |
-| TypeScript | 5.x | Type safety | Non-negotiable for any project with scraping configs, LLM schemas, and geo data. Catches integration bugs early. | HIGH |
+**Why View Transitions API instead of Motion AnimatePresence for page transitions:**
 
-**Why Next.js 15 over 16:** Next.js 16 (released Dec 2025) defaults to Turbopack and has performance improvements (5.7s vs 24.5s builds), but 15.x is battle-tested with a larger ecosystem of working examples, especially for react-leaflet SSR workarounds. Upgrade to 16 after MVP.
+1. **AnimatePresence is broken with App Router.** Next.js App Router aggressively unmounts/remounts components during navigation, breaking AnimatePresence's exit detection. The workarounds (FrozenRouter, template.tsx hacks) are fragile and poorly maintained. This is a known, long-standing issue (vercel/next.js#49279).
 
-### Styling & UI Components
+2. **Zero bundle cost.** View Transitions are a native browser API -- no JS shipped for the transition itself. Motion is already in the bundle for existing animations; adding page transition logic would increase that further with no benefit.
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| Tailwind CSS | 4.x | Utility-first CSS | shadcn/ui fully supports v4 since March 2025. Use v4 (not v3) for new projects -- new `@theme` directive, better performance. | HIGH |
-| shadcn/ui | latest (CLI) | Base component library | Copy-paste components, fully customizable, no vendor lock-in. Cards, dialogs, dropdowns, badges -- covers 80% of UI needs. Install via `pnpm dlx shadcn@latest init`. | HIGH |
-| Magic UI | latest | Animated components | 150+ animated components built on shadcn/ui + Tailwind + Motion. Use for hero sections, card animations, text reveals. Copy-paste model (no npm dependency). | MEDIUM |
-| ReactBits | latest | Interactive UI effects | 110+ animated components. Use selectively for text animations and background effects. Copy-paste model. | MEDIUM |
-| motion | 12.x | Animation engine | Formerly "Framer Motion" -- renamed and expanded beyond React. Required by Magic UI components. Install `motion` (NOT `framer-motion`). | HIGH |
-| tw-animate-css | latest | CSS animations for shadcn | Replacement for deprecated `tailwindcss-animate`. Installed by default with new shadcn/ui projects on Tailwind v4. | HIGH |
+3. **Progressive enhancement.** Browsers without support simply skip the animation -- the app works perfectly without it. No broken state, no fallback code needed.
 
-**Important:** Magic UI and ReactBits are copy-paste libraries, not npm dependencies. They add code to your project. Use them sparingly -- pick 5-10 components max to avoid bloating the bundle. Prioritize Magic UI (better shadcn integration) over ReactBits.
+4. **Official Next.js support.** The `experimental.viewTransition` flag exists precisely for this use case in Next.js 15.2+. While labeled experimental, the underlying browser API is stable (W3C Working Draft, 89% support). The "experimental" tag refers to deeper Next.js integration hooks (automatic transition types for navigations), not the core cross-fade functionality.
 
-### Database & Backend
-
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| Supabase | Client: 2.98.x | BaaS (DB, auth, edge functions) | PostgreSQL + PostGIS + pg_cron + pg_net on free tier. 500 MB storage, 500K edge function invocations/month. Enough for thousands of sagre records. | HIGH |
-| PostGIS | (Supabase extension) | Geographic queries | Enable via Supabase Dashboard. ST_DWithin for radius search, `<->` operator for nearest-neighbor sort. Native spatial indexing. | HIGH |
-| pg_cron | (Supabase extension) | Job scheduling | Available on free tier. Cron syntax down to 1-second intervals. Replaces Vercel cron (which is daily-only on free tier). | HIGH |
-| pg_net | (Supabase extension) | HTTP requests from Postgres | Allows pg_cron jobs to call Edge Functions or external webhooks via HTTP. Required for the scraping/enrichment pipeline. | HIGH |
-
-**PostGIS Setup Pattern:**
-```sql
--- Enable PostGIS extension
-CREATE EXTENSION IF NOT EXISTS postgis SCHEMA extensions;
-
--- Sagre table with geography column
-CREATE TABLE sagre (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  title TEXT NOT NULL,
-  location GEOGRAPHY(POINT, 4326),
-  -- ... other columns
-);
-
--- Spatial index
-CREATE INDEX idx_sagre_location ON sagre USING GIST(location);
-
--- Find nearby sagre (RPC function)
-CREATE OR REPLACE FUNCTION find_nearby_sagre(
-  lat DOUBLE PRECISION,
-  lng DOUBLE PRECISION,
-  radius_km INTEGER DEFAULT 30
-)
-RETURNS SETOF sagre AS $$
-  SELECT *
-  FROM sagre
-  WHERE ST_DWithin(
-    location,
-    ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography,
-    radius_km * 1000  -- meters
-  )
-  ORDER BY location <-> ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography;
-$$ LANGUAGE sql STABLE;
-```
-
-**CRITICAL: Longitude comes FIRST in PostGIS functions** (ST_MakePoint(lng, lat), not lat, lng). This is the #1 PostGIS mistake.
-
-### Scraping
-
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| cheerio | 1.2.x | HTML parsing | 14.5M weekly npm downloads. Fast, lightweight (6.6kb), jQuery-like API. Perfect for static HTML scraping. No browser overhead. | HIGH |
-
-**Why NOT Puppeteer/Playwright:** Italian sagre websites (SagreItaliane, EventieSagre, SoloSagre, TuttoFesta, Sagritaly) are server-rendered static HTML sites. They don't use JS-heavy SPAs. Cheerio is 70% faster and requires zero browser infrastructure. If a source later requires JS rendering, add Playwright for that single source only.
-
-**Scraping Architecture:** Config-driven generic scraper. Each source is a row in a `scraper_configs` table with CSS selectors:
+**Implementation approach:**
 
 ```typescript
-interface ScraperConfig {
-  id: string;
-  source_name: string;
-  base_url: string;
-  list_selector: string;      // CSS selector for event cards
-  title_selector: string;
-  date_selector: string;
-  location_selector: string;
-  description_selector: string;
-  image_selector: string;
-  pagination_selector?: string;
-  enabled: boolean;
+// next.config.ts -- only change needed
+const nextConfig: NextConfig = {
+  experimental: {
+    viewTransition: true,
+  },
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**" },
+    ],
+  },
+};
+```
+
+```tsx
+// In components wrapping page content (e.g., layout or individual pages):
+import { ViewTransition } from 'react';
+
+<ViewTransition>
+  <div>{children}</div>
+</ViewTransition>
+```
+
+**CSS for transitions (add to globals.css):**
+
+```css
+::view-transition-old(root) {
+  animation: fade-out 150ms ease-out;
+}
+::view-transition-new(root) {
+  animation: fade-in 150ms ease-in;
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 ```
 
-### Geocoding
+### No New npm Dependencies Required
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| Nominatim (OSM) | Public API | City name to coordinates | Free, accurate for Italian locations, no API key needed. Rate limit: 1 req/sec (absolute max). | HIGH |
+The entire v1.2 scope can be achieved with the existing stack. Here is why:
 
-**Rate Limit Strategy:** Geocode during enrichment batch processing, not on user requests. Cache results in DB -- Italian cities don't move. A `geocoding_cache` table with city name -> coordinates avoids re-requesting. With ~500 unique Veneto locations, initial geocoding takes ~8 minutes at 1 req/sec. After that, cache hits only.
+| Capability Needed | Solution | Why No New Dependency |
+|-------------------|----------|----------------------|
+| Page transitions | View Transitions API (browser-native) + Next.js flag | Built into browser + Next.js 15.2+ |
+| Skeleton loaders | Already have Shadcn `<Skeleton>` + `SagraCardSkeleton` | Already built in v1.0 |
+| Hover effects | Motion `whileHover` + `whileTap` (already installed) | Motion 12.35.0 already in deps |
+| Scroll animations | Motion `whileInView` (already used in FadeIn) | Already used in FadeIn component |
+| Scroll progress bar | Motion `useScroll` hook | Already available in motion@12 |
+| Responsive desktop layout | Tailwind v4 responsive utilities + container queries | Built into Tailwind v4 core |
+| Back button | `useRouter().back()` or `<Link>` -- plain Next.js | Built into Next.js |
+| Image placeholder | Existing gradient placeholder pattern in SagraCard | Already implemented in cards |
+| Layout animations | Motion `layout` prop for smooth reflows | Already available in motion@12 |
 
-**Required Headers:** Must set a custom `User-Agent` header identifying the application (e.g., `Nemovia/1.0 (contact@nemovia.it)`). Requests without proper identification may be blocked.
+## Libraries Explicitly NOT Adding
 
-### LLM Integration
+### barba.js -- REJECT
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| @google/genai | 1.43.x | Gemini API client | The NEW official Google GenAI SDK. Do NOT use `@google/generative-ai` (deprecated, support ended Aug 2025). | HIGH |
-| Gemini 2.5 Flash | model: `gemini-2.5-flash` | Text classification & enrichment | Free tier: 10 RPM, 250 RPD, 250K TPM. Use for food-type tagging and description enrichment. | HIGH |
-| zod | 3.x | Schema validation | Define structured output schemas for Gemini responses. Use with `zod-to-json-schema` for type-safe LLM outputs. | HIGH |
-| zod-to-json-schema | latest | Schema conversion | Converts Zod schemas to JSON Schema for Gemini's `responseJsonSchema` config. | HIGH |
+**Why mentioned:** User referenced it as an option for page transitions.
 
-**CRITICAL: Gemini Free Tier is 250 RPD (requests per day)**, not 2000. The PROJECT.md states ~2000 req/day which exceeds the free tier by 8x. Solutions:
-1. **Batch intelligently:** Only enrich NEW sagre (not all). With ~50 new sagre/day across 5 sources, 250 RPD is sufficient.
-2. **Combine tagging + description in one request** to halve the request count.
-3. **Cache LLM results** -- once enriched, never re-process.
-4. If volume grows, Gemini pay-as-you-go is very cheap ($0.10/1M input tokens for Flash).
+**Why not:**
+- barba.js is designed for vanilla JS multi-page sites, NOT React/Next.js SPAs
+- Known `DOMParser is not defined` errors in Next.js (GitHub barbajs/barba#650)
+- Conflicts with React's virtual DOM -- barba.js manipulates real DOM containers directly
+- Zero React integration -- no hooks, no component model, no TypeScript types
+- Motion + View Transitions cover the same use case without compatibility issues
 
-**Structured Output Pattern:**
-```typescript
-import { GoogleGenAI } from "@google/genai";
-import { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
+### lenis (smooth scroll) -- DEFER, not needed for v1.2
 
-const SagraEnrichmentSchema = z.object({
-  food_tags: z.array(z.string()).describe("Tipo cucina: pesce, carne, pizza, dolci, polenta, etc."),
-  description_short: z.string().max(250).describe("Descrizione coinvolgente in italiano, max 250 caratteri"),
-  is_free: z.boolean().describe("Ingresso gratuito o a pagamento"),
-});
+**Why mentioned:** User referenced it for "wow effect" smooth scrolling.
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+**Why not now:**
+- The app is a mobile-first sagre aggregator with short, scrollable pages -- not a portfolio/agency showcase site where smooth scroll adds value
+- Lenis adds ~8KB to the bundle and introduces a custom scroll layer that can conflict with Leaflet's scroll behavior on map pages
+- Known glitchy behavior on iPad with Magic Keyboard (relevant for Italian users)
+- Can be added in a future milestone if scroll-heavy content pages are introduced
+- The "wow effect" is better achieved through micro-interactions (hover, stagger, transitions) which Motion already provides
 
-const response = await ai.models.generateContent({
-  model: "gemini-2.5-flash",
-  contents: `Analizza questa sagra e classifica: ${sagraTitle} - ${sagraDescription}`,
-  config: {
-    responseMimeType: "application/json",
-    responseJsonSchema: zodToJsonSchema(SagraEnrichmentSchema),
-  },
-});
+### reactbits -- DO NOT ADD
+
+**Why mentioned:** User referenced it for modern UI components.
+
+**Why not:**
+- reactbits provides pre-built animated components (text effects, backgrounds, etc.) -- NOT a library you integrate alongside Shadcn
+- The app already has a consistent design system with Shadcn/UI + Motion
+- Adding reactbits would create two competing component libraries with different styling conventions
+- The specific effects (hover animations, scroll reveals) are trivially achievable with Motion's `whileHover`, `whileTap`, `whileInView` which are already installed
+- MIT + Commons Clause license is more restrictive than standard MIT
+
+### next-view-transitions (shuding/next-view-transitions) -- SKIP
+
+**Why considered:** Popular community library for View Transitions in Next.js App Router.
+
+**Why not:**
+- Next.js 15.2+ has built-in `experimental.viewTransition` support, making this library redundant
+- The library (v0.3.5) wraps the same browser API but adds its own `<Link>` component and `<ViewTransitions>` wrapper that duplicate what Next.js now provides natively
+- Shuding (the author) works at Vercel -- the library was a precursor to the native support that landed in Next.js 15.2
+
+### next-transition-router -- SKIP
+
+**Why considered:** Allows animated page transitions with any animation library.
+
+**Why not:**
+- Still in Beta, API may change
+- Adds routing wrapper complexity
+- View Transitions API achieves the same result with zero dependencies and better performance
+
+## Tailwind v4 Responsive Strategy for Desktop Layout
+
+The main layout currently uses `max-w-lg` (32rem / 512px) which is aggressively mobile-scoped. For responsive desktop, this needs to scale up using Tailwind v4's built-in responsive utilities.
+
+### Breakpoints (built into Tailwind v4, no config needed)
+
+| Breakpoint | Width | Use For |
+|------------|-------|---------|
+| (default) | < 640px | Mobile -- current behavior, single column |
+| `sm` | >= 640px | 2-column card grid (already used in StaggerGrid) |
+| `md` | >= 768px | Tablet -- wider content area, larger cards |
+| `lg` | >= 1024px | Desktop -- 3-column grid, wider max-width, potential sidebar |
+| `xl` | >= 1280px | Large desktop -- max content width with comfortable margins |
+
+### Container Queries (new in Tailwind v4 core, no plugin needed)
+
+Container queries are built into Tailwind v4 core (the `@tailwindcss/container-queries` plugin is no longer needed). Useful for components that need to adapt to their container size rather than viewport:
+
+```html
+<!-- Parent defines container -->
+<div class="@container">
+  <!-- Child responds to container width, not viewport -->
+  <div class="flex flex-col @md:flex-row">
+    ...
+  </div>
+</div>
 ```
 
-### Maps & Geolocation
+**Container query breakpoints are smaller than viewport breakpoints:**
+| Container | Width | Viewport equivalent |
+|-----------|-------|---------------------|
+| `@sm` | 320px | Much smaller than `sm` (640px) |
+| `@md` | 448px | Smaller than `md` (768px) |
+| `@lg` | 640px | Smaller than `lg` (1024px) |
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| leaflet | 1.9.4 | Map rendering engine | Stable, free, no API key. Do NOT use Leaflet 2.0 (alpha, breaking changes). | HIGH |
-| react-leaflet | 5.0.0 | React wrapper for Leaflet | Requires React 19 + Leaflet 1.9.x. Provides `<MapContainer>`, `<TileLayer>`, `<Marker>`, `<Popup>`. | HIGH |
-| react-leaflet-cluster | 2.x | Marker clustering | Wraps Leaflet.markercluster. Supports chunkedLoading for performance. CSS must be imported manually. | HIGH |
+**When to use container queries vs breakpoints:**
+- **Breakpoints (`md:`, `lg:`)** -- For page-level layout changes (content max-width, grid columns, sidebar visibility, navigation style)
+- **Container queries (`@md:`, `@lg:`)** -- For component-level adaptation (SagraCard changing from vertical to horizontal layout when placed in a wider container)
 
-**CRITICAL SSR Workaround:** Leaflet accesses `window` on import, which breaks Next.js SSR. The solution is mandatory:
+### Responsive Layout Changes
 
-```typescript
-// components/Map.tsx (client component)
-"use client";
-import dynamic from "next/dynamic";
-
-const MapComponent = dynamic(
-  () => import("./MapInner"),
-  { ssr: false, loading: () => <div className="h-[500px] bg-stone-100 animate-pulse" /> }
-);
-
-export default MapComponent;
+**Current layout** (max-w-lg = 512px for all screen sizes):
+```tsx
+// (main)/layout.tsx -- CURRENT (too narrow on desktop)
+<main className="mx-auto max-w-lg px-4 py-4">{children}</main>
 ```
 
-**Tile Layer (OpenStreetMap):**
-```typescript
-<TileLayer
-  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-/>
+**Recommended responsive layout:**
+```tsx
+// (main)/layout.tsx -- RESPONSIVE
+<main className="mx-auto max-w-lg px-4 py-4 md:max-w-3xl lg:max-w-5xl xl:max-w-6xl">
+  {children}
+</main>
 ```
 
-### Deployment & Infrastructure
-
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| Vercel | Hobby (free) | Hosting & CDN | Native Next.js support, automatic deployments from Git, edge network. Free tier: 100 GB bandwidth, 10s function timeout (60s with Fluid Compute). | HIGH |
-| Supabase Edge Functions | (Deno runtime) | Scraping & enrichment workers | 150s timeout (vs Vercel's 10s). 500K invocations/month free. Run scraping and LLM enrichment here, NOT in Vercel serverless functions. | HIGH |
-| Supabase pg_cron | (PostgreSQL extension) | Job scheduling | Schedule scraping 2x/day, enrichment 2x/day. Calls Edge Functions via pg_net HTTP requests. Replaces Vercel cron entirely. | HIGH |
-
-**Why Supabase Edge Functions over Vercel Serverless for scraping:**
-- Vercel free tier: 10s timeout (60s with Fluid Compute). Scraping 5 websites takes longer.
-- Supabase Edge Functions: 150s timeout. Sufficient for scraping a batch of pages.
-- pg_cron can schedule at any frequency (every minute if needed), unlike Vercel's daily-only free cron.
-
-**Architecture Decision: Use Vercel ONLY for the frontend and API routes. Use Supabase Edge Functions for ALL background processing (scraping, geocoding, LLM enrichment).**
-
-### SEO & Metadata
-
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| Next.js Metadata API | (built-in) | Dynamic meta tags | `generateMetadata()` in App Router. Dynamic OG titles/descriptions per sagra page. | HIGH |
-| @vercel/og | latest | OG image generation | Generate dynamic Open Graph images for social sharing. Each sagra gets a branded OG image. | MEDIUM |
-
-### Supporting Libraries
-
-| Library | Version | Purpose | When to Use | Confidence |
-|---------|---------|---------|-------------|------------|
-| @supabase/ssr | latest | Supabase SSR helpers | Server-side Supabase client in Next.js App Router. Required for server components. | HIGH |
-| date-fns | 4.x | Date manipulation | Parse Italian date formats from scraped data. Locale support for "it". | HIGH |
-| lucide-react | latest | Icons | Default icon set for shadcn/ui. Consistent, tree-shakeable. | HIGH |
-| nuqs | latest | URL query state | Sync filter state (province, date, cuisine) with URL params. Enables shareable filtered views. | MEDIUM |
-| next-sitemap | latest | Sitemap generation | Auto-generate sitemap.xml with all sagra detail pages for SEO. | MEDIUM |
-
-## Alternatives Considered
-
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Framework | Next.js 15 | Next.js 16 | 16 is newer but less battle-tested. Upgrade post-MVP. |
-| Framework | Next.js 15 | Remix / Astro | Team chose Next.js. Vercel-native. No reason to change. |
-| CSS | Tailwind v4 | Tailwind v3 | v4 is production-ready with shadcn/ui. No reason to use v3 for new projects. |
-| Database | Supabase (PostgreSQL) | PlanetScale / Neon | PostGIS support is critical. Supabase has native PostGIS. PlanetScale is MySQL (no PostGIS). Neon has PostGIS but worse free tier. |
-| Maps | Leaflet + OSM | Google Maps / Mapbox | Zero cost, no API key, sufficient for the use case. Google Maps = billing. Mapbox = token management. |
-| Scraping | Cheerio | Puppeteer / Playwright | Target sites are static HTML. Cheerio is 70% faster, zero browser overhead. |
-| Scraping | Cheerio | Crawlee | Crawlee is overkill for 5 static sites. Adds complexity without benefit. |
-| Geocoding | Nominatim | Google Geocoding / Mapbox | Free, accurate for Italy, no API key. Google/Mapbox = billing. |
-| LLM | Gemini 2.5 Flash | GPT-4o-mini / Claude Haiku | Free tier. GPT-4o-mini has no free tier. Claude Haiku has no free tier. |
-| LLM SDK | @google/genai | @google/generative-ai | Old package deprecated Aug 2025. Must use new SDK. |
-| LLM SDK | @google/genai | Vercel AI SDK (@ai-sdk/google) | Adds abstraction layer. Direct SDK is simpler for batch processing (no streaming needed). |
-| Animation | motion (v12) | framer-motion | Same library, renamed. `framer-motion` is the old package name. |
-| State | URL params (nuqs) | Zustand / Jotai | No client-side state management needed. All state is URL-driven (filters, search) or server-fetched. Shareable URLs are a feature requirement. |
-| ORM | Raw SQL (Supabase client) | Prisma / Drizzle | Supabase client handles queries. PostGIS functions are best written as raw SQL/RPC. An ORM adds complexity without value here. |
-
-## Version Matrix
-
-```
-next@15.x
-react@19.x
-react-dom@19.x
-typescript@5.x
-tailwindcss@4.x
-motion@12.x
-@supabase/supabase-js@2.98.x
-@supabase/ssr@latest
-@google/genai@1.43.x
-cheerio@1.2.x
-leaflet@1.9.4
-react-leaflet@5.0.0
-react-leaflet-cluster@2.x
-zod@3.x
-zod-to-json-schema@latest
-date-fns@4.x
-lucide-react@latest
-nuqs@latest
-next-sitemap@latest
-tw-animate-css@latest
+**Responsive card grids:**
+```tsx
+// StaggerGrid default className -- RESPONSIVE
+className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
 ```
 
-## Installation
-
-```bash
-# Initialize Next.js project
-pnpm create next-app@15 nemovia --typescript --tailwind --eslint --app --src-dir
-
-# Core dependencies
-pnpm add @supabase/supabase-js @supabase/ssr @google/genai cheerio leaflet react-leaflet react-leaflet-cluster zod zod-to-json-schema date-fns lucide-react nuqs motion next-sitemap
-
-# Type definitions
-pnpm add -D @types/leaflet
-
-# Initialize shadcn/ui (Tailwind v4)
-pnpm dlx shadcn@latest init
-
-# Add commonly needed shadcn components
-pnpm dlx shadcn@latest add button card badge input select dialog sheet separator skeleton tabs toggle-group
+**Detail page -- centered content:**
+```tsx
+// sagra/[slug] detail content -- wider but not full-width
+className="mx-auto max-w-2xl"
 ```
 
-## Free Tier Budget Summary
+**Desktop navigation consideration:**
+On `lg:` and above, the BottomNav should optionally transform into a top navigation bar or sidebar. Alternatively, keep BottomNav on all sizes (many modern apps do this successfully).
 
-| Service | Free Tier Limit | Expected Usage (MVP) | Headroom |
-|---------|----------------|---------------------|----------|
-| Vercel Hosting | 100 GB bandwidth | <5 GB/month | 95% |
-| Supabase Database | 500 MB storage | ~50 MB (few thousand sagre) | 90% |
-| Supabase Edge Functions | 500K invocations/month | ~1,000/month (cron jobs) | 99% |
-| Gemini 2.5 Flash | 250 RPD / 10 RPM | ~100 RPD (batch enrichment) | 60% |
-| Nominatim | 1 req/sec | Burst on new cities, then cache | OK |
-| OpenStreetMap Tiles | Unlimited (fair use) | Standard usage | OK |
-| GitHub Actions | 2,000 min/month | Not needed (pg_cron replaces) | 100% |
+## Motion Features Already Available (underutilized)
+
+The project has `motion@12.35.0` installed with only FadeIn and StaggerGrid built. These additional features are ready to use without any new install:
+
+### Hover and Tap Gestures (for SagraCard micro-interactions)
+
+```tsx
+import { motion } from "motion/react";
+
+// Wrap SagraCard link in motion.div for hover/tap feedback
+<motion.div
+  whileHover={{ scale: 1.02, y: -2 }}
+  whileTap={{ scale: 0.98 }}
+  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+>
+  <SagraCard sagra={sagra} />
+</motion.div>
+```
+
+### Scroll-Linked Progress Bar
+
+```tsx
+import { useScroll, motion } from "motion/react";
+
+function ScrollProgress() {
+  const { scrollYProgress } = useScroll();
+  return (
+    <motion.div
+      style={{ scaleX: scrollYProgress }}
+      className="fixed top-0 left-0 right-0 h-1 bg-primary origin-left z-50"
+    />
+  );
+}
+```
+
+### Exit Animations (within a page, NOT page transitions)
+
+```tsx
+import { AnimatePresence, motion } from "motion/react";
+
+// Use AnimatePresence for in-page elements: filter panels, modals, toasts, empty states
+// Do NOT use for page-level route transitions (use View Transitions instead)
+<AnimatePresence>
+  {isVisible && (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+    />
+  )}
+</AnimatePresence>
+```
+
+### Layout Animations (smooth reflows when list content changes)
+
+```tsx
+// Smooth layout shifts when filters change the result count
+<motion.div layout transition={{ type: "spring", damping: 25, stiffness: 200 }}>
+  {results.map(sagra => (
+    <motion.div layout key={sagra.id}>
+      <SagraCard sagra={sagra} />
+    </motion.div>
+  ))}
+</motion.div>
+```
+
+### Improved Stagger with whileInView
+
+The existing StaggerGrid uses `whileInView` with `once: true`. This pattern can be extended to other sections (ProvinceSection, QuickFilters) for a coordinated reveal effect across the page without any new code patterns.
+
+## Summary: What Changes in package.json
+
+**Nothing.** Zero new dependencies. The entire v1.2 milestone is achievable with:
+
+1. **View Transitions API** -- enabled via a single line in `next.config.ts` (already installed Next.js 15.5.12, which is >= 15.2)
+2. **Motion gestures and scroll** -- already installed (motion@12.35.0), currently underutilized. Only FadeIn and StaggerGrid are built; whileHover, whileTap, useScroll, layout animations are all available
+3. **Tailwind v4 responsive** -- already installed, just constrained by `max-w-lg` in the layout. Breakpoints (sm/md/lg/xl) and container queries (@container/@md) are built-in
+4. **Shadcn Skeleton** -- already installed and used in all loading.tsx files
+
+**The only config change:** Add `experimental: { viewTransition: true }` to `next.config.ts`.
 
 ## Sources
 
-- [Next.js 15 Release Blog](https://nextjs.org/blog/next-15) - HIGH confidence
-- [Next.js 16 Release Blog](https://nextjs.org/blog/next-16) - HIGH confidence
-- [Supabase PostGIS Documentation](https://supabase.com/docs/guides/database/extensions/postgis) - HIGH confidence
-- [Supabase Cron Documentation](https://supabase.com/docs/guides/cron) - HIGH confidence
-- [Supabase Edge Functions Limits](https://supabase.com/docs/guides/functions/limits) - HIGH confidence
-- [Supabase Pricing](https://supabase.com/pricing) - HIGH confidence
-- [Vercel Cron Jobs Usage & Pricing](https://vercel.com/docs/cron-jobs/usage-and-pricing) - HIGH confidence
-- [Vercel Limits](https://vercel.com/docs/limits) - HIGH confidence
-- [Gemini API Rate Limits](https://ai.google.dev/gemini-api/docs/rate-limits) - HIGH confidence
-- [Gemini API Pricing](https://ai.google.dev/gemini-api/docs/pricing) - HIGH confidence
-- [@google/genai npm](https://www.npmjs.com/package/@google/genai) - HIGH confidence
-- [@google/generative-ai npm (DEPRECATED)](https://www.npmjs.com/package/@google/generative-ai) - HIGH confidence
-- [Cheerio Official Site](https://cheerio.js.org/) - HIGH confidence
-- [react-leaflet Installation](https://react-leaflet.js.org/docs/start-installation/) - HIGH confidence
-- [React Leaflet on Next.js 15 (SSR workaround)](https://xxlsteve.net/blog/react-leaflet-on-next-15/) - MEDIUM confidence
-- [Nominatim Usage Policy](https://operations.osmfoundation.org/policies/nominatim/) - HIGH confidence
-- [shadcn/ui Tailwind v4](https://ui.shadcn.com/docs/tailwind-v4) - HIGH confidence
-- [Motion (formerly Framer Motion)](https://motion.dev) - HIGH confidence
-- [Magic UI](https://magicui.design/) - MEDIUM confidence
-- [ReactBits](https://reactbits.dev/) - MEDIUM confidence
-- [Gemini Structured Output](https://ai.google.dev/gemini-api/docs/structured-output) - HIGH confidence
+- [Next.js viewTransition docs](https://nextjs.org/docs/app/api-reference/config/next-config-js/viewTransition) -- HIGH confidence, verified config syntax and version requirements
+- [Can I Use: View Transitions API](https://caniuse.com/view-transitions) -- HIGH confidence, 89.25% global support (Chrome 111+, Firefox 144+, Safari 18+, Edge 111+)
+- [Motion for React](https://motion.dev/docs/react) -- HIGH confidence, v12.35.0 confirmed on npm
+- [Motion changelog](https://motion.dev/changelog) -- HIGH confidence, AnimateView and useScroll improvements in v12.34-12.35
+- [Tailwind CSS v4 Responsive Design](https://tailwindcss.com/docs/responsive-design) -- HIGH confidence, breakpoints and container queries verified
+- [Tailwind CSS v4 Container Queries](https://www.sitepoint.com/tailwind-css-v4-container-queries-modern-layouts/) -- MEDIUM confidence, confirms no plugin needed
+- [AnimatePresence + App Router issue](https://github.com/vercel/next.js/issues/49279) -- HIGH confidence, confirmed broken
+- [barba.js Next.js DOMParser error](https://github.com/barbajs/barba/issues/650) -- HIGH confidence, confirmed incompatibility
+- [next-view-transitions](https://github.com/shuding/next-view-transitions) -- MEDIUM confidence, v0.3.5 superseded by native support
+- [Lenis smooth scroll](https://github.com/darkroomengineering/lenis) -- MEDIUM confidence, evaluated and deferred
+- [React Bits](https://reactbits.dev/) -- MEDIUM confidence, evaluated and rejected

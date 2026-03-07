@@ -1,184 +1,250 @@
 # Feature Landscape
 
-**Domain:** Food festival (sagre) aggregator for Veneto, Italy
-**Researched:** 2026-03-04
+**Domain:** UI/UX polish for food festival (sagre) aggregator -- page transitions, responsive desktop, micro-interactions
+**Researched:** 2026-03-07
+**Milestone:** v1.2 "Polish"
 
-## Competitor Landscape Summary
+## Existing State Assessment
 
-The Italian sagre discovery space has these tiers:
+What Nemovia already has that this milestone builds on:
 
-1. **Legacy portals** (SoloSagre, EventieSagre, AssoSagre, VenetoSagre, TuttoFesta): Text-heavy listings, jQuery-era UX, basic province/date filters, no map or geolocalization, invasive ads. These are the incumbents Nemovia replaces.
-2. **Modern-ish portals** (Sagritaly, Itinerari nel Gusto): Better visual design, some Leaflet map integration, but still catalog-style browsing without true proximity search.
-3. **Direct competitor** (Sagriamo): Native mobile app + web, has geolocation-based "near me" discovery, map markers, online table reservations, food ordering. Strongest existing product but focused on vendor-side features (ordering/reservations) rather than discovery UX. Coverage appears nationwide but sparse.
-
-**The gap Nemovia fills:** No existing product combines comprehensive Veneto coverage (multi-source aggregation), modern mobile-first UX, intelligent food-type filtering, and proximity-based map discovery. Sagriamo comes closest but relies on organizers self-listing rather than scraping.
+| Existing Feature | Status | Relevance to v1.2 |
+|------------------|--------|-------------------|
+| Motion (framer-motion) library | Installed (v12.35) | Foundation for all animations -- page transitions, hover, scroll |
+| FadeIn animation wrapper | Built | Extend with more variants (slide, scale) |
+| StaggerGrid animation | Built | Enhance with responsive column counts |
+| Skeleton UI component (Shadcn) | Built | Base for shimmer enhancement |
+| SagraCardSkeleton | Built | Content-aware skeleton, already matches card layout |
+| loading.tsx files (Home, Cerca, Mappa, Detail) | Built | Already using Next.js Suspense streaming |
+| BackButton component | Built | Bug fix target -- works but needs visibility improvements |
+| Image placeholder on SagraCard | Built (gradient + icon) | Missing on detail page -- bug fix |
+| BottomNav | Built (mobile) | Needs desktop sidebar alternative |
+| max-w-lg container | Built | Desktop bottleneck -- needs responsive widening |
 
 ---
 
 ## Table Stakes
 
-Features users expect from any event discovery product in 2026. Missing = users leave.
+Features users expect for a polished, modern web app in 2026. Missing = app feels cheap or broken.
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| **Event listing with key details** (name, dates, location, description) | Basic information architecture. Every competitor has this. | Low | SagraCard component covers this |
-| **Search by location** (province, city, or radius) | Users think spatially: "What's near me?" Every portal has at least province filter. | Medium | PostGIS `find_nearby_sagre` RPC handles radius queries |
-| **Date filtering** ("this weekend", "today", date range) | Users think in time buckets, not calendar dates. Research confirms humans think in "tonight, this weekend, next week." | Low | Pre-built quick filters: Oggi, Questo Weekend, Prossima Settimana |
-| **Interactive map view** | AllEvents, Sagriamo, Sagritaly all have maps. Users expect to see events spatially, not just as lists. | Medium | Leaflet + OSM with marker clustering |
-| **List/map toggle** | Standard pattern in event apps. Users switch between browsing (list) and exploring (map). | Low | Single toggle in search view |
-| **Mobile-responsive design** | 70%+ of target users (Laura checking Friday night on her phone) are mobile. Every modern app must be mobile-first. | Medium | Tailwind + mobile-first CSS. BottomNav pattern. |
-| **"Near me" geolocation** | Browser geolocation is table stakes for any location-based discovery in 2026. Sagriamo and AllEvents both have it. | Low | `navigator.geolocation` + PostGIS radius query |
-| **Event detail page** with practical info | Users need: address, dates/times, what food is served, how to get there. Every portal provides a detail view. | Medium | Include: description, dates, location, food tags, mini-map, directions link |
-| **Google Maps directions link** | "Take me there" is a fundamental call-to-action for physical events. | Low | Deep link: `https://maps.google.com/?daddr={lat},{lng}` |
-| **Share event link** (especially WhatsApp) | In Italy, WhatsApp is the primary messaging app. The user persona literally says "manda il link al marito su WhatsApp." Web Share API covers this natively. | Low | `navigator.share()` with fallback to copy-link. WhatsApp is dominant in Italy. |
-| **Food/cuisine type indication** | Users want to know what food is served before they go. Even legacy portals categorize by food type (pesce, carne, funghi). | Low | LLM auto-tagging already planned. Display as pills/badges on cards. |
-| **SEO-optimized pages** | Organic search is the primary acquisition channel. "Sagre Veneto questo weekend" must find Nemovia. | Medium | Dynamic meta tags, OG images, JSON-LD Event schema, sitemap |
-| **Fast page loads** | Legacy competitors are slow (heavy ads, jQuery). Speed is a competitive advantage that doubles as table stakes in 2026. | Medium | Next.js SSR/SSG, image optimization, no ads |
+### Bug Fixes (existing broken expectations)
+
+| Feature | Why Expected | Complexity | Dependencies |
+|---------|--------------|------------|--------------|
+| **Back button on detail page (already built)** | Already implemented as BackButton.tsx with router.back(). Bug was listed in PROJECT.md but component exists. Verify it renders correctly and is accessible. | Low | None -- verify only |
+| **Image placeholder on detail page** | SagraCard already has a gradient+icon placeholder when image_url is null. Detail page should match. Inconsistency breaks trust. | Low | None -- SagraDetail.tsx already handles this (line 47-49). Verify it works. |
+| **"TUTTE" province filter selected by default on Cerca** | User opens Cerca and sees no results because no province is selected. Default should show all provinces. Standard behavior for any filter UI. | Low | SearchFilters.tsx -- set initial state to "TUTTE" or empty (meaning all) |
+| **Responsive desktop layout** | 50%+ of Italian web traffic is desktop. Current max-w-lg (32rem/512px) creates a narrow phone-width column on desktop. Desktop users expect content to fill available width. | Medium | Layout.tsx -- responsive max-w, grid columns, sidebar |
+
+### Skeleton Loading Quality
+
+| Feature | Why Expected | Complexity | Dependencies |
+|---------|--------------|------------|--------------|
+| **Shimmer effect on skeletons** | Static gray blocks feel frozen/broken. Shimmer (animated gradient sweep) signals "loading" and reduces perceived wait time by ~30%. Every premium app (Instagram, Airbnb, Google) uses shimmer. | Low | CSS-only -- add shimmer gradient animation to Skeleton component |
+| **Content-aware skeleton shapes** | Already partially built (SagraCardSkeleton matches card layout). Ensure all loading.tsx files mirror their page structure accurately. | Low | Existing loading.tsx files -- audit and polish |
+
+### Responsive Adaptations
+
+| Feature | Why Expected | Complexity | Dependencies |
+|---------|--------------|------------|--------------|
+| **Wider content area on desktop** | max-w-lg is 512px. Desktop should use max-w-4xl (896px) or max-w-6xl (1152px) with responsive breakpoints. | Low | Layout.tsx -- change max-w-lg to responsive classes |
+| **Multi-column card grid on desktop** | 2 columns on tablet, 3-4 columns on desktop. Currently stuck at grid-cols-1 sm:grid-cols-2. | Low | StaggerGrid default className, SagraGrid |
+| **Desktop navigation (top or side)** | BottomNav is mobile-only pattern. Desktop users expect top navbar or sidebar. Hide BottomNav on lg+ screens, show desktop nav. | Medium | New DesktopNav component, BottomNav hidden at lg: breakpoint |
+
+### Accessibility
+
+| Feature | Why Expected | Complexity | Dependencies |
+|---------|--------------|------------|--------------|
+| **prefers-reduced-motion support** | WCAG 2.1 requirement (SC 2.3.3). Vestibular disorders affect ~35% of adults over 40. Must disable/reduce animations when OS setting is enabled. | Low | CSS media query + Motion's `useReducedMotion()` hook |
+| **Focus-visible states on interactive elements** | Keyboard navigation must have visible focus indicators. Cards, buttons, filters need `:focus-visible` outlines. | Low | Tailwind `focus-visible:` utilities |
 
 ---
 
 ## Differentiators
 
-Features that set Nemovia apart. Not expected by users (competitors lack them), but create the "wow, this is better" moment.
+Features that create the "wow, this is premium" feeling. Not expected, but make users go "this is better than any sagre site I've used."
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| **Multi-source aggregation** (5+ sites) | No single portal has all sagre. Nemovia's core value is COMPLETENESS -- "all sagre in one place." Competitors rely on self-listing or single-source data. | High | Config-driven generic scraper. Deduplication is the hard part. |
-| **LLM-enriched descriptions** | Legacy portals have minimal, often copy-pasted descriptions. Enriched, engaging 250-char descriptions in consistent tone make every sagra feel curated. | Medium | Gemini 2.5 Flash batch processing via cron |
-| **Intelligent food-type tags** (LLM-classified) | No competitor offers reliable food-type filtering. Users can filter for "Pesce" or "Funghi" and get accurate results across all sources. | Medium | LLM auto-tagging. Normalize to ~15-20 canonical food categories. |
-| **Proximity-sorted results with distance** | Show "3.2 km" or "15 km" next to each sagra. Legacy portals show province at best. Sagriamo does this but with limited coverage. | Low | PostGIS distance calculation, trivial once geolocation works |
-| **Modern, premium UI** (animations, polish) | Every existing portal looks dated. A polished, animated UI is immediately differentiating. This is the "first 3 seconds" advantage. | Medium | Shadcn/UI + Magic UI + Framer Motion. Invest in micro-interactions. |
-| **"This weekend" hero section** | Homepage immediately answers the #1 question: "What sagre are happening this weekend near me?" No competitor surfaces this prominently. | Low | Date-filtered query, geolocation optional, prominent on homepage |
-| **Smart quick filters** | One-tap filters like "Gratis", "Pesce", "Questo weekend", "Entro 20km" that combine to answer real user intents. Competitors have clunky multi-step forms. | Medium | Combine as composable filter chips. Each filter is a query param. |
-| **Cluster markers on map** | When zoomed out, group nearby sagre into numbered clusters. AllEvents does this. No Italian competitor does. Prevents map marker soup. | Low | Leaflet.markercluster plugin, well-established pattern |
-| **Automatic event expiry** | Events disappear after their end date. Legacy portals are littered with past events, destroying trust. | Low | Cron job marks events as expired. Only show active/upcoming. |
-| **Schema.org Event structured data** | Enables Google rich results ("sagra del baccala Sandrigo" shows date/location directly in Google). No Italian competitor does this well. | Low | JSON-LD on detail pages. Google explicitly supports Event schema. |
-| **OG image per sagra** | When shared on WhatsApp/social, shows a rich preview with sagra name, date, food type. Makes shares look professional. | Medium | Dynamic OG image generation via Vercel OG or similar |
+### Page Transitions
+
+| Feature | Value Proposition | Complexity | Dependencies |
+|---------|-------------------|------------|--------------|
+| **View Transitions API (native)** | GPU-accelerated cross-fade between pages with zero JS overhead. Feels 2-3x snappier than no transition. Browser support hit >85% in late 2025 (Chrome, Edge, Firefox 133+, Safari 18+). Next.js 15.2+ has experimental.viewTransition flag. Since Nemovia runs Next.js 15.5.12, this is available. | Low | next.config.ts: `experimental: { viewTransition: true }`. Wrap content with React's `<ViewTransition>`. Progressive enhancement -- unsupported browsers get instant navigation (current behavior). |
+| **Shared element transitions (card-to-detail)** | When user taps a SagraCard, the card image morphs into the detail page hero image. Creates spatial continuity. This is what makes apps feel "native." Uses CSS `view-transition-name` on matching elements. | Medium | Requires viewTransition enabled + matching `view-transition-name` on SagraCard image and SagraDetail hero image. CSS-only once framework support is in place. |
+| **Cross-fade page content** | Default view transition provides a smooth cross-fade between old and new page content instead of hard cut. Trivial to enable once viewTransition flag is set. | Low | Automatic with viewTransition: true |
+
+**Why View Transitions API over Motion/framer-motion for page transitions:**
+- Motion's AnimatePresence does NOT work reliably with Next.js App Router (components unmount before exit animation completes)
+- View Transitions API is native browser, GPU-accelerated, zero bundle cost
+- Progressive enhancement: graceful fallback to instant navigation
+- Next.js 15.5 has built-in support via experimental flag
+- Avoids FrozenRouter hacks and template.tsx workarounds
+
+**Why NOT barba.js:** Incompatible with React/Next.js. Uses DOMParser (SSR error). Official docs say "use your framework's built-in transitions instead."
+
+### Micro-Interactions
+
+| Feature | Value Proposition | Complexity | Dependencies |
+|---------|-------------------|------------|--------------|
+| **Card hover lift + shadow** | Subtle scale(1.02) + shadow-lg on hover. Creates depth and interactivity on desktop. Current card only has `hover:shadow-md transition-shadow`. | Low | CSS or Motion's `whileHover` prop. Pure CSS preferred for performance. |
+| **Card press/tap feedback** | On mobile, brief scale(0.98) on tap creates tactile feedback. Makes cards feel like real buttons. | Low | Motion's `whileTap={{ scale: 0.98 }}` on the card Link wrapper |
+| **Button press animation** | Scale bounce on action buttons (Directions, Share, filters). Confirms the action was received. | Low | Motion's `whileTap={{ scale: 0.95 }}` |
+| **BottomNav icon animation** | Active tab icon gets a subtle bounce or morph on selection. Creates responsive navigation feel. | Low | Motion spring animation on active icon |
+| **Badge/tag hover pop** | Food tag badges scale slightly and brighten on hover. Invites interaction on desktop. | Low | CSS `hover:scale-105 hover:shadow-sm` transition |
+| **Image load fade-in** | Images fade from transparent to opaque as they load instead of popping in. Removes jarring layout shifts. | Low | Next.js Image `onLoad` callback + opacity transition |
+
+### Scroll Animations
+
+| Feature | Value Proposition | Complexity | Dependencies |
+|---------|-------------------|------------|--------------|
+| **Scroll-triggered section reveals** | Already using FadeIn with `whileInView`. Enhance with variety: some sections slide from left, others from right, creating rhythm. | Low | Extend FadeIn component with `direction` prop (up/left/right) |
+| **Scroll progress indicator** | Thin progress bar at top of page showing scroll depth. Especially useful on detail pages with long content. | Low | Motion's `useScroll()` hook + fixed progress bar |
+| **Parallax hero background** | Hero section gradient moves slightly slower than scroll, creating depth illusion. Subtle parallax (not aggressive). | Low | Motion's `useScroll` + `useTransform` on HeroSection background |
+
+### Desktop-Specific Polish
+
+| Feature | Value Proposition | Complexity | Dependencies |
+|---------|-------------------|------------|--------------|
+| **Desktop sidebar navigation** | Replace BottomNav with a persistent left sidebar on lg+ screens. Icons + labels vertically stacked: Home, Cerca, Mappa. Keeps navigation accessible without eating vertical space. | Medium | New DesktopSidebar component, hide BottomNav at lg:, show sidebar at lg:. CSS Grid layout. |
+| **Detail page side-by-side layout** | On desktop, show image + map on the left, info on the right (or vice versa). Better use of horizontal space than stacking everything vertically. | Medium | SagraDetail.tsx -- responsive grid: `grid-cols-1 lg:grid-cols-2` |
+| **Hover tooltip on map markers** | On desktop, show sagra name on marker hover without clicking. Faster discovery than requiring click. | Low | Leaflet tooltip (L.tooltip) bound to markers. Show on `mouseover`. |
+| **Card grid with 3 columns on xl** | XL screens (1280px+) show 3 cards per row for denser browsing. | Low | Grid class: `xl:grid-cols-3` |
 
 ---
 
 ## Anti-Features
 
-Features to explicitly NOT build. Each has a reason.
+Features to explicitly NOT build in this milestone. Each has a reason.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| **User accounts / login** | Adds friction to a discovery-only app. Target user wants 30-second flow: open, find, share, go. Auth adds complexity with zero value for read-only use case. | Keep everything public and anonymous. Revisit only if adding favorites/notifications later. |
-| **Reviews / ratings / comments** | Requires moderation, auth, and UGC management. Sagre are short-lived events (days, not permanent venues) -- reviews have minimal value. Creates legal/reputation risk with organizers. | Show factual info only: what, where, when, what food. Let Google Maps handle venue reviews. |
-| **User-uploaded photos** | Storage costs, moderation burden, legal issues (photo rights). Scraped images from source sites are sufficient. | Use source images. If no image available, use a tasteful placeholder or food-category illustration. |
-| **Table reservations / food ordering** | This is Sagriamo's territory and requires deep integration with each sagra's operations. Massive complexity for uncertain value. | Link to organizer's website/phone if reservation info is available. "Call to reserve" is sufficient. |
-| **Ticket sales / payments** | Most sagre are free entry (pay for food). Ticketing adds payment processing, refunds, legal compliance. Not the product's focus. | Show "Gratis" / "Ingresso a pagamento" as a filter. Link to organizer for paid events. |
-| **Gamification / badges / points** | Requires auth, adds complexity, unclear motivation for a utility app. Users want to find sagre, not collect badges. | Focus on utility: fast discovery, good information, easy sharing. |
-| **Notifications / push alerts** | Requires auth + push infrastructure (service workers, VAPID keys, subscription management). Premature for MVP. | Show "Questo weekend" prominently on homepage. Users will return organically. Revisit as PWA feature post-MVP. |
-| **Favorites / saved events** | Requires some form of persistence (auth or local storage). Local storage is fragile (cleared on browser cleanup). Auth is out of scope. | Share link is the "save" mechanism. WhatsApp message to self = bookmark. |
-| **Multi-region expansion** | Tempting to go national, but dilutes the value prop. "All sagre in Veneto" is verifiable and defensible. "All sagre in Italy" is a data quality nightmare. | Stay Veneto-only for MVP. Nail coverage and quality for one region first. |
-| **Native mobile app** | App store distribution adds friction (download, install, storage). PWA or responsive web app reaches more users faster with zero install friction. | Mobile-first responsive web. Consider PWA (add to home screen) as a lightweight enhancement post-MVP. |
-| **AI chatbot / voice search** | Over-engineering for a discovery app. Users know what they want (sagre this weekend near me). Filters solve this faster than conversation. | Invest in excellent filter UX instead. Quick filters = faster than asking a chatbot. |
-| **Vendor dashboard / organizer portal** | Building for organizers is a different product. Nemovia aggregates existing data; it does not need organizer cooperation. | Scrape public data. If organizers want to claim/update their listing, that is a v2+ feature. |
-| **Advertising / sponsored listings** | Ads destroy the UX advantage over legacy portals. The entire competitive moat is "clean, fast, no-ads experience." | Validate product-market fit first. Monetization comes after proven traction. |
+| **Smooth scroll library (Lenis)** | Adds complexity and potential conflicts with Leaflet map scrolling. Lenis hijacks native scroll behavior which can break map pan/zoom. Also conflicts with Motion's scroll hooks. The user mentioned Lenis but it creates more problems than it solves for this app type with map interactions. | Use native browser scrolling with CSS `scroll-behavior: smooth` for anchor links only. Motion's `useScroll` for scroll-linked animations. |
+| **barba.js page transitions** | Incompatible with React and Next.js. Throws DOMParser errors on SSR. Official barba.js docs recommend using framework-native transitions instead. | Use View Transitions API via Next.js experimental flag. |
+| **React Bits library (reactbits)** | Copy-paste components with GSAP/other animation library dependencies. Adds bundle weight and conflicting animation systems. Nemovia already has Motion installed -- no need for a second animation framework. Some effects (PixelCard, Hyperspeed backgrounds) are eye-candy for marketing sites, not utility apps. | Cherry-pick inspiration from reactbits.dev but implement using Motion, which is already installed. Focus on subtle polish, not flashy effects. |
+| **Complex page enter/exit animations** | Slide-in/slide-out, morph, or staircase transitions add 300-500ms delay per navigation. For a utility app where users navigate rapidly between cards and search, speed trumps spectacle. | Use fast cross-fade (150-200ms) via View Transitions API. Instant navigation is the goal. |
+| **Dark mode** | Cosmetic feature that doubles CSS surface area. Not a priority for a daytime-use food discovery app. Sagre happen outdoors in daylight. | Warm, inviting light theme only. Revisit in v2+ if users request. |
+| **Animated backgrounds / particles** | Marketing site aesthetic. Distracts from content (sagre listings). Hurts performance on low-end phones. | Clean, warm gradient backgrounds (already using amber/green gradients). |
+| **Infinite scroll** | Complicates URL sharing, back button behavior, and accessibility. Pagination or "load more" is better for discovery with filters. | Keep current paginated/full-list approach. |
+| **Custom loading spinners** | Skeletons are strictly better than spinners for content-heavy UIs. Spinners provide no structural hint about incoming content. | Enhance existing skeleton loaders with shimmer effect. |
 
 ---
 
 ## Feature Dependencies
 
 ```
-Geolocation (browser API)
-  --> "Near me" search
-  --> Proximity-sorted results with distance
-  --> "This weekend near me" hero section
+View Transitions API (page transitions)
+  --> next.config.ts experimental.viewTransition: true (no code deps)
+  --> CSS view-transition-name on SagraCard image + SagraDetail hero (shared element)
+  --> Progressive enhancement: no fallback code needed
 
-Scraping pipeline (Cheerio + cron)
-  --> Event data in database
-  --> LLM enrichment (depends on raw data)
-    --> Food-type tags (depends on LLM)
-      --> Food-type filter chips
-    --> Enriched descriptions
-  --> Geocoding (depends on city/address from scraping)
-    --> Map markers (depends on coordinates)
-    --> Proximity queries (depends on coordinates)
-    --> Cluster markers (depends on map markers)
+Responsive Desktop Layout
+  --> Layout.tsx max-w change (foundation for everything)
+  --> DesktopNav/Sidebar component (depends on layout change)
+  --> Hide BottomNav at lg+ (depends on DesktopNav existing)
+  --> Multi-column grids (depends on wider container)
+  --> Detail page side-by-side (depends on wider container)
 
-PostGIS setup
-  --> Spatial queries (find_nearby_sagre)
-  --> Distance calculation in results
-  --> Radius filter
+Micro-Interactions (independent, can be done in any order)
+  --> Card hover/tap (SagraCard.tsx)
+  --> Button press (DirectionsButton, ShareButton)
+  --> BottomNav icon animation (BottomNav.tsx)
+  --> Image load fade (SagraCard, SagraDetail)
 
-Search/filter system
-  --> Province filter (basic DB query)
-  --> Date filter (basic DB query)
-  --> Food-type filter (depends on LLM tags)
-  --> Free/paid filter (depends on scraping extracting price info)
-  --> Radius filter (depends on PostGIS + geocoding)
-  --> Combined quick filters (depends on all individual filters)
+Skeleton Enhancement
+  --> Shimmer CSS animation (Skeleton.tsx -- foundation)
+  --> Audit all loading.tsx files (depends on shimmer being added)
 
-Event detail page
-  --> SEO metadata (depends on detail page existing)
-  --> Schema.org JSON-LD (depends on detail page)
-  --> OG image generation (depends on detail page + event data)
-  --> Share functionality (depends on detail page URL)
-  --> Google Maps directions link (depends on coordinates)
+Scroll Animations
+  --> FadeIn direction variants (extend existing component)
+  --> Scroll progress bar (standalone, any page)
+  --> Parallax hero (HeroSection.tsx)
 
-Homepage
-  --> Weekend sagre section (depends on date query)
-  --> Hero with location awareness (depends on geolocation, optional)
-  --> Quick filter chips (depends on search system)
+Bug Fixes (independent, do first)
+  --> TUTTE default on Cerca (SearchFilters.tsx)
+  --> Image placeholder on detail (SagraDetail.tsx -- already implemented, verify)
+  --> Back button visibility (BackButton.tsx -- already implemented, verify)
+
+Accessibility
+  --> prefers-reduced-motion (globals.css + Motion config)
+  --> focus-visible states (global Tailwind utilities)
 ```
 
 ---
 
-## MVP Recommendation
+## Phase Recommendation
 
-**Prioritize (Phase 1 -- Core Discovery):**
+### Phase 1: Bug Fixes + Foundation (do first)
+Fix the 4 known bugs and set up responsive layout foundation.
 
-1. Scraping pipeline with 3+ sources (foundation for everything)
-2. Geocoding + PostGIS setup (enables map and proximity)
-3. Event listing with cards (name, dates, city, food tags, distance)
-4. Interactive map with clusters
-5. Basic filters: province, date range, "this weekend"
-6. "Near me" geolocation
-7. Mobile-first responsive layout with BottomNav
-8. Event detail page with directions link + share
+1. TUTTE province filter default on Cerca
+2. Verify back button works (already built)
+3. Verify image placeholder on detail (already built)
+4. Responsive container width (max-w-lg to responsive breakpoints)
+5. prefers-reduced-motion CSS media query
 
-**Prioritize (Phase 2 -- Enrichment + Polish):**
+### Phase 2: Desktop Layout
+Build the responsive desktop experience.
 
-9. LLM auto-tagging for food types
-10. LLM description enrichment
-11. Food-type filter chips
-12. "This weekend" hero section on homepage
-13. Schema.org Event structured data
-14. SEO metadata + sitemap
-15. OG image generation per sagra
-16. Combined quick filter chips
-17. Premium animations (Framer Motion, Magic UI)
+1. Desktop navigation (sidebar or top nav)
+2. Hide BottomNav on lg+ screens
+3. Multi-column card grids (md:2, lg:3, xl:4)
+4. Detail page side-by-side layout on desktop
+5. Map tooltips on hover (desktop)
 
-**Defer:**
+### Phase 3: Page Transitions + Animations
+Add the "wow effect" layer.
 
-- **Radius/km filter slider**: Nice but province + "near me" covers 90% of use cases. Add when basic filters are validated.
-- **Free/paid filter**: Depends on price data being reliably scraped. Add when data quality is confirmed.
-- **PWA (add to home screen)**: Post-MVP enhancement. Service worker + manifest. Low effort but not critical for validation.
-- **Calendar integration (Add to Calendar)**: Minor convenience feature. `.ics` file download or Google Calendar deep link. Revisit post-MVP.
-- **Dark mode**: Cosmetic. Not a priority for a daytime-use discovery app.
+1. Enable viewTransition experimental flag
+2. Shared element transition (card image to detail hero)
+3. Card hover lift + tap feedback
+4. Button press animations
+5. BottomNav active icon animation
+6. Skeleton shimmer effect
+7. Image load fade-in
+8. Scroll progress indicator
+9. FadeIn direction variants
+10. Parallax hero (optional, subtle)
+
+**Rationale:** Fix bugs first (trust), then desktop layout (usability for 50% of users), then animations (delight). Each phase builds on the previous. Animation work should come last because it touches components that may change during layout refactoring.
+
+---
+
+## Complexity Budget
+
+| Category | Estimated Effort | Risk Level |
+|----------|-----------------|------------|
+| Bug fixes | 1-2 hours | Low -- mostly verification of already-built features |
+| Responsive layout | 4-6 hours | Low -- Tailwind responsive utilities, well-understood pattern |
+| Desktop nav | 2-3 hours | Low -- new component but simple structure |
+| View Transitions | 1-2 hours | Medium -- experimental API, test across browsers |
+| Shared element transitions | 2-3 hours | Medium -- CSS view-transition-name matching |
+| Card micro-interactions | 1-2 hours | Low -- Motion whileHover/whileTap, CSS |
+| Skeleton shimmer | 30 min | Low -- CSS animation only |
+| Scroll animations | 1-2 hours | Low -- Motion hooks, well-documented |
+| Accessibility (reduced motion) | 30 min | Low -- CSS + Motion hook |
+
+**Total estimated:** 12-20 hours of implementation work.
 
 ---
 
 ## Sources
 
-### Competitor Sites (directly analyzed)
-- [Solo Sagre](https://www.solosagre.it/) -- Legacy portal, text-heavy, basic filters
-- [Eventi e Sagre](https://www.eventiesagre.it/) -- ~5,667 daily visitors, dated UX, jQuery-era
-- [Sagritaly](https://sagritaly.com/) -- Most modern existing portal, Leaflet map integration
-- [AssoSagre](https://www.assosagre.it/) -- National calendar, traditional listing format
-- [VenetoSagre](http://www.venetosagre.it/) -- Veneto-specific, very dated, no map
-- [TuttoFesta](https://www.tuttofesta.net/) -- National events portal
-- [Sagriamo](https://www.sagriamo.it/) -- Closest competitor: native app, geolocation, ordering/reservations
-- [Itinerari nel Gusto](https://www.itinerarinelgusto.it/sagre-e-feste/veneto) -- Regional focus, basic search
+### Official Documentation (HIGH confidence)
+- [Next.js viewTransition experimental config](https://nextjs.org/docs/app/api-reference/config/next-config-js/viewTransition) -- experimental flag docs, usage with React ViewTransition component
+- [Next.js 15.2 release blog](https://nextjs.org/blog/next-15-2) -- viewTransition feature announcement
+- [Motion scroll animations docs](https://motion.dev/docs/react-scroll-animations) -- useScroll, useInView, whileInView
+- [Motion gestures docs](https://motion.dev/docs/react) -- whileHover, whileTap
+- [View Transition API MDN](https://developer.mozilla.org/en-US/docs/Web/API/View_Transition_API) -- browser API reference
+- [View Transitions browser support (caniuse)](https://caniuse.com/view-transitions) -- 85%+ support as of late 2025
 
-### Event Discovery Patterns
-- [AllEvents 2026 Roadmap](https://allevents.in/blog/allevents-2026-event-discovery-roadmap/) -- Maps, personalization, friend planning
-- [Google Event Schema Documentation](https://developers.google.com/search/docs/appearance/structured-data/event) -- Structured data requirements
-- [Event Management App UI/UX Trends 2025](https://vocal.media/01/event-management-app-ui-ux-trends-that-are-winning-in-2025) -- Simplicity, gesture navigation, accessibility
+### Community/Ecosystem (MEDIUM confidence)
+- [next-view-transitions by Shuding](https://github.com/shuding/next-view-transitions) -- community library for View Transitions in Next.js App Router (alternative approach, but native experimental flag is preferred since Nemovia is on 15.5)
+- [React Bits](https://reactbits.dev/) -- animated component library for inspiration (not recommended as dependency)
+- [Lenis smooth scroll](https://github.com/darkroomengineering/lenis) -- evaluated and rejected for Nemovia due to Leaflet conflicts
+- [barba.js React incompatibility](https://github.com/barbajs/barba/issues/221) -- confirmed incompatible with React frameworks
 
-### UX Research
-- [Calendar UI Best Practices](https://www.eleken.co/blog-posts/calendar-ui) -- Time bucket thinking pattern
-- [Filter UX Design Best Practices](https://lollypop.design/blog/2025/july/filter-ux-design/) -- Filter patterns for SaaS/discovery
-- [PWA Guide 2025](https://isitdev.com/progressive-web-apps-pwa-guide-2025/) -- Offline, installability patterns
+### UX Research (MEDIUM confidence)
+- [Micro-interactions guide](https://www.frontendtools.tech/blog/micro-interactions-ui-ux-guide) -- timing (150-300ms), GPU-accelerated properties
+- [Motion UI trends 2025](https://www.betasofttechnology.com/motion-ui-trends-and-micro-interactions/) -- industry patterns
+- [Skeleton loading best practices](https://blog.logrocket.com/handling-react-loading-states-react-loading-skeleton/) -- shimmer effect, content-aware shapes
+- [prefers-reduced-motion W3C technique](https://www.w3.org/WAI/WCAG21/Techniques/css/C39) -- accessibility requirement
+- [Chrome View Transitions 2025 update](https://developer.chrome.com/blog/view-transitions-in-2025) -- cross-document transitions, types

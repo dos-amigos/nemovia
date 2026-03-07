@@ -1,80 +1,69 @@
-# Research Summary: Nemovia
+# Research Summary: Nemovia v1.2 "Polish"
 
-**Domain:** Food festival (sagre) aggregator web app
-**Researched:** 2026-03-04
+**Domain:** UI/UX polish for food festival (sagre) aggregator
+**Researched:** 2026-03-07
 **Overall confidence:** HIGH
 
 ## Executive Summary
 
-Nemovia is a web app that aggregates Italian food festivals (sagre) from 5+ websites in the Veneto region, enriches them with LLM-powered classification and descriptions, and presents them in a modern mobile-first UI with interactive maps and filters. The target user is someone who wants to find sagre for the weekend near them in under 30 seconds.
+Nemovia v1.2 is a pure frontend polish milestone. The backend (Supabase, scrapers, LLM enrichment, PostGIS) is stable and unchanged. The goal is to fix 4 UX bugs and add visual polish -- page transitions, responsive desktop layout, skeleton loaders, and micro-interactions -- to make the app feel premium on every device.
 
-The team's pre-selected stack (Next.js, Supabase, Leaflet, Cheerio, Gemini, Vercel) is well-validated and appropriate for this use case. Research confirmed all choices are sound, but surfaced three critical corrections: (1) the `@google/generative-ai` npm package is deprecated -- use `@google/genai` instead, (2) Framer Motion has been renamed to `motion`, and (3) Vercel's free tier only supports daily cron jobs, so all scheduled work (scraping 2x/day, enrichment 2x/day) must use Supabase's pg_cron + Edge Functions instead.
+The critical finding is that **zero new npm dependencies are needed**. The existing stack (Next.js 15.5.12, Motion 12.35.0, Tailwind v4, Shadcn/UI) provides everything required. Page transitions use the browser-native View Transitions API via a Next.js experimental flag. Responsive layout uses Tailwind v4's built-in breakpoints and container queries. Micro-interactions use Motion's whileHover/whileTap/useScroll features that are already installed but underutilized. Skeleton loaders are already built via Shadcn's Skeleton component.
 
-The zero-budget constraint is achievable. All services fit within free tier limits for an MVP with a few thousand sagre records and moderate traffic. The main scaling bottleneck is the Gemini free tier (250 requests/day), but this is manageable by enriching only new sagre and combining multiple operations per request.
+The user mentioned barba.js, lenis, and reactbits as libraries to explore. Research confirms all three should be rejected: barba.js is incompatible with React/Next.js (DOMParser errors), lenis conflicts with Leaflet map scrolling and adds unnecessary weight for short-content pages, and reactbits creates a competing design system alongside the existing Shadcn/UI + Motion stack.
 
-The architecture naturally splits into a frontend layer (Vercel) and a backend processing layer (Supabase Edge Functions + pg_cron). This separation is necessary because Vercel free tier has a 10-second function timeout, while scraping and LLM enrichment require longer-running processes that fit within Supabase Edge Functions' 150-second timeout.
+The main architectural risk is the `max-w-lg` layout constraint. Currently every page is squeezed into 512px. Widening this for desktop has cascading effects on card grids, skeleton loaders (CLS risk), and navigation. This is the highest-effort change and must be done before animation work.
 
 ## Key Findings
 
-**Stack:** Next.js 15 + Tailwind v4 + shadcn/ui + Supabase (PostGIS + pg_cron) + Cheerio + Gemini 2.5 Flash + Leaflet + Vercel. All zero-cost, all production-ready.
+**Stack:** No new dependencies. Enable `experimental.viewTransition` in next.config.ts. Use existing Motion features (whileHover, whileTap, useScroll, layout). Use Tailwind v4 responsive breakpoints (md/lg/xl).
 
-**Architecture:** Frontend on Vercel (SSR, static, API routes), background processing on Supabase (Edge Functions for scraping/enrichment, pg_cron for scheduling, PostGIS for geo-queries).
+**Architecture:** Four integration domains -- page transitions (View Transitions API), responsive layout (Tailwind breakpoints), skeleton enhancement (shimmer CSS), micro-interactions (Motion gestures). All purely in the rendering layer, zero backend changes.
 
-**Critical pitfall:** Vercel free cron is daily-only; Gemini free tier is 250 RPD (not 2000 as assumed in PROJECT.md); Leaflet requires SSR-disabled dynamic imports in Next.js.
+**Critical pitfall:** AnimatePresence does NOT work for page transitions in Next.js App Router (issue #49279). Must use View Transitions API instead. The max-w-lg layout change has cascading effects on all grid components and skeleton loaders.
 
 ## Implications for Roadmap
 
 Based on research, suggested phase structure:
 
-1. **Foundation & Data Model** - Set up Next.js project, Supabase with PostGIS, define sagra schema with geography column, deploy to Vercel
-   - Addresses: Project scaffolding, database design, deployment pipeline
-   - Avoids: Building UI before data model is stable
+1. **Bug Fixes** - Fix the 4 known UX issues (back button, image placeholder, TUTTE default, responsive container)
+   - Addresses: Immediate broken UX that makes app feel incomplete
+   - Avoids: Polishing on top of broken foundations
+   - Complexity: Low (mostly one-line fixes or verification of already-built components)
 
-2. **Scraping Pipeline** - Config-driven generic scraper with Cheerio, Supabase Edge Functions, pg_cron scheduling
-   - Addresses: Automated data collection from 5+ sources
-   - Avoids: Manual data entry, hardcoded scrapers
+2. **Responsive Desktop Layout** - Widen container, add desktop navigation, responsive grids, update skeletons
+   - Addresses: 50% of users on desktop seeing a 512px column on a 1920px monitor
+   - Avoids: CLS regression by updating skeletons in sync with layout changes
+   - Complexity: Medium (cascading layout changes, new DesktopNav component)
 
-3. **LLM Enrichment** - Gemini 2.5 Flash integration for food tagging and description enrichment, geocoding with Nominatim
-   - Addresses: Data quality, searchable food categories, coordinates for map
-   - Avoids: Building map/search before data has coordinates and tags
-
-4. **Core UI & Search** - Homepage, sagra cards, filter system, list/map toggle, mobile-first layout
-   - Addresses: Primary user experience, discovery flow
-   - Avoids: Premature animation polish before core UX works
-
-5. **Interactive Map** - Leaflet integration, marker clustering, "near me" geolocation, detail page with mini-map
-   - Addresses: Map-based discovery, location-aware search
-   - Avoids: SSR issues by isolating map in client-only components
-
-6. **Polish & SEO** - Animations (Motion, Magic UI), dynamic metadata, sitemap, OG images, sharing
-   - Addresses: Premium feel, discoverability, social sharing
-   - Avoids: Over-investing in polish before core features work
+3. **Page Transitions and Micro-interactions** - Enable View Transitions, add hover/tap effects, scroll progress, stagger extensions
+   - Addresses: The "wow effect" premium feel that differentiates from competitors
+   - Avoids: Animation performance issues by using GPU-accelerated properties only
+   - Complexity: Low-Medium (config + CSS for transitions, Motion props for interactions)
 
 **Phase ordering rationale:**
-- Data model must exist before scraping can populate it
-- Scraping must run before LLM enrichment has data to process
-- Enrichment (tags, coordinates) must complete before search/map can work meaningfully
-- UI and map need real data to test properly
-- Polish is last because it adds zero functional value
+- Bug fixes first because broken UX undermines any polish work
+- Responsive layout second because it changes the spatial container that animations operate within
+- Transitions and micro-interactions last because they layer on top of stable layouts
+- Skeleton updates must happen alongside layout changes (same phase) to prevent CLS
 
 **Research flags for phases:**
-- Phase 2 (Scraping): Likely needs deeper research on each target site's HTML structure and anti-scraping measures
-- Phase 3 (LLM): Standard patterns, but monitor Gemini free tier limits closely -- they changed in Dec 2025 and could change again
-- Phase 5 (Map): SSR workarounds are well-documented but tricky; follow the dynamic import pattern exactly
+- Phase 2 (Responsive Layout): Highest risk -- cascading changes to grids, skeletons, navigation. Test at every breakpoint (375px, 768px, 1024px, 1280px, 1920px)
+- Phase 3 (Transitions): View Transitions API is experimental in Next.js. Test cross-browser (Chrome, Safari, Firefox fallback). Monitor for conflicts with nuqs URL state updates
+- Phase 3 (Micro-interactions): Performance budget -- test with Chrome DevTools CPU 4x throttle on 20+ card grids
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All technologies verified via official docs and npm. Versions confirmed current. |
-| Features | HIGH | Standard aggregator patterns, well-understood domain. |
-| Architecture | HIGH | Vercel + Supabase separation is a proven pattern with extensive documentation. |
-| Pitfalls | HIGH | Vercel cron, Gemini limits, Leaflet SSR are well-documented issues with known solutions. |
+| Stack | HIGH | Zero new deps. All capabilities verified in installed versions via official docs. |
+| Features | HIGH | Well-understood patterns (responsive, hover, transitions). No novel technical challenges. |
+| Architecture | HIGH | Pure rendering layer changes. No backend, no data model, no API changes. |
+| Pitfalls | HIGH | AnimatePresence incompatibility is well-documented. CLS risk is standard and preventable. |
 
 ## Gaps to Address
 
-- **Target site HTML structure:** Need to inspect each of the 5 sagre websites to confirm they're static HTML (suitable for Cheerio) and identify CSS selectors
-- **Gemini free tier stability:** Google quietly changed limits in Dec 2025. Monitor for further changes.
-- **Supabase free tier pausing:** Projects pause after 7 days of inactivity. pg_cron activity should prevent this, but needs verification.
-- **Italian date format parsing:** Sagre sites use various Italian date formats ("15-17 Agosto 2026", "dal 15 al 17 agosto"). Need date-fns Italian locale + custom parsers.
-- **Image handling:** Scraped images may be hotlinked (blocked by CORS/referrer) or low quality. May need Supabase Storage for caching images.
+- **View Transitions + nuqs interaction:** Need to verify that filter state changes in Cerca page do not trigger unintended page-level view transitions. May need to scope view-transition-name carefully.
+- **Leaflet map invalidateSize on resize:** When the layout container changes width for desktop, the Leaflet map may show grey tiles. Need ResizeObserver calling invalidateSize().
+- **LazyMotion migration:** Current codebase imports full `motion` bundle (~34KB). Could reduce to ~5KB with `m` + `LazyMotion` but this is an optimization that can be deferred.
+- **Shared element transitions (card-to-detail morph):** Technically possible with CSS view-transition-name but the React ViewTransition component is still experimental. Defer to v1.3 if stability improves.
