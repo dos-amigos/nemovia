@@ -38,7 +38,7 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 
 **Milestone Goal:** Fix UX bugs and add polish -- page transitions, responsive desktop layout, micro-interazioni -- per un'esperienza premium su ogni device.
 
-- [ ] **Phase 11: Bug Fixes + Foundation** - Fix 4 broken UX flows and establish accessibility baseline for all animation work
+- [x] **Phase 11: Bug Fixes + Foundation** - Fix 4 broken UX flows and establish accessibility baseline for all animation work (completed 2026-03-07)
 - [ ] **Phase 12: Responsive Desktop Layout** - Desktop-optimized layout with navigation, grids, and breakpoint-aware skeletons
 - [ ] **Phase 13: Transitions + Micro-Interactions** - Page transitions, hover/tap effects, scroll animations, and shimmer loaders for premium feel
 
@@ -57,8 +57,8 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 **Plans**: 2 plans
 
 Plans:
-- [ ] 11-01-PLAN.md -- Fix 4 UX bugs (back button verify, placeholder verify, Cerca default filter, desktop width)
-- [ ] 11-02-PLAN.md -- Accessibility foundation (reduced-motion MotionConfig, focus-visible on all interactive elements)
+- [x] 11-01-PLAN.md -- Fix 4 UX bugs (back button verify, placeholder verify, Cerca default filter, desktop width)
+- [x] 11-02-PLAN.md -- Accessibility foundation (reduced-motion MotionConfig, focus-visible on all interactive elements)
 
 ### Phase 12: Responsive Desktop Layout
 **Goal**: Users on tablet and desktop see a layout purpose-built for larger screens with proper navigation, grids, and skeleton shapes
@@ -109,6 +109,6 @@ Phases execute in numeric order: 11 -> 12 -> 13
 | 8. Fix Cheerio Scrapers | v1.1 | 3/3 | Complete | 2026-03-07 |
 | 9. Sagritaly Ingestion | v1.1 | 1/1 | Complete | 2026-03-07 |
 | 10. Data Quality Filters | v1.1 | 2/2 | Complete | 2026-03-07 |
-| 11. Bug Fixes + Foundation | v1.2 | 0/2 | Not started | - |
+| 11. Bug Fixes + Foundation | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 12. Responsive Desktop Layout | v1.2 | 0/? | Not started | - |
 | 13. Transitions + Micro-Interactions | v1.2 | 0/? | Not started | - |

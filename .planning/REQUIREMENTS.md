@@ -9,10 +9,10 @@ Requirements for v1.2 milestone. Each maps to roadmap phases.
 
 ### Bug Fixes
 
-- [ ] **BUG-01**: User sees a visible back button on sagra detail page to return to previous view
-- [ ] **BUG-02**: User sees an image placeholder (gradient + icon) on sagra detail page when no image is available
-- [ ] **BUG-03**: User sees all sagre on Cerca page by default with "TUTTE" province filter pre-selected
-- [ ] **BUG-04**: User sees content filling available screen width on desktop (not squeezed into 512px column)
+- [x] **BUG-01**: User sees a visible back button on sagra detail page to return to previous view
+- [x] **BUG-02**: User sees an image placeholder (gradient + icon) on sagra detail page when no image is available
+- [x] **BUG-03**: User sees all sagre on Cerca page by default with "TUTTE" province filter pre-selected
+- [x] **BUG-04**: User sees content filling available screen width on desktop (not squeezed into 512px column)
 
 ### Responsive Desktop Layout
 
@@ -49,8 +49,8 @@ Requirements for v1.2 milestone. Each maps to roadmap phases.
 
 ### Accessibility
 
-- [ ] **A11Y-01**: User with prefers-reduced-motion OS setting sees no/minimal animations
-- [ ] **A11Y-02**: User navigating with keyboard sees visible focus indicators on all interactive elements
+- [x] **A11Y-01**: User with prefers-reduced-motion OS setting sees no/minimal animations
+- [x] **A11Y-02**: User navigating with keyboard sees visible focus indicators on all interactive elements
 
 ## v2 Requirements
 
@@ -95,10 +95,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUG-01 | Phase 11 | Pending |
-| BUG-02 | Phase 11 | Pending |
-| BUG-03 | Phase 11 | Pending |
-| BUG-04 | Phase 11 | Pending |
+| BUG-01 | Phase 11 | Complete |
+| BUG-02 | Phase 11 | Complete |
+| BUG-03 | Phase 11 | Complete |
+| BUG-04 | Phase 11 | Complete |
 | DESK-01 | Phase 12 | Pending |
 | DESK-02 | Phase 12 | Pending |
 | DESK-03 | Phase 12 | Pending |
@@ -117,8 +117,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SCRL-01 | Phase 13 | Pending |
 | SCRL-02 | Phase 13 | Pending |
 | SCRL-03 | Phase 13 | Pending |
-| A11Y-01 | Phase 11 | Pending |
-| A11Y-02 | Phase 11 | Pending |
+| A11Y-01 | Phase 11 | Complete |
+| A11Y-02 | Phase 11 | Complete |
 
 **Coverage:**
 - v1 requirements: 24 total
