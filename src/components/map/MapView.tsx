@@ -6,7 +6,7 @@ import "react-leaflet-cluster/dist/assets/MarkerCluster.Default.css";
 
 import { useEffect } from "react";
 import L from "leaflet";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import { VENETO_CENTER, DEFAULT_MAP_ZOOM } from "@/lib/constants/veneto";
 import type { MapMarkerData } from "@/lib/queries/types";
@@ -71,6 +71,7 @@ export default function MapView({
           ];
           return (
             <Marker key={sagra.id} position={position}>
+              <Tooltip>{sagra.title}</Tooltip>
               <Popup>
                 <MapMarkerPopup sagra={sagra} />
               </Popup>

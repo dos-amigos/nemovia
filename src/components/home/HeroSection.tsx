@@ -5,12 +5,12 @@ import { FadeIn } from "@/components/animations/FadeIn";
 export function HeroSection() {
   return (
     <FadeIn>
-      <section className="rounded-2xl bg-gradient-to-br from-amber-50 via-orange-50 to-green-50 px-6 py-8">
-        <h1 className="text-2xl font-bold text-foreground">
+      <section className="rounded-2xl bg-gradient-to-br from-amber-50 via-orange-50 to-green-50 px-6 py-8 lg:px-10 lg:py-12">
+        <h1 className="text-2xl font-bold text-foreground lg:text-3xl">
           Scopri le sagre del Veneto
         </h1>
 
-        <p className="mt-2 text-muted-foreground">
+        <p className="mt-2 text-muted-foreground lg:text-lg">
           Trova sagre ed eventi gastronomici nella tua zona
         </p>
 

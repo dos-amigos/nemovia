@@ -23,7 +23,7 @@ export function ProvinceSection({ counts }: ProvinceSectionProps) {
           description="I dati delle province non sono ancora disponibili."
         />
       ) : (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
           {VENETO_PROVINCES.map((province) => {
             const match = counts.find((c) => c.province === province.name);
             const count = match?.count ?? 0;

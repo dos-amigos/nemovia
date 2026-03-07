@@ -25,7 +25,7 @@ export function SagraCard({ sagra, distanceKm }: SagraCardProps) {
               alt={sagra.title}
               fill
               className="object-cover"
-              sizes="(max-width: 640px) 100vw, 50vw"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-100 to-green-100">
