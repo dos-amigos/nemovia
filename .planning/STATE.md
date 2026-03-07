@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Dati Reali
 status: executing
-stopped_at: Phase 8 complete, ready for Phase 9
-last_updated: "2026-03-07T10:00:00Z"
-last_activity: 2026-03-07 -- Finalized Phase 8 (all 3 Cheerio scrapers fixed)
+stopped_at: Phase 9 complete, ready for Phase 10
+last_updated: "2026-03-07T10:17:38Z"
+last_activity: 2026-03-07 -- Completed Phase 9 (sagritaly ingestion)
 progress:
   total_phases: 4
-  completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  completed_phases: 3
+  total_plans: 5
+  completed_plans: 5
   percent: 100
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Phase 8 complete -- ready for Phase 9 (Sagritaly Ingestion) or Phase 10 (Data Quality Filters)
+**Current focus:** Phase 9 complete -- ready for Phase 10 (Data Quality Filters)
 
 ## Current Position
 
-Phase: 8 of 10 (Fix Cheerio Scrapers) -- COMPLETE
-Plan: 3/3 complete
-Status: All Cheerio scrapers fixed (assosagre, solosagre, venetoinfesta)
-Last activity: 2026-03-07 -- Finalized Phase 8, created 08-03-SUMMARY.md
+Phase: 9 of 10 (Sagritaly Ingestion) -- COMPLETE
+Plan: 1/1 complete
+Status: Sagritaly scraper active, all 5 sources ingesting
+Last activity: 2026-03-07 -- Completed Phase 9, created 09-01-SUMMARY.md
 
-Progress: [██████████] 100% (v1.1 plans 4/4 executed so far)
+Progress: [██████████] 100% (v1.1 plans 5/5 executed so far)
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ Progress: [██████████] 100% (v1.1 plans 4/4 executed so far)
 |-------|-------|-------|----------|
 | 7. Deploy & Verify Baseline | 1/1 | ~15min | ~15min |
 | 8. Fix Cheerio Scrapers | 3/3 | ~65min | ~22min |
+| 9. Sagritaly Ingestion | 1/1 | ~12min | ~12min |
 
 *Updated after each plan completion*
 
@@ -65,6 +66,9 @@ All v1.0 decisions archived to PROJECT.md Key Decisions table with outcomes.
 - Added relative image URL resolution generically for all sources
 - Used div.box_evento selectors for venetoinfesta flat HTML structure
 - Added venetoinfesta-specific date parser for "abbreviated-month DD YYYY" format
+- Used Cheerio for sagritaly.com (server-rendered WordPress, not JS-rendered as assumed)
+- Single page scrape for sagritaly (max_pages=1, pagination 404s with Veneto filter)
+- Composed sagritaly start/end dates into "DD/MM/YYYY al DD/MM/YYYY" for parseItalianDateRange()
 
 ### Pending Todos
 
@@ -73,11 +77,11 @@ All v1.0 decisions archived to PROJECT.md Key Decisions table with outcomes.
 
 ### Blockers/Concerns
 
-- sagritaly JS-rendering requires different scraping approach (headless browser or API) -- Phase 9 scope
+- ~~sagritaly JS-rendering requires different scraping approach (headless browser or API)~~ RESOLVED: Site is server-rendered WordPress, Cheerio works (Phase 9)
 - ~~enrich-sagre Edge Function fix committed but NOT deployed~~ RESOLVED: Deployed in Phase 7
 
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Phase 8 finalized, ready for Phase 9/10
+Stopped at: Phase 9 complete, ready for Phase 10
 Resume file: None
