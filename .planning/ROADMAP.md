@@ -54,11 +54,11 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
   3. User lands on Cerca page and immediately sees all sagre with "TUTTE" province filter pre-selected, without needing to interact
   4. User on a desktop browser sees content filling the available screen width, not squeezed into a narrow mobile column
   5. User with prefers-reduced-motion enabled sees no animations, and keyboard-only users see visible focus indicators on every interactive element
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 11-01: TBD
-- [ ] 11-02: TBD
+- [ ] 11-01-PLAN.md -- Fix 4 UX bugs (back button verify, placeholder verify, Cerca default filter, desktop width)
+- [ ] 11-02-PLAN.md -- Accessibility foundation (reduced-motion MotionConfig, focus-visible on all interactive elements)
 
 ### Phase 12: Responsive Desktop Layout
 **Goal**: Users on tablet and desktop see a layout purpose-built for larger screens with proper navigation, grids, and skeleton shapes
@@ -109,6 +109,6 @@ Phases execute in numeric order: 11 -> 12 -> 13
 | 8. Fix Cheerio Scrapers | v1.1 | 3/3 | Complete | 2026-03-07 |
 | 9. Sagritaly Ingestion | v1.1 | 1/1 | Complete | 2026-03-07 |
 | 10. Data Quality Filters | v1.1 | 2/2 | Complete | 2026-03-07 |
-| 11. Bug Fixes + Foundation | v1.2 | 0/? | Not started | - |
+| 11. Bug Fixes + Foundation | v1.2 | 0/2 | Not started | - |
 | 12. Responsive Desktop Layout | v1.2 | 0/? | Not started | - |
 | 13. Transitions + Micro-Interactions | v1.2 | 0/? | Not started | - |
