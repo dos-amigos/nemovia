@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** — Phases 1-6 (shipped 2026-03-05)
-- 🚧 **v1.1 Dati Reali** — Phases 7-10 (in progress)
+- ✅ **v1.1 Dati Reali** — Phases 7-10 (shipped 2026-03-07)
 
 ## Phases
 
@@ -26,7 +26,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - [x] **Phase 7: Deploy & Verify Baseline** - Deploy geocoding fix and confirm eventiesagre scraper produces valid enriched data end-to-end (completed 2026-03-06)
 - [x] **Phase 8: Fix Cheerio Scrapers** - Repair CSS selectors for assosagre, solosagre, and venetoinfesta so all Cheerio-based sources produce valid sagre (completed 2026-03-07)
 - [x] **Phase 9: Sagritaly Ingestion** - Ingest sagre from sagritaly.com using Cheerio (site is server-rendered WordPress, not JS-rendered as originally assumed) (completed 2026-03-07)
-- [ ] **Phase 10: Data Quality Filters** - Filter out non-Veneto events, noise titles, and dirty location text so the pipeline produces clean data
+- [x] **Phase 10: Data Quality Filters** - Filter out non-Veneto events, noise titles, and dirty location text so the pipeline produces clean data (completed 2026-03-07)
 
 ## Phase Details
 
@@ -79,10 +79,10 @@ Plans:
   2. Entries with noise or invalid titles (ads, site navigation text, generic non-event strings) are detected and excluded
   3. location_text values are cleaned/normalized before geocoding, resulting in a higher geocoding success rate (fewer null coordinates)
   4. Existing pipeline data is retroactively cleaned (not just new scrapes)
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
-- [ ] 10-01-PLAN.md — Add noise title filter to scraper, location normalization and Veneto province validation to enricher
-- [ ] 10-02-PLAN.md — Deploy Edge Functions, run retroactive cleanup SQL, verify clean data on live site
+- [x] 10-01-PLAN.md — Add noise title filter to scraper, location normalization and Veneto province validation to enricher
+- [x] 10-02-PLAN.md — Deploy Edge Functions, run retroactive cleanup SQL, verify clean data on live site
 
 ## Progress
 
@@ -97,7 +97,7 @@ Phases 7 through 10. Phase 8 and Phase 9 can run in parallel (both depend on Pha
 | 4. Discovery UI | v1.0 | 3/3 | Complete | 2026-03-05 |
 | 5. Map & Detail | v1.0 | 3/3 | Complete | 2026-03-05 |
 | 6. SEO & Polish | v1.0 | 3/3 | Complete | 2026-03-05 |
-| 7. Deploy & Verify Baseline | v1.1 | Complete    | 2026-03-06 | 2026-03-06 |
+| 7. Deploy & Verify Baseline | v1.1 | 1/1 | Complete | 2026-03-06 |
 | 8. Fix Cheerio Scrapers | v1.1 | 3/3 | Complete | 2026-03-07 |
 | 9. Sagritaly Ingestion | v1.1 | 1/1 | Complete | 2026-03-07 |
-| 10. Data Quality Filters | 1/2 | In Progress|  | - |
+| 10. Data Quality Filters | v1.1 | 2/2 | Complete | 2026-03-07 |

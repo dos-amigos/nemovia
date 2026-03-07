@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Dati Reali
-status: executing
-stopped_at: Completed 10-01-PLAN.md
-last_updated: "2026-03-07T10:39:06Z"
-last_activity: 2026-03-07 -- Completed Phase 10 Plan 01, data quality filters
+status: complete
+stopped_at: Completed 10-02-PLAN.md (v1.1 milestone complete)
+last_updated: "2026-03-07T11:08:18Z"
+last_activity: 2026-03-07 -- Completed Phase 10 Plan 02, deploy data quality filters and retroactive cleanup
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 7
-  completed_plans: 6
-  percent: 86
+  completed_plans: 7
+  percent: 100
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Phase 10 in progress -- Data Quality Filters (plan 1/2 complete)
+**Current focus:** v1.1 "Dati Reali" COMPLETE -- all 4 phases, 7 plans executed
 
 ## Current Position
 
 Phase: 10 of 10 (Data Quality Filters)
-Plan: 1/2 complete
-Status: Noise title filter, location normalization, and Veneto province validation added
-Last activity: 2026-03-07 -- Completed Phase 10 Plan 01, data quality filters
+Plan: 2/2 complete
+Status: v1.1 milestone complete -- all data quality filters deployed, retroactive cleanup done, pipeline producing clean Veneto-only data
+Last activity: 2026-03-07 -- Completed Phase 10 Plan 02, deploy and retroactive cleanup
 
-Progress: [█████████░] 86% (v1.1 plans 6/7 executed so far)
+Progress: [██████████] 100% (v1.1 plans 7/7 executed)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18 (v1.0) + 5 (v1.1)
-- v1.1 plans completed: 5
-- Average duration: ~18min
-- Total execution time: ~83min
+- Total plans completed: 18 (v1.0) + 7 (v1.1)
+- v1.1 plans completed: 7
+- Average duration: ~14min
+- Total execution time: ~97min
 
 **By Phase:**
 
@@ -47,7 +47,7 @@ Progress: [█████████░] 86% (v1.1 plans 6/7 executed so far)
 | 7. Deploy & Verify Baseline | 1/1 | ~15min | ~15min |
 | 8. Fix Cheerio Scrapers | 3/3 | ~65min | ~22min |
 | 9. Sagritaly Ingestion | 1/1 | ~12min | ~12min |
-| 10. Data Quality Filters | 1/2 | ~3min | ~3min |
+| 10. Data Quality Filters | 2/2 | ~17min | ~9min |
 
 *Updated after each plan completion*
 
@@ -74,6 +74,9 @@ All v1.0 decisions archived to PROJECT.md Key Decisions table with outcomes.
 - normalizeLocationText appends ", Veneto" for bare city names to improve Nominatim disambiguation
 - Non-Veneto sagre deactivated (is_active=false) but coordinates/province kept for debugging
 - cleanCityName kept as deprecated alias for backward compatibility
+- PostgreSQL regex character class for numeric-only title pattern in retroactive cleanup SQL
+- PostGIS WKB hex parsed client-side via Buffer.readDoubleLE rather than changing DB query to ST_AsGeoJSON
+- Retroactive SQL migrations stored in supabase/migrations/ for auditability even when executed manually
 
 ### Pending Todos
 
@@ -88,5 +91,5 @@ All v1.0 decisions archived to PROJECT.md Key Decisions table with outcomes.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 10-01-PLAN.md
+Stopped at: Completed 10-02-PLAN.md (v1.1 milestone complete)
 Resume file: None
