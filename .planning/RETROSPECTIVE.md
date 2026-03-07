@@ -51,20 +51,67 @@
 
 ---
 
+## Milestone: v1.1 — Dati Reali
+
+**Shipped:** 2026-03-07
+**Phases:** 4 | **Plans:** 7 | **Commits:** 29
+
+### What Was Built
+- Deployed enrich-sagre PostGIS WKT geocoding fix and verified end-to-end pipeline
+- Fixed assosagre, solosagre, venetoinfesta scrapers with source-specific CSS selectors and date parsers
+- Added sagritaly.com as 5th active source via Cheerio (WordPress SSR, not JS-rendered as assumed)
+- Noise title detection filters out calendar pages, nav text, and generic non-event strings at scrape time
+- Location normalization appends ", Veneto" for Nominatim disambiguation; non-Veneto sagre deactivated after geocoding
+- Retroactive cleanup: 36 dirty rows deactivated, 735 clean active sagre
+
+### What Worked
+- **Source-specific extraction branches**: keying extractRawEvent() by source.name scaled cleanly to 5 different HTML layouts
+- **Reusing parseItalianDateRange()**: composing dates into a standard format let all 5 sources share one date parser
+- **Heuristic data quality filters**: simple regex/length checks caught all noise without ML complexity
+- **REST API verification pattern**: checking scrape_logs and sagre table via REST API provided fast feedback during scraper fixes
+- **12-minute sagritaly phase**: discovering the site was server-rendered WordPress (not JS) eliminated an entire headless browser complexity
+
+### What Was Inefficient
+- **Inline function duplication for Edge Functions**: still copying pure functions between src/ and supabase/functions/ — maintenance burden grows with each data quality function added
+- **Manual function invocation**: triggering Edge Functions via curl for testing; could benefit from a dev/test mode
+- **No automated selector validation**: CSS selectors break when sites update — no alerting in place
+
+### Patterns Established
+- **Source-specific extraction**: when a scraper source has non-standard HTML, add a named branch keyed by source.name in extractRawEvent()
+- **Pipeline-stage filtering**: noise detection at scrape time, province gating at geocode time — filter as early as possible
+- **Location normalization**: strip province codes, region prefixes, append disambiguation suffix before geocoding
+
+### Key Lessons
+1. **Check if a site is SSR before assuming JS rendering** — sagritaly was WordPress, Cheerio worked directly, saving significant complexity
+2. **Heuristic filters beat ML for known patterns** — noise titles follow predictable regex patterns, no need for classification models
+3. **Deactivate instead of delete dirty data** — keeping is_active=false rows preserves debugging context
+4. **Small phase count (4) with focused scope shipped in 3 days** — data-pipeline-only milestone avoided UI complexity
+
+### Cost Observations
+- Model mix: primarily Opus for execution
+- Sessions: ~4 across 3 days
+- Notable: 7 plans across 4 phases in 3 days — fast velocity from focused data-pipeline scope with no frontend changes
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
-| Milestone | Commits | Phases | Key Change |
-|-----------|---------|--------|------------|
-| v1.0 | 85 | 6 | First milestone — established all patterns |
+| Milestone | Commits | Phases | Plans | Key Change |
+|-----------|---------|--------|-------|------------|
+| v1.0 | 85 | 6 | 18 | First milestone — established all patterns |
+| v1.1 | 29 | 4 | 7 | Data pipeline focus — no frontend, all scraper/quality work |
 
 ### Cumulative Quality
 
-| Milestone | LOC | Files | Scraper Sources Active |
-|-----------|-----|-------|----------------------|
-| v1.0 | 3,514 | 159 | 1/5 |
+| Milestone | LOC | Files | Scraper Sources Active | Active Sagre |
+|-----------|-----|-------|----------------------|-------------|
+| v1.0 | 3,514 | 159 | 1/5 | ~140 |
+| v1.1 | ~3,900 | 159 | 5/5 | 735 |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. (First milestone — lessons to be validated in v1.1)
+1. **Validate assumptions about external sites before planning** — v1.0 assumed JS rendering for sagritaly, v1.1 proved it was SSR (validated across phases 2 and 9)
+2. **Phase-by-phase incremental delivery works** — both milestones shipped incrementally with verification at each phase (validated v1.0 + v1.1)
+3. **Edge Function inline copies are a growing burden** — noted in both milestones, needs resolution before v1.2

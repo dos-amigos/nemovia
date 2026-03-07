@@ -21,73 +21,19 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 </details>
 
-### v1.1 Dati Reali
+<details>
+<summary>✅ v1.1 Dati Reali (Phases 7-10) — SHIPPED 2026-03-07</summary>
 
-- [x] **Phase 7: Deploy & Verify Baseline** - Deploy geocoding fix and confirm eventiesagre scraper produces valid enriched data end-to-end (completed 2026-03-06)
-- [x] **Phase 8: Fix Cheerio Scrapers** - Repair CSS selectors for assosagre, solosagre, and venetoinfesta so all Cheerio-based sources produce valid sagre (completed 2026-03-07)
-- [x] **Phase 9: Sagritaly Ingestion** - Ingest sagre from sagritaly.com using Cheerio (site is server-rendered WordPress, not JS-rendered as originally assumed) (completed 2026-03-07)
-- [x] **Phase 10: Data Quality Filters** - Filter out non-Veneto events, noise titles, and dirty location text so the pipeline produces clean data (completed 2026-03-07)
+- [x] Phase 7: Deploy & Verify Baseline (1/1 plans) — completed 2026-03-06
+- [x] Phase 8: Fix Cheerio Scrapers (3/3 plans) — completed 2026-03-07
+- [x] Phase 9: Sagritaly Ingestion (1/1 plans) — completed 2026-03-07
+- [x] Phase 10: Data Quality Filters (2/2 plans) — completed 2026-03-07
 
-## Phase Details
+Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 
-### Phase 7: Deploy & Verify Baseline
-**Goal**: The existing pipeline runs end-to-end with correct geocoding, and the one active scraper (eventiesagre) reliably produces enriched sagre with valid coordinates
-**Depends on**: Phase 6 (v1.0 complete)
-**Requirements**: DEPLOY-01, SCRAPE-01
-**Success Criteria** (what must be TRUE):
-  1. enrich-sagre Edge Function is deployed to Supabase production and runs without errors on its next cron invocation
-  2. Sagre geocoded after the deploy have valid PostGIS coordinates (not null, not 0,0) visible on the map
-  3. eventiesagre scraper runs on its cron schedule and inserts new sagre rows with title, dates, location_text, and source_url populated
-  4. End-to-end pipeline confirmed: a sagra scraped from eventiesagre appears on nemovia.vercel.app with coordinates, tags, and description within one cron cycle
-**Plans:** 1/1 plans complete
-Plans:
-- [x] 07-01-PLAN.md — Deploy enrich-sagre fix, trigger pipeline, verify end-to-end data flow
-
-### Phase 8: Fix Cheerio Scrapers
-**Goal**: All three broken Cheerio-based scraper sources (assosagre, solosagre, venetoinfesta) produce valid sagre data from their live sites
-**Depends on**: Phase 7
-**Requirements**: SCRAPE-02, SCRAPE-03, SCRAPE-04
-**Success Criteria** (what must be TRUE):
-  1. assosagre scraper runs and inserts sagre with title, dates, and location_text populated (no null critical fields)
-  2. solosagre scraper runs and inserts sagre with title, dates, and location_text populated (no null critical fields)
-  3. venetoinfesta scraper runs and inserts sagre with title, dates, and location_text populated (no null critical fields)
-  4. All three sources' sagre appear on the live site after enrichment (geocoded, tagged, with descriptions)
-**Plans:** 3/3 plans complete
-Plans:
-- [x] 08-01-PLAN.md — Fix assosagre scraper CSS selectors and extraction logic
-- [x] 08-02-PLAN.md — Fix solosagre scraper CSS selectors and extraction logic
-- [x] 08-03-PLAN.md — Fix venetoinfesta scraper CSS selectors, base URL, and extraction logic
-
-### Phase 9: Sagritaly Ingestion
-**Goal**: Sagritaly sagre are ingested into the pipeline using Cheerio with source-specific extraction (site is server-rendered WordPress/WooCommerce, not JS-rendered as originally assumed)
-**Depends on**: Phase 7
-**Requirements**: SCRAPE-05
-**Success Criteria** (what must be TRUE):
-  1. Sagritaly sagre are ingested into the sagre table with title, dates, location_text, and source_url populated
-  2. Ingested sagritaly sagre pass through enrichment (geocoding + LLM tagging) successfully
-  3. The ingestion approach works within Supabase Edge Function constraints (or has a viable alternative execution path)
-**Plans:** 1/1 plans complete
-Plans:
-- [x] 09-01-PLAN.md — Add sagritaly-specific Cheerio extraction branch and update DB source config
-
-### Phase 10: Data Quality Filters
-**Goal**: The pipeline produces clean, Veneto-only sagre data by filtering out geographic mismatches, noise entries, and normalizing location text for accurate geocoding
-**Depends on**: Phase 8, Phase 9
-**Requirements**: QUAL-01, QUAL-02, QUAL-03
-**Success Criteria** (what must be TRUE):
-  1. Events with locations outside Veneto (wrong region, other Italian regions, foreign) are excluded from the active sagre visible to users
-  2. Entries with noise or invalid titles (ads, site navigation text, generic non-event strings) are detected and excluded
-  3. location_text values are cleaned/normalized before geocoding, resulting in a higher geocoding success rate (fewer null coordinates)
-  4. Existing pipeline data is retroactively cleaned (not just new scrapes)
-**Plans:** 2/2 plans complete
-Plans:
-- [x] 10-01-PLAN.md — Add noise title filter to scraper, location normalization and Veneto province validation to enricher
-- [x] 10-02-PLAN.md — Deploy Edge Functions, run retroactive cleanup SQL, verify clean data on live site
+</details>
 
 ## Progress
-
-**Execution Order:**
-Phases 7 through 10. Phase 8 and Phase 9 can run in parallel (both depend on Phase 7, not on each other). Phase 10 depends on both 8 and 9.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -100,4 +46,4 @@ Phases 7 through 10. Phase 8 and Phase 9 can run in parallel (both depend on Pha
 | 7. Deploy & Verify Baseline | v1.1 | 1/1 | Complete | 2026-03-06 |
 | 8. Fix Cheerio Scrapers | v1.1 | 3/3 | Complete | 2026-03-07 |
 | 9. Sagritaly Ingestion | v1.1 | 1/1 | Complete | 2026-03-07 |
-| 10. Data Quality Filters | v1.1 | Complete    | 2026-03-07 | 2026-03-07 |
+| 10. Data Quality Filters | v1.1 | 2/2 | Complete | 2026-03-07 |
