@@ -109,6 +109,6 @@ Phases execute in numeric order: 11 -> 12 -> 13
 | 8. Fix Cheerio Scrapers | v1.1 | 3/3 | Complete | 2026-03-07 |
 | 9. Sagritaly Ingestion | v1.1 | 1/1 | Complete | 2026-03-07 |
 | 10. Data Quality Filters | v1.1 | 2/2 | Complete | 2026-03-07 |
-| 11. Bug Fixes + Foundation | v1.2 | 2/2 | Complete | 2026-03-07 |
+| 11. Bug Fixes + Foundation | v1.2 | Complete    | 2026-03-07 | 2026-03-07 |
 | 12. Responsive Desktop Layout | v1.2 | 0/? | Not started | - |
 | 13. Transitions + Micro-Interactions | v1.2 | 0/? | Not started | - |
