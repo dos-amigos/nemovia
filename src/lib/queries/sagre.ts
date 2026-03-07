@@ -14,6 +14,20 @@ import type {
 } from "./types";
 
 /**
+ * Parse PostGIS EWKB hex (Point, SRID 4326) into GeoJSON.
+ * PostgREST returns geography columns as WKB hex, not GeoJSON.
+ */
+function parseWKBPoint(
+  wkb: string
+): { type: string; coordinates: [number, number] } | null {
+  if (!wkb || wkb.length < 50) return null;
+  const buf = Buffer.from(wkb, "hex");
+  const lng = buf.readDoubleLE(9);
+  const lat = buf.readDoubleLE(17);
+  return { type: "Point", coordinates: [lng, lat] };
+}
+
+/**
  * Fetch active sagre happening this weekend (today through +3 days).
  * Catches multi-day sagre whose start_date is in the past but end_date
  * is in the future (or null, treated as single-day).
@@ -180,7 +194,10 @@ export async function getMapSagre(): Promise<MapMarkerData[]> {
       return [];
     }
 
-    return (data as MapMarkerData[]) ?? [];
+    return (data ?? []).map((row) => ({
+      ...row,
+      location: parseWKBPoint(row.location as unknown as string),
+    })) as MapMarkerData[];
   } catch (err) {
     console.error("getMapSagre unexpected error:", err);
     return [];
@@ -207,7 +224,11 @@ export async function getSagraBySlug(slug: string): Promise<Sagra | null> {
       return null;
     }
 
-    return data as Sagra;
+    const sagra = data as Sagra;
+    if (sagra?.location && typeof sagra.location === "string") {
+      sagra.location = parseWKBPoint(sagra.location as unknown as string);
+    }
+    return sagra;
   } catch (err) {
     console.error("getSagraBySlug unexpected error:", err);
     return null;
