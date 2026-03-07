@@ -39,7 +39,7 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 **Milestone Goal:** Fix UX bugs and add polish -- page transitions, responsive desktop layout, micro-interazioni -- per un'esperienza premium su ogni device.
 
 - [x] **Phase 11: Bug Fixes + Foundation** - Fix 4 broken UX flows and establish accessibility baseline for all animation work (completed 2026-03-07)
-- [ ] **Phase 12: Responsive Desktop Layout** - Desktop-optimized layout with navigation, grids, and breakpoint-aware skeletons
+- [x] **Phase 12: Responsive Desktop Layout** - Desktop-optimized layout with navigation, grids, and breakpoint-aware skeletons (completed 2026-03-07)
 - [ ] **Phase 13: Transitions + Micro-Interactions** - Page transitions, hover/tap effects, scroll animations, and shimmer loaders for premium feel
 
 ## Phase Details
@@ -110,5 +110,5 @@ Phases execute in numeric order: 11 -> 12 -> 13
 | 9. Sagritaly Ingestion | v1.1 | 1/1 | Complete | 2026-03-07 |
 | 10. Data Quality Filters | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 11. Bug Fixes + Foundation | v1.2 | 2/2 | Complete | 2026-03-07 |
-| 12. Responsive Desktop Layout | v1.2 | 0/2 | Not started | - |
+| 12. Responsive Desktop Layout | 2/2 | Complete   | 2026-03-07 | - |
 | 13. Transitions + Micro-Interactions | v1.2 | 0/? | Not started | - |

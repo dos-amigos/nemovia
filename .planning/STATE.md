@@ -3,30 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Polish
 status: active
-stopped_at: Completed 11-02-PLAN.md (Phase 11 done, ready for Phase 12)
-last_updated: "2026-03-07T12:34:20.744Z"
-last_activity: "2026-03-07 -- Phase 11 completed (2/2 plans: bug fixes + accessibility foundation)"
+stopped_at: Completed 12-01-PLAN.md
+last_updated: "2026-03-07T12:55:00Z"
+last_activity: "2026-03-07 -- Phase 12 Plan 01 completed (desktop nav + responsive layout)"
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
----
-
----
-gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Polish
-status: active
-stopped_at: Completed 11-02-PLAN.md
-last_updated: "2026-03-07T12:28:00Z"
-last_activity: 2026-03-07 -- Phase 11 completed (2/2 plans)
-progress:
-  total_phases: 3
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 33
+  total_plans: 4
+  completed_plans: 3
+  percent: 75
 ---
 
 # Project State
@@ -41,24 +26,25 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 12 of 13 (Responsive Desktop Layout)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-03-07 -- Phase 11 completed (2/2 plans: bug fixes + accessibility foundation)
+Plan: 1 of 2 in current phase
+Status: Executing
+Last activity: 2026-03-07 -- Phase 12 Plan 01 completed (desktop nav + responsive layout)
 
-Progress: [███░░░░░░░] 33%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2 (v1.2)
-- Average duration: ~8min
-- Total execution time: ~16min
+- Total plans completed: 3 (v1.2)
+- Average duration: ~6min
+- Total execution time: ~18min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 11 - Bug Fixes + Foundation | 2/2 | ~16min | ~8min |
+| 12 - Responsive Desktop Layout | 1/2 | ~2min | ~2min |
 
 *Updated after each plan completion*
 
@@ -77,6 +63,8 @@ All v1.0/v1.1 decisions archived to PROJECT.md Key Decisions table.
 - [11-02]: Used single Providers.tsx wrapping both MotionConfig and NuqsAdapter to keep layout.tsx as Server Component
 - [11-02]: Global CSS @media rule for animate-pulse/spin rather than per-component motion-reduce classes
 - [11-02]: Consistent focus ring pattern: focus-visible:ring-[3px] focus-visible:ring-ring/50 matching Shadcn/UI conventions
+- [12-01]: CSS-only nav swap (hidden/lg:block + lg:hidden) -- no JS viewport detection needed
+- [12-01]: Replaced inline style heights with Tailwind arbitrary value classes for responsive map
 
 ### Pending Todos
 
@@ -91,5 +79,5 @@ None active.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 11-02-PLAN.md (Phase 11 done, ready for Phase 12)
+Stopped at: Completed 12-01-PLAN.md
 Resume file: None
