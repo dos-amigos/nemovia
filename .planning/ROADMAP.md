@@ -25,7 +25,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 - [x] **Phase 7: Deploy & Verify Baseline** - Deploy geocoding fix and confirm eventiesagre scraper produces valid enriched data end-to-end (completed 2026-03-06)
 - [x] **Phase 8: Fix Cheerio Scrapers** - Repair CSS selectors for assosagre, solosagre, and venetoinfesta so all Cheerio-based sources produce valid sagre (completed 2026-03-07)
-- [ ] **Phase 9: Sagritaly Ingestion** - Ingest sagre from sagritaly using an approach that handles JS-rendered content
+- [ ] **Phase 9: Sagritaly Ingestion** - Ingest sagre from sagritaly.com using Cheerio (site is server-rendered WordPress, not JS-rendered as originally assumed)
 - [ ] **Phase 10: Data Quality Filters** - Filter out non-Veneto events, noise titles, and dirty location text so the pipeline produces clean data
 
 ## Phase Details
@@ -59,14 +59,16 @@ Plans:
 - [x] 08-03-PLAN.md — Fix venetoinfesta scraper CSS selectors, base URL, and extraction logic
 
 ### Phase 9: Sagritaly Ingestion
-**Goal**: Sagre data from sagritaly.it is ingested into the pipeline despite the site using JS rendering that Cheerio cannot parse
+**Goal**: Sagritaly sagre are ingested into the pipeline using Cheerio with source-specific extraction (site is server-rendered WordPress/WooCommerce, not JS-rendered as originally assumed)
 **Depends on**: Phase 7
 **Requirements**: SCRAPE-05
 **Success Criteria** (what must be TRUE):
   1. Sagritaly sagre are ingested into the sagre table with title, dates, location_text, and source_url populated
   2. Ingested sagritaly sagre pass through enrichment (geocoding + LLM tagging) successfully
   3. The ingestion approach works within Supabase Edge Function constraints (or has a viable alternative execution path)
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 09-01-PLAN.md — Add sagritaly-specific Cheerio extraction branch and update DB source config
 
 ### Phase 10: Data Quality Filters
 **Goal**: The pipeline produces clean, Veneto-only sagre data by filtering out geographic mismatches, noise entries, and normalizing location text for accurate geocoding
@@ -94,5 +96,5 @@ Phases 7 through 10. Phase 8 and Phase 9 can run in parallel (both depend on Pha
 | 6. SEO & Polish | v1.0 | 3/3 | Complete | 2026-03-05 |
 | 7. Deploy & Verify Baseline | v1.1 | Complete    | 2026-03-06 | 2026-03-06 |
 | 8. Fix Cheerio Scrapers | v1.1 | 3/3 | Complete | 2026-03-07 |
-| 9. Sagritaly Ingestion | v1.1 | 0/? | Not started | - |
+| 9. Sagritaly Ingestion | v1.1 | 0/1 | Planned | - |
 | 10. Data Quality Filters | v1.1 | 0/? | Not started | - |
