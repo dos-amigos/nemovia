@@ -33,11 +33,11 @@ Mostrare TUTTE le sagre del Veneto in un unico posto — dove sono, quando sono,
 
 ### Active
 
-- [ ] Deploy enrich-sagre Edge Function fix (PostGIS geocoding WKT format)
-- [ ] Fix eventiesagre scraper (verify still working, improve reliability)
-- [ ] Fix assosagre CSS selectors
-- [ ] Fix solosagre CSS selectors
-- [ ] Fix venetoinfesta CSS selectors
+- [x] Deploy enrich-sagre Edge Function fix (PostGIS geocoding WKT format) — v1.1 Phase 7
+- [x] Fix eventiesagre scraper (verify still working, improve reliability) — v1.1 Phase 7
+- [x] Fix assosagre CSS selectors — v1.1 Phase 8
+- [x] Fix solosagre CSS selectors — v1.1 Phase 8
+- [x] Fix venetoinfesta CSS selectors — v1.1 Phase 8
 - [ ] Handle sagritaly JS-rendering (alternative approach to Cheerio)
 - [ ] Data quality filtering: exclude non-Veneto events and noise entries
 - [ ] Data quality: clean location_text for accurate geocoding

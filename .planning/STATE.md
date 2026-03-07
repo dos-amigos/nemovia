@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Dati Reali
 status: executing
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-03-06T15:16:04Z"
-last_activity: 2026-03-06 -- Fixed solosagre scraper, 1 sagra ingested
+stopped_at: Phase 8 complete, ready for Phase 9
+last_updated: "2026-03-07T10:00:00Z"
+last_activity: 2026-03-07 -- Finalized Phase 8 (all 3 Cheerio scrapers fixed)
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
-  percent: 75
+  completed_plans: 4
+  percent: 100
 ---
 
 # Project State
@@ -21,31 +21,31 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Phase 8 -- Fix Cheerio Scrapers (plan 3 of 3 next)
+**Current focus:** Phase 8 complete -- ready for Phase 9 (Sagritaly Ingestion) or Phase 10 (Data Quality Filters)
 
 ## Current Position
 
-Phase: 8 of 10 (Fix Cheerio Scrapers) -- IN PROGRESS
-Plan: 2/3 complete
-Status: 08-02 (solosagre) complete, ready for 08-03 (venetoinfesta)
-Last activity: 2026-03-06 -- Fixed solosagre scraper, 1 sagra ingested
+Phase: 8 of 10 (Fix Cheerio Scrapers) -- COMPLETE
+Plan: 3/3 complete
+Status: All Cheerio scrapers fixed (assosagre, solosagre, venetoinfesta)
+Last activity: 2026-03-07 -- Finalized Phase 8, created 08-03-SUMMARY.md
 
-Progress: [████████░░] 75% (v1.1 overall: 3/4 plans)
+Progress: [██████████] 100% (v1.1 plans 4/4 executed so far)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18 (v1.0) + 3 (v1.1)
-- v1.1 plans completed: 3
+- Total plans completed: 18 (v1.0) + 4 (v1.1)
+- v1.1 plans completed: 4
 - Average duration: ~20min
-- Total execution time: ~60min
+- Total execution time: ~80min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 7. Deploy & Verify Baseline | 1/1 | ~15min | ~15min |
-| 8. Fix Cheerio Scrapers | 2/3 | ~45min | ~22min |
+| 8. Fix Cheerio Scrapers | 3/3 | ~65min | ~22min |
 
 *Updated after each plan completion*
 
@@ -63,6 +63,8 @@ All v1.0 decisions archived to PROJECT.md Key Decisions table with outcomes.
 - Updated scraper_sources DB row via REST API with corrected CSS selectors
 - Used schema.org itemprop selectors for solosagre structured data extraction
 - Added relative image URL resolution generically for all sources
+- Used div.box_evento selectors for venetoinfesta flat HTML structure
+- Added venetoinfesta-specific date parser for "abbreviated-month DD YYYY" format
 
 ### Pending Todos
 
@@ -76,6 +78,6 @@ All v1.0 decisions archived to PROJECT.md Key Decisions table with outcomes.
 
 ## Session Continuity
 
-Last session: 2026-03-06
-Stopped at: Completed 08-02-PLAN.md
+Last session: 2026-03-07
+Stopped at: Phase 8 finalized, ready for Phase 9/10
 Resume file: None
