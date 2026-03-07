@@ -109,7 +109,7 @@ export function SearchFilters() {
             Provincia
           </label>
           <Select
-            value={filters.provincia ?? ""}
+            value={filters.provincia ?? "__all__"}
             onValueChange={(v) =>
               setFilters({ provincia: v === "__all__" ? null : v })
             }
