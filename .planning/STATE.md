@@ -3,30 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Dati Reali
 status: executing
-stopped_at: Phase 9 complete, ready for Phase 10
-last_updated: "2026-03-07T10:23:04.534Z"
-last_activity: 2026-03-07 -- Completed Phase 9, created 09-01-SUMMARY.md
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-03-07T10:39:06Z"
+last_activity: 2026-03-07 -- Completed Phase 10 Plan 01, data quality filters
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
----
-
----
-gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Dati Reali
-status: executing
-stopped_at: Phase 9 complete, ready for Phase 10
-last_updated: "2026-03-07T10:17:38Z"
-last_activity: 2026-03-07 -- Completed Phase 9 (sagritaly ingestion)
-progress:
-  total_phases: 4
-  completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
-  percent: 100
+  total_plans: 7
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State
@@ -36,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Phase 9 complete -- ready for Phase 10 (Data Quality Filters)
+**Current focus:** Phase 10 in progress -- Data Quality Filters (plan 1/2 complete)
 
 ## Current Position
 
-Phase: 9 of 10 (Sagritaly Ingestion) -- COMPLETE
-Plan: 1/1 complete
-Status: Sagritaly scraper active, all 5 sources ingesting
-Last activity: 2026-03-07 -- Completed Phase 9, created 09-01-SUMMARY.md
+Phase: 10 of 10 (Data Quality Filters)
+Plan: 1/2 complete
+Status: Noise title filter, location normalization, and Veneto province validation added
+Last activity: 2026-03-07 -- Completed Phase 10 Plan 01, data quality filters
 
-Progress: [██████████] 100% (v1.1 plans 5/5 executed so far)
+Progress: [█████████░] 86% (v1.1 plans 6/7 executed so far)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18 (v1.0) + 4 (v1.1)
-- v1.1 plans completed: 4
-- Average duration: ~20min
-- Total execution time: ~80min
+- Total plans completed: 18 (v1.0) + 5 (v1.1)
+- v1.1 plans completed: 5
+- Average duration: ~18min
+- Total execution time: ~83min
 
 **By Phase:**
 
@@ -62,6 +47,7 @@ Progress: [██████████] 100% (v1.1 plans 5/5 executed so far)
 | 7. Deploy & Verify Baseline | 1/1 | ~15min | ~15min |
 | 8. Fix Cheerio Scrapers | 3/3 | ~65min | ~22min |
 | 9. Sagritaly Ingestion | 1/1 | ~12min | ~12min |
+| 10. Data Quality Filters | 1/2 | ~3min | ~3min |
 
 *Updated after each plan completion*
 
@@ -84,6 +70,10 @@ All v1.0 decisions archived to PROJECT.md Key Decisions table with outcomes.
 - Used Cheerio for sagritaly.com (server-rendered WordPress, not JS-rendered as assumed)
 - Single page scrape for sagritaly (max_pages=1, pagination 404s with Veneto filter)
 - Composed sagritaly start/end dates into "DD/MM/YYYY al DD/MM/YYYY" for parseItalianDateRange()
+- Noise filter uses heuristic pattern matching (length, regex) -- no ML needed
+- normalizeLocationText appends ", Veneto" for bare city names to improve Nominatim disambiguation
+- Non-Veneto sagre deactivated (is_active=false) but coordinates/province kept for debugging
+- cleanCityName kept as deprecated alias for backward compatibility
 
 ### Pending Todos
 
@@ -98,5 +88,5 @@ All v1.0 decisions archived to PROJECT.md Key Decisions table with outcomes.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Phase 9 complete, ready for Phase 10
+Stopped at: Completed 10-01-PLAN.md
 Resume file: None

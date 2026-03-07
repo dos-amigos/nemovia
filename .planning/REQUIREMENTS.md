@@ -21,9 +21,9 @@ Requirements for v1.1 "Dati Reali". Each maps to roadmap phases.
 
 ### Data Quality
 
-- [ ] **QUAL-01**: Non-Veneto events filtered out during scraping or enrichment
-- [ ] **QUAL-02**: Noise/invalid event titles detected and excluded
-- [ ] **QUAL-03**: location_text cleaned before geocoding for higher match rate
+- [x] **QUAL-01**: Non-Veneto events filtered out during scraping or enrichment
+- [x] **QUAL-02**: Noise/invalid event titles detected and excluded
+- [x] **QUAL-03**: location_text cleaned before geocoding for higher match rate
 
 ## Future Requirements
 
@@ -66,9 +66,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SCRAPE-03 | Phase 8 | Complete |
 | SCRAPE-04 | Phase 8 | Complete |
 | SCRAPE-05 | Phase 9 | Complete |
-| QUAL-01 | Phase 10 | Pending |
-| QUAL-02 | Phase 10 | Pending |
-| QUAL-03 | Phase 10 | Pending |
+| QUAL-01 | Phase 10 | Complete |
+| QUAL-02 | Phase 10 | Complete |
+| QUAL-03 | Phase 10 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 9 total

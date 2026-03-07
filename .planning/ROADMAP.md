@@ -79,7 +79,7 @@ Plans:
   2. Entries with noise or invalid titles (ads, site navigation text, generic non-event strings) are detected and excluded
   3. location_text values are cleaned/normalized before geocoding, resulting in a higher geocoding success rate (fewer null coordinates)
   4. Existing pipeline data is retroactively cleaned (not just new scrapes)
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
 - [ ] 10-01-PLAN.md — Add noise title filter to scraper, location normalization and Veneto province validation to enricher
 - [ ] 10-02-PLAN.md — Deploy Edge Functions, run retroactive cleanup SQL, verify clean data on live site
@@ -100,4 +100,4 @@ Phases 7 through 10. Phase 8 and Phase 9 can run in parallel (both depend on Pha
 | 7. Deploy & Verify Baseline | v1.1 | Complete    | 2026-03-06 | 2026-03-06 |
 | 8. Fix Cheerio Scrapers | v1.1 | 3/3 | Complete | 2026-03-07 |
 | 9. Sagritaly Ingestion | v1.1 | 1/1 | Complete | 2026-03-07 |
-| 10. Data Quality Filters | v1.1 | 0/2 | Not started | - |
+| 10. Data Quality Filters | 1/2 | In Progress|  | - |
