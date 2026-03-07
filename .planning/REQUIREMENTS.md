@@ -17,10 +17,10 @@ Requirements for v1.2 milestone. Each maps to roadmap phases.
 ### Responsive Desktop Layout
 
 - [x] **DESK-01**: User sees a wider content area on desktop (responsive max-width scaling with breakpoints)
-- [ ] **DESK-02**: User sees multi-column card grids on tablet (2 cols) and desktop (3-4 cols)
+- [x] **DESK-02**: User sees multi-column card grids on tablet (2 cols) and desktop (3-4 cols)
 - [x] **DESK-03**: User sees desktop navigation (top bar or sidebar) on lg+ screens instead of BottomNav
-- [ ] **DESK-04**: User sees sagra detail with side-by-side layout on desktop (image+map left, info right)
-- [ ] **DESK-05**: User sees sagra name tooltip on map marker hover on desktop (without clicking)
+- [x] **DESK-04**: User sees sagra detail with side-by-side layout on desktop (image+map left, info right)
+- [x] **DESK-05**: User sees sagra name tooltip on map marker hover on desktop (without clicking)
 
 ### Page Transitions
 
@@ -39,7 +39,7 @@ Requirements for v1.2 milestone. Each maps to roadmap phases.
 ### Skeleton & Loading
 
 - [ ] **SKEL-01**: User sees shimmer animation (animated gradient sweep) on all skeleton loaders
-- [ ] **SKEL-02**: User sees content-aware skeleton shapes that match the actual page layout at every breakpoint
+- [x] **SKEL-02**: User sees content-aware skeleton shapes that match the actual page layout at every breakpoint
 
 ### Scroll Animations
 
@@ -100,10 +100,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BUG-03 | Phase 11 | Complete |
 | BUG-04 | Phase 11 | Complete |
 | DESK-01 | Phase 12 | Complete |
-| DESK-02 | Phase 12 | Pending |
+| DESK-02 | Phase 12 | Complete |
 | DESK-03 | Phase 12 | Complete |
-| DESK-04 | Phase 12 | Pending |
-| DESK-05 | Phase 12 | Pending |
+| DESK-04 | Phase 12 | Complete |
+| DESK-05 | Phase 12 | Complete |
 | TRANS-01 | Phase 13 | Pending |
 | TRANS-02 | Phase 13 | Pending |
 | MICRO-01 | Phase 13 | Pending |
@@ -113,7 +113,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MICRO-05 | Phase 13 | Pending |
 | MICRO-06 | Phase 13 | Pending |
 | SKEL-01 | Phase 13 | Pending |
-| SKEL-02 | Phase 12 | Pending |
+| SKEL-02 | Phase 12 | Complete |
 | SCRL-01 | Phase 13 | Pending |
 | SCRL-02 | Phase 13 | Pending |
 | SCRL-03 | Phase 13 | Pending |
