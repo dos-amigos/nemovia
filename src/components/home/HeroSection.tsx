@@ -16,7 +16,7 @@ export function HeroSection() {
 
         <Link
           href="/cerca"
-          className="mt-5 flex items-center gap-3 rounded-full border bg-white/80 px-4 py-3 text-muted-foreground shadow-sm transition-shadow hover:shadow-md"
+          className="mt-5 flex items-center gap-3 rounded-full border bg-white/80 px-4 py-3 text-muted-foreground shadow-sm transition-shadow hover:shadow-md focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
           <Search className="h-5 w-5 shrink-0" />
           <span className="text-sm">Cerca per nome, citta...</span>

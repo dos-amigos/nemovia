@@ -15,7 +15,7 @@ export function SagraCard({ sagra, distanceKm }: SagraCardProps) {
   const distance = distanceKm ?? sagra.distance_km;
 
   return (
-    <Link href={`/sagra/${sagra.slug}`} className="block">
+    <Link href={`/sagra/${sagra.slug}`} className="block rounded-lg focus-visible:ring-[3px] focus-visible:ring-ring/50">
       <Card className="overflow-hidden py-0 hover:shadow-md transition-shadow">
         {/* Image area */}
         <div className="relative h-40 w-full">

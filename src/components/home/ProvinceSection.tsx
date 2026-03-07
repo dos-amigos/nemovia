@@ -32,7 +32,7 @@ export function ProvinceSection({ counts }: ProvinceSectionProps) {
               <Link
                 key={province.code}
                 href={`/cerca?provincia=${province.name}`}
-                className="flex items-center justify-between rounded-lg border bg-card p-3 transition-shadow hover:shadow-sm"
+                className="flex items-center justify-between rounded-lg border bg-card p-3 transition-shadow hover:shadow-sm focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
                 <span className="text-sm font-medium">{province.name}</span>
                 <Badge variant="secondary">{count}</Badge>

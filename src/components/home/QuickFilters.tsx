@@ -32,6 +32,7 @@ export function QuickFilters() {
             <button
               key={chip.label}
               type="button"
+              className="rounded-full focus-visible:ring-[3px] focus-visible:ring-ring/50"
               onClick={() => handleChipClick(chip.param, chip.value)}
             >
               <Badge

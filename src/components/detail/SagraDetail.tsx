@@ -146,7 +146,7 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
               href={sagra.source_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted-foreground underline underline-offset-4 hover:text-foreground"
+              className="rounded text-muted-foreground underline underline-offset-4 hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               Vedi sito originale
             </a>

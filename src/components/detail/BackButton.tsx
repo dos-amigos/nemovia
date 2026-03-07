@@ -9,7 +9,7 @@ export default function BackButton() {
   return (
     <button
       onClick={() => router.back()}
-      className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 backdrop-blur-sm shadow-sm transition-colors hover:bg-background"
+      className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 backdrop-blur-sm shadow-sm transition-colors hover:bg-background focus-visible:ring-[3px] focus-visible:ring-ring/50"
       aria-label="Torna indietro"
     >
       <ArrowLeft className="size-5" />
