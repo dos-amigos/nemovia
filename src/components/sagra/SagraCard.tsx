@@ -86,14 +86,14 @@ export function SagraCard({ sagra, distanceKm }: SagraCardProps) {
             {/* Tags row */}
             {((sagra.food_tags && sagra.food_tags.length > 0) ||
               (sagra.price_info && !sagra.is_free)) && (
-              <div className="flex items-center gap-1 pt-0.5">
+              <div className="flex flex-wrap items-center gap-1 pt-0.5">
                 {sagra.food_tags?.slice(0, 3).map((tag) => (
                   <Badge key={tag} variant="secondary" className="text-xs">
                     {tag}
                   </Badge>
                 ))}
                 {sagra.price_info && !sagra.is_free && (
-                  <span className="ml-auto text-xs text-muted-foreground">
+                  <span className="ml-auto shrink-0 text-xs text-muted-foreground max-w-[45%] truncate">
                     {sagra.price_info}
                   </span>
                 )}
