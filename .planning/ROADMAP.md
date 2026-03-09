@@ -67,11 +67,11 @@ Full details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
   3. No event displayed has a duration exceeding 7 days
   4. No event from 2025 or earlier appears anywhere in the app
   5. Existing production data that violates these rules has been cleaned up (deactivated)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 14-01: TBD
-- [ ] 14-02: TBD
+- [ ] 14-01-PLAN.md — TDD: Heuristic filter functions (isNoiseTitle, isCalendarDateRange, isExcessiveDuration, isPastYearEvent)
+- [ ] 14-02-PLAN.md — Pipeline integration, SQL retroactive cleanup, and expire cron fix
 
 ### Phase 15: Deduplication & Classification
 **Goal**: Users see each sagra only once and never see non-sagra events (antique markets, exhibitions, generic markets) mixed in with real food festivals
@@ -141,7 +141,7 @@ Phases execute in numeric order: 14 → 15 → 16 → 17
 | 11. Bug Fixes + Foundation | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 12. Responsive Desktop Layout | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 13. Transitions + Micro-Interactions | v1.2 | 3/3 | Complete | 2026-03-09 |
-| 14. Data Quality Heuristic Filters | v1.3 | 0/? | Not started | - |
+| 14. Data Quality Heuristic Filters | v1.3 | 0/2 | In progress | - |
 | 15. Deduplication & Classification | v1.3 | 0/? | Not started | - |
 | 16. Design System Foundation | v1.3 | 0/? | Not started | - |
 | 17. Visual Effects, Layout & Performance | v1.3 | 0/? | Not started | - |
