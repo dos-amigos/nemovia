@@ -1,0 +1,124 @@
+/**
+ * Heuristic data quality filter functions for the scraping pipeline.
+ *
+ * Each function is a pure predicate that returns `true` when an event
+ * should be REJECTED (filtered out). Functions handle null/edge-case
+ * inputs without throwing.
+ *
+ * These are the canonical implementations. The Edge Function
+ * (supabase/functions/scrape-sagre/index.ts) maintains inline copies
+ * due to Deno import constraints (documented tech debt).
+ */
+
+/**
+ * Enhanced noise title detection.
+ * Returns `true` if the title is garbage/spam and should be REJECTED.
+ *
+ * Covers: empty/short/long titles, calendar spam, navigation elements,
+ * aggregator listings, newsletter CTAs, numeric-only strings, and
+ * month-range headers.
+ */
+export function isNoiseTitle(title: string): boolean {
+  if (!title || title.length < 5 || title.length > 150) return true;
+  const t = title.toLowerCase();
+
+  // Calendar/navigation noise (original patterns from v1.1)
+  if (/calendario\s.*(mensile|regioni|italian)/i.test(t)) return true;
+  if (/cookie|privacy\s*policy|termini\s*(e\s*)?condizion/i.test(t))
+    return true;
+  if (/cerca\s+sagr|ricerca\s+event/i.test(t)) return true;
+  if (/^(menu|navigazione|home)\b/i.test(t)) return true;
+  if (/^[\d\s\-\/\.]+$/.test(title.trim())) return true;
+  if (/tutte le sagre|elenco sagre|lista sagre/i.test(t)) return true;
+  if (/gennaio.*dicembre|dicembre.*gennaio/i.test(t)) return true;
+
+  // NEW: Expanded calendar spam -- "calendario" combined with event keywords
+  // but NOT standalone "calendario" (avoids false positives like
+  // "Sagra della Polenta - Calendario 2026")
+  if (/calendario\b/i.test(t) && /\beventi\b|\bsagre\b|\bfeste\b/i.test(t))
+    return true;
+
+  // NEW: Program/schedule spam
+  if (/programma\s+(completo|mensile|settimanale)/i.test(t)) return true;
+
+  // NEW: "Discover all" / "See all" CTAs
+  if (/scopri\s+tutt[ei]|vedi\s+tutt[ei]/i.test(t)) return true;
+
+  // NEW: Newsletter/signup noise
+  if (/newsletter|iscriviti|registrati/i.test(t)) return true;
+
+  return false;
+}
+
+/**
+ * Detect calendar-spam date ranges (whole month or near-whole month).
+ * A range starting on day 1 and ending on day 28+ of any month = calendar spam.
+ * Returns `true` if the date range should be REJECTED.
+ *
+ * Returns `false` for null inputs (cannot determine range).
+ */
+export function isCalendarDateRange(
+  startDate: string | null,
+  endDate: string | null
+): boolean {
+  if (!startDate || !endDate) return false;
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  // Full-month range: starts on the 1st, ends on the 28th or later
+  if (start.getUTCDate() === 1 && end.getUTCDate() >= 28) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Detect events with unreasonable duration.
+ * Real sagre last 1-3 days, occasionally up to a week.
+ * Returns `true` if the duration exceeds `maxDays` (default 7).
+ *
+ * Exactly `maxDays` is allowed (not rejected).
+ * Returns `false` for null inputs (cannot determine duration).
+ */
+export function isExcessiveDuration(
+  startDate: string | null,
+  endDate: string | null,
+  maxDays: number = 7
+): boolean {
+  if (!startDate || !endDate) return false;
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diffMs = end.getTime() - start.getTime();
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+  return diffDays > maxDays;
+}
+
+/**
+ * Detect events from past years.
+ * Uses dynamic year comparison (not hardcoded) so it works across year boundaries.
+ * Returns `true` if either start or end date is from a previous year.
+ *
+ * Returns `false` when both dates are null.
+ */
+export function isPastYearEvent(
+  startDate: string | null,
+  endDate: string | null
+): boolean {
+  const currentYear = new Date().getFullYear();
+
+  if (startDate) {
+    const startYear = new Date(startDate).getFullYear();
+    if (startYear < currentYear) return true;
+  }
+
+  if (endDate) {
+    const endYear = new Date(endDate).getFullYear();
+    if (endYear < currentYear) return true;
+  }
+
+  return false;
+}
