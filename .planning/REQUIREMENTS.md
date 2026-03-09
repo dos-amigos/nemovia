@@ -25,16 +25,16 @@ Requirements for v1.2 milestone. Each maps to roadmap phases.
 ### Page Transitions
 
 - [x] **TRANS-01**: User sees smooth cross-fade transition when navigating between pages
-- [ ] **TRANS-02**: User sees card image morph into detail page hero image (shared element transition)
+- [x] **TRANS-02**: User sees card image morph into detail page hero image (shared element transition)
 
 ### Micro-Interactions
 
-- [ ] **MICRO-01**: User sees card lift effect (subtle scale + shadow) on hover on desktop
-- [ ] **MICRO-02**: User feels tap feedback (brief scale down) when pressing a card on mobile
-- [ ] **MICRO-03**: User sees press animation on action buttons (Directions, Share, filter chips)
+- [x] **MICRO-01**: User sees card lift effect (subtle scale + shadow) on hover on desktop
+- [x] **MICRO-02**: User feels tap feedback (brief scale down) when pressing a card on mobile
+- [x] **MICRO-03**: User sees press animation on action buttons (Directions, Share, filter chips)
 - [x] **MICRO-04**: User sees active tab icon animation in BottomNav on selection
-- [ ] **MICRO-05**: User sees images fade in smoothly as they load instead of popping in
-- [ ] **MICRO-06**: User sees food tag badges scale slightly and brighten on hover
+- [x] **MICRO-05**: User sees images fade in smoothly as they load instead of popping in
+- [x] **MICRO-06**: User sees food tag badges scale slightly and brighten on hover
 
 ### Skeleton & Loading
 
@@ -105,13 +105,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DESK-04 | Phase 12 | Complete |
 | DESK-05 | Phase 12 | Complete |
 | TRANS-01 | Phase 13 | Complete |
-| TRANS-02 | Phase 13 | Pending |
-| MICRO-01 | Phase 13 | Pending |
-| MICRO-02 | Phase 13 | Pending |
-| MICRO-03 | Phase 13 | Pending |
+| TRANS-02 | Phase 13 | Complete |
+| MICRO-01 | Phase 13 | Complete |
+| MICRO-02 | Phase 13 | Complete |
+| MICRO-03 | Phase 13 | Complete |
 | MICRO-04 | Phase 13 | Complete |
-| MICRO-05 | Phase 13 | Pending |
-| MICRO-06 | Phase 13 | Pending |
+| MICRO-05 | Phase 13 | Complete |
+| MICRO-06 | Phase 13 | Complete |
 | SKEL-01 | Phase 13 | Complete |
 | SKEL-02 | Phase 12 | Complete |
 | SCRL-01 | Phase 13 | Pending |
