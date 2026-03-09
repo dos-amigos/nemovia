@@ -1,7 +1,7 @@
 # Requirements: Nemovia v1.3
 
 **Defined:** 2026-03-09
-**Core Value:** Mostrare TUTTE le sagre del Veneto in un unico posto — dove sono, quando sono, cosa offrono — con un'esperienza mobile-first che nessun portale esistente offre.
+**Core Value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
 
 ## v1.3 Requirements
 
@@ -76,33 +76,33 @@ Deferred to v1.4+. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DQ-01 | — | Pending |
-| DQ-02 | — | Pending |
-| DQ-03 | — | Pending |
-| DQ-04 | — | Pending |
-| DQ-05 | — | Pending |
-| DQ-06 | — | Pending |
-| DQ-07 | — | Pending |
-| DQ-08 | — | Pending |
-| DQ-09 | — | Pending |
-| DQ-10 | — | Pending |
-| UI-01 | — | Pending |
-| UI-02 | — | Pending |
-| UI-03 | — | Pending |
-| UI-04 | — | Pending |
-| UI-05 | — | Pending |
-| UI-06 | — | Pending |
-| UI-07 | — | Pending |
-| UI-08 | — | Pending |
-| UI-09 | — | Pending |
-| UI-10 | — | Pending |
-| UI-11 | — | Pending |
+| DQ-01 | Phase 14 | Pending |
+| DQ-02 | Phase 14 | Pending |
+| DQ-03 | Phase 14 | Pending |
+| DQ-04 | Phase 14 | Pending |
+| DQ-05 | Phase 14 | Pending |
+| DQ-06 | Phase 15 | Pending |
+| DQ-07 | Phase 15 | Pending |
+| DQ-08 | Phase 15 | Pending |
+| DQ-09 | Phase 15 | Pending |
+| DQ-10 | Phase 15 | Pending |
+| UI-01 | Phase 16 | Pending |
+| UI-02 | Phase 16 | Pending |
+| UI-03 | Phase 16 | Pending |
+| UI-04 | Phase 16 | Pending |
+| UI-05 | Phase 17 | Pending |
+| UI-06 | Phase 17 | Pending |
+| UI-07 | Phase 17 | Pending |
+| UI-08 | Phase 17 | Pending |
+| UI-09 | Phase 17 | Pending |
+| UI-10 | Phase 17 | Pending |
+| UI-11 | Phase 17 | Pending |
 
 **Coverage:**
 - v1.3 requirements: 21 total
-- Mapped to phases: 0
-- Unmapped: 21 ⚠️
+- Mapped to phases: 21
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-09*
-*Last updated: 2026-03-09 after initial definition*
+*Last updated: 2026-03-09 after roadmap creation*
