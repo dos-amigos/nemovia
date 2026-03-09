@@ -35,19 +35,21 @@ Mostrare TUTTE le sagre del Veneto in un unico posto — dove sono, quando sono,
 - ✓ Sagritaly ingested via Cheerio (server-rendered WordPress, not JS-rendered) — v1.1
 - ✓ Data quality: noise title detection, location normalization, Veneto province gating — v1.1
 - ✓ Retroactive data cleanup: 36 dirty rows deactivated, 735 clean active sagre — v1.1
+- ✓ Back button on sagra detail page — v1.2 (verified already working)
+- ✓ Image placeholder on sagra detail page — v1.2 (verified already working)
+- ✓ Cerca page "TUTTE" province filter selected by default — v1.2
+- ✓ Responsive desktop layout with TopNav, multi-column grids, side-by-side detail — v1.2
+- ✓ Page transitions (cross-fade via AnimatePresence + FrozenRouter) — v1.2
+- ✓ Micro-interactions (card hover/tap, button press, badge hover, shimmer skeletons, scroll animations) — v1.2
+- ✓ Accessibility foundation (reduced-motion MotionConfig, focus-visible rings) — v1.2
 
 ### Active
 
-- [ ] Back button on sagra detail page
-- [ ] Image placeholder on sagra detail page
-- [ ] Cerca page: "TUTTE" province filter selected by default
-- [ ] Responsive desktop layout (grid/sidebar per schermi grandi)
-- [ ] Page transitions (Motion / View Transitions API)
-- [ ] Micro-interazioni (hover effects, skeleton loaders, scroll animations)
-- [ ] User authentication (Google OAuth, Magic Link) — deferred to v1.3+
-- [ ] Preferiti / salva sagra — deferred to v1.3+
-- [ ] Recensioni e foto utenti — deferred to v1.3+
-- [ ] Expand to new scraper sources beyond the initial 5 — deferred to future
+- [ ] User authentication (Google OAuth, Magic Link)
+- [ ] Preferiti / salva sagra
+- [ ] Recensioni e foto utenti
+- [ ] Expand to new scraper sources beyond the initial 5
+- [ ] LazyMotion migration (34kb → 5kb bundle optimization)
 
 ### Out of Scope
 
@@ -59,32 +61,25 @@ Mostrare TUTTE le sagre del Veneto in un unico posto — dove sono, quando sono,
 - Cache ricerche — ottimizzazione prematura
 - App nativa mobile — web app mobile-first è sufficiente
 - Prenotazione tavoli — fuori scope, l'app mostra info
+- Lenis smooth scroll — conflicts with Leaflet map pan/zoom
+- barba.js page transitions — incompatible with React/Next.js
+- Complex page enter/exit animations — hurts utility app speed
 
-## Current Milestone: v1.2 "Polish"
+## Latest Milestone: v1.2 "Polish" (Shipped 2026-03-09)
 
-**Goal:** Fix UX bugs and add polish — page transitions, responsive desktop layout, micro-interazioni — per un'esperienza premium su ogni device.
-
-**Target features:**
-- Fix 4 bug noti (back button, image placeholder, responsive, TUTTE default)
-- Page transitions smooth tra le pagine
-- Layout desktop curato (grid/sidebar)
-- Micro-interazioni (hover, skeleton loaders, feedback tattile, scroll animations)
-
-## Latest Milestone: v1.1 "Dati Reali" (Shipped 2026-03-07)
-
-**Delivered:** All 5 scraper sources active with data quality filters producing 735 clean Veneto sagre.
+**Delivered:** UX polish — bug fixes, responsive desktop layout, page transitions, micro-interactions, and scroll animations for a premium feel on every device.
 
 ## Context
 
 ### Current State
 
-Shipped v1.1 with ~3,900 LOC TypeScript across 159 files.
+Shipped v1.2 with ~4,200 LOC TypeScript across 60+ files modified.
 Tech stack: Next.js 15 App Router, Supabase (PostgreSQL + PostGIS), Tailwind v4 + Shadcn/UI, Leaflet + OSM, Cheerio, Nominatim, Gemini 2.5 Flash, Motion (animations).
 Deployed on Vercel at nemovia.vercel.app.
 
-Pipeline: All 5 scraper sources active (eventiesagre, assosagre, solosagre, venetoinfesta, sagritaly). 735 clean active sagre. Enrichment runs 2x/day via pg_cron. Geocoding via Nominatim with location normalization. Noise title filtering and Veneto province gating in place.
+Pipeline: All 5 scraper sources active (eventiesagre, assosagre, solosagre, venetoinfesta, sagritaly). 735 clean active sagre. Enrichment runs 2x/day via pg_cron.
 
-Known UI issues being addressed in v1.2: back button on detail page, image placeholder on detail, responsive desktop layout, Cerca page default province filter.
+UI: Responsive desktop layout (TopNav + multi-column grids + side-by-side detail). Page cross-fade transitions, card hover/tap animations, shimmer skeleton loaders, scroll-linked progress bar and parallax. Full accessibility support (reduced-motion, focus-visible).
 
 ### Il problema
 
@@ -130,6 +125,13 @@ Italiano, informale ma competente. L'app deve sembrare curata, non un template.
 | Cheerio for sagritaly (not headless) | sagritaly.com is server-rendered WordPress, not JS-rendered | ✓ Good — consistent approach, no headless browser needed |
 | Noise title heuristic filter | Pattern matching (length, regex) instead of ML classification | ✓ Good — simple, fast, no dependencies |
 | Location normalization + Veneto gating | Append ", Veneto" for disambiguation, deactivate non-Veneto after geocoding | ✓ Good — 36 dirty rows caught, 735 clean remaining |
+| Providers.tsx client wrapper | Single client component wrapping MotionConfig + NuqsAdapter | ✓ Good — keeps layout.tsx as Server Component |
+| CSS-only nav swap | hidden/lg:block + lg:hidden for TopNav/BottomNav | ✓ Good — no JS viewport detection, no hydration mismatch |
+| FrozenRouter for page transitions | Freeze LayoutRouterContext during AnimatePresence exit | ✓ Good — prevents new route rendering during exit animation |
+| Short transition durations (150ms/100ms) | Utility app should feel snappy, not cinematic | ✓ Good — premium feel without hurting navigation speed |
+| ScrollReveal separate from FadeIn | Avoid breaking existing FadeIn usage across app | ✓ Good — directional variety without regression risk |
+| Mobile-only parallax | lg:!transform-none disables parallax on desktop | ✓ Good — avoids sticky-vs-transform conflict on desktop |
+| SagraCard as client component | Parent StaggerGrid already client boundary | ✓ Good — enables motion gestures with no SSR impact |
 
 ---
-*Last updated: 2026-03-07 after v1.2 milestone start*
+*Last updated: 2026-03-09 after v1.2 milestone completion*

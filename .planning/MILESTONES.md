@@ -1,5 +1,23 @@
 # Milestones
 
+## v1.2 Polish (Shipped: 2026-03-09)
+
+**Delivered:** UX polish — bug fixes, responsive desktop layout, page transitions, micro-interactions, and scroll animations for a premium feel on every device.
+
+**Phases completed:** 3 phases, 7 plans
+**Commits:** 37 | **Source files changed:** 29 | **LOC delta:** +571/-260 TypeScript/CSS
+**Timeline:** 3 days (2026-03-07 → 2026-03-09)
+**Git range:** `ad0d5fc` → `9102f9e`
+
+**Key accomplishments:**
+1. Fixed 4 UX bugs (back button, image placeholder, Cerca default filter, desktop width) and established accessibility foundation with reduced-motion and focus-visible support
+2. Built responsive desktop layout with TopNav, multi-column grids (1/2/3/4 cols), side-by-side detail page with sticky left column
+3. Added smooth page cross-fade transitions with FrozenRouter pattern and shimmer gradient skeleton loaders
+4. Implemented card hover/tap micro-interactions, FadeImage progressive loading, button press animations, and badge hover effects
+5. Added scroll-linked animations: progress bar, directional section reveals, and mobile-only parallax hero
+
+---
+
 ## v1.1 Dati Reali (Shipped: 2026-03-07)
 
 **Delivered:** Data pipeline fix — all 5 scraper sources active with data quality filters producing 735 clean Veneto sagre.
