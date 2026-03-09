@@ -1,250 +1,289 @@
-# Feature Landscape
+# Feature Research
 
-**Domain:** UI/UX polish for food festival (sagre) aggregator -- page transitions, responsive desktop, micro-interactions
-**Researched:** 2026-03-07
-**Milestone:** v1.2 "Polish"
+**Domain:** Data quality filtering + UI/UX redesign for food festival (sagre) aggregator
+**Researched:** 2026-03-09
+**Milestone:** v1.3 "Dati Puliti + Redesign"
+**Confidence:** HIGH (data quality) / MEDIUM (UI redesign -- design trends require subjective validation)
 
 ## Existing State Assessment
 
-What Nemovia already has that this milestone builds on:
+Features already built that this milestone extends or fixes:
 
-| Existing Feature | Status | Relevance to v1.2 |
+| Existing Feature | Status | Relevance to v1.3 |
 |------------------|--------|-------------------|
-| Motion (framer-motion) library | Installed (v12.35) | Foundation for all animations -- page transitions, hover, scroll |
-| FadeIn animation wrapper | Built | Extend with more variants (slide, scale) |
-| StaggerGrid animation | Built | Enhance with responsive column counts |
-| Skeleton UI component (Shadcn) | Built | Base for shimmer enhancement |
-| SagraCardSkeleton | Built | Content-aware skeleton, already matches card layout |
-| loading.tsx files (Home, Cerca, Mappa, Detail) | Built | Already using Next.js Suspense streaming |
-| BackButton component | Built | Bug fix target -- works but needs visibility improvements |
-| Image placeholder on SagraCard | Built (gradient + icon) | Missing on detail page -- bug fix |
-| BottomNav | Built (mobile) | Needs desktop sidebar alternative |
-| max-w-lg container | Built | Desktop bottleneck -- needs responsive widening |
+| `isNoiseTitle()` heuristic filter | Built (scrape-sagre) | Catches some junk but misses calendar titles, non-sagre events |
+| `parseItalianDateRange()` | Built | Parses dates but does not validate duration or reject impossible ranges |
+| `find_duplicate_sagra` RPC | Built (PostgreSQL) | Exact-match dedup by normalized title + city + dates. No fuzzy matching. |
+| Expire cron job | Built (pg_cron daily) | Deactivates past events but may not catch 2025 events correctly |
+| Veneto province gating | Built (enrich-sagre) | Filters non-Veneto after geocoding. Working correctly. |
+| Gemini structured output enrichment | Built | Tags + descriptions. Could be extended to classify event type. |
+| OKLCH color system in globals.css | Built | amber-600 primary, green-700 accent, stone-50 background. Ready to swap. |
+| Shadcn/UI component library | Built | Provides base components. Theme swap via CSS variables is trivial. |
+| Motion animation system | Built | FadeIn, StaggerGrid, ScrollReveal, ParallaxHero, page transitions all exist |
+| Responsive desktop layout | Built (v1.2) | TopNav, multi-col grids, side-by-side detail already done |
 
 ---
 
-## Table Stakes
+## Track 1: Data Quality Features
 
-Features users expect for a polished, modern web app in 2026. Missing = app feels cheap or broken.
+### Table Stakes (Users Expect Clean Data)
 
-### Bug Fixes (existing broken expectations)
-
-| Feature | Why Expected | Complexity | Dependencies |
-|---------|--------------|------------|--------------|
-| **Back button on detail page (already built)** | Already implemented as BackButton.tsx with router.back(). Bug was listed in PROJECT.md but component exists. Verify it renders correctly and is accessible. | Low | None -- verify only |
-| **Image placeholder on detail page** | SagraCard already has a gradient+icon placeholder when image_url is null. Detail page should match. Inconsistency breaks trust. | Low | None -- SagraDetail.tsx already handles this (line 47-49). Verify it works. |
-| **"TUTTE" province filter selected by default on Cerca** | User opens Cerca and sees no results because no province is selected. Default should show all provinces. Standard behavior for any filter UI. | Low | SearchFilters.tsx -- set initial state to "TUTTE" or empty (meaning all) |
-| **Responsive desktop layout** | 50%+ of Italian web traffic is desktop. Current max-w-lg (32rem/512px) creates a narrow phone-width column on desktop. Desktop users expect content to fill available width. | Medium | Layout.tsx -- responsive max-w, grid columns, sidebar |
-
-### Skeleton Loading Quality
+Features that fix visible data corruption. Users seeing junk events = immediate loss of trust.
 
 | Feature | Why Expected | Complexity | Dependencies |
 |---------|--------------|------------|--------------|
-| **Shimmer effect on skeletons** | Static gray blocks feel frozen/broken. Shimmer (animated gradient sweep) signals "loading" and reduces perceived wait time by ~30%. Every premium app (Instagram, Airbnb, Google) uses shimmer. | Low | CSS-only -- add shimmer gradient animation to Skeleton component |
-| **Content-aware skeleton shapes** | Already partially built (SagraCardSkeleton matches card layout). Ensure all loading.tsx files mirror their page structure accurately. | Low | Existing loading.tsx files -- audit and polish |
+| **Expired event removal (2025 events)** | Events from 2025 are still showing in March 2026. The expire cron must check `end_date < NOW()` and also handle events with no end_date where `start_date < NOW() - interval '3 days'`. Users opening the app see stale events and assume the data is abandoned. | LOW | Expire SQL query fix. No code dependencies. Run once as retroactive cleanup + fix cron logic. |
+| **Calendar date rejection** | Dates like "1 gennaio - 31 gennaio" or "1 gen - 31 dic" are calendar page artifacts, not real sagra dates. Real sagre last 1-7 days max, with rare exceptions up to 14 days. Duration > 14 days should be flagged as suspicious and rejected. | LOW | Add duration validation to `scrape-sagre` after `parseItalianDateRange()`. If `endDate - startDate > 14 days`, mark as noise. |
+| **Junk title filter enhancement** | Current `isNoiseTitle()` catches "Calendario mensile" but misses patterns like "Calendario eventi sagre [month] [region]", "Sagre del mese di [month]", generic listing titles. These are navigation/index page artifacts, not event names. | LOW | Extend `isNoiseTitle()` regex patterns. Add: titles containing multiple month names, "del mese di", "eventi in [region]", and titles that are pure category listings. |
+| **Duplicate detection improvement** | Same junk event appears multiple times because `find_duplicate_sagra` matches on normalized_title + city + start_date. If the junk passes with slightly different dates or missing city, it creates duplicates. Need fuzzy matching on title similarity. | MEDIUM | Enhance `find_duplicate_sagra` RPC to use `pg_trgm` trigram similarity for fuzzy title matching (threshold 0.7). PostgreSQL extension, no external deps. |
+| **Past-year event filtering** | Events scraped with year 2025 dates should be auto-rejected at scrape time, not just expired later. The scraper currently accepts any parsed date regardless of year. | LOW | Add year check in `scrape-sagre`: if `startDate` year < current year, skip the event. Simple integer comparison. |
 
-### Responsive Adaptations
+### Differentiators (Better Than Competitors)
 
-| Feature | Why Expected | Complexity | Dependencies |
-|---------|--------------|------------|--------------|
-| **Wider content area on desktop** | max-w-lg is 512px. Desktop should use max-w-4xl (896px) or max-w-6xl (1152px) with responsive breakpoints. | Low | Layout.tsx -- change max-w-lg to responsive classes |
-| **Multi-column card grid on desktop** | 2 columns on tablet, 3-4 columns on desktop. Currently stuck at grid-cols-1 sm:grid-cols-2. | Low | StaggerGrid default className, SagraGrid |
-| **Desktop navigation (top or side)** | BottomNav is mobile-only pattern. Desktop users expect top navbar or sidebar. Hide BottomNav on lg+ screens, show desktop nav. | Medium | New DesktopNav component, BottomNav hidden at lg: breakpoint |
+| Feature | Value Proposition | Complexity | Dependencies |
+|---------|-------------------|------------|--------------|
+| **"Is it a sagra?" LLM classifier** | Non-sagre events (antique markets, art exhibitions, trade fairs) slip through because the scraper has no concept of event type. Use Gemini to classify: `{type: "sagra" | "mercato" | "mostra" | "fiera" | "altro", confidence: 0.0-1.0, reason: "..."}`. Only keep events classified as "sagra" or "fiera gastronomica" with confidence > 0.7. This is the single highest-impact data quality feature. | MEDIUM | Add classification step to `enrich-sagre` Edge Function, between geocoding and tag enrichment. Use Gemini structured output with enum response schema. Batch 8 events per request (same as current enrichment). Adds ~2s per batch. |
+| **Image quality gating** | Scraped images are often tiny thumbnails (50x50, 100x75). These look terrible on cards with `h-40` (160px) height. Filter images below a minimum dimension threshold (e.g., width < 200px or height < 150px). Replace sub-threshold images with the styled placeholder (gradient + icon). | LOW | At scrape time or enrich time, HEAD request the image URL and check `Content-Length` (very small = likely thumbnail) or, better, fetch image headers to get dimensions. If below threshold, set `image_url = null` so the placeholder renders. |
+| **Higher-resolution image extraction** | Many source sites serve thumbnail URLs in listing pages but have full-res images on detail pages. Scraping the detail page URL for each event to find `<meta property="og:image">` or the largest `<img>` could yield much better images. | HIGH | Requires a second scraping pass per event (detail page fetch). Rate-limited by politeness delays. Could add 5-10 minutes per scraper run. Best done as a separate enrichment step, not blocking the main scrape. |
+| **Automated data quality dashboard** | Track metrics over time: % of events rejected by each filter, % with images, % with valid dates, duplicate rate. Log to `data_quality_logs` table. Helps detect when a source site changes format and breaks the scraper. | LOW | New DB table + INSERT at end of each scrape/enrich run. No UI needed initially -- query via Supabase dashboard. |
 
-### Accessibility
+### Anti-Features (Data Quality)
 
-| Feature | Why Expected | Complexity | Dependencies |
-|---------|--------------|------------|--------------|
-| **prefers-reduced-motion support** | WCAG 2.1 requirement (SC 2.3.3). Vestibular disorders affect ~35% of adults over 40. Must disable/reduce animations when OS setting is enabled. | Low | CSS media query + Motion's `useReducedMotion()` hook |
-| **Focus-visible states on interactive elements** | Keyboard navigation must have visible focus indicators. Cards, buttons, filters need `:focus-visible` outlines. | Low | Tailwind `focus-visible:` utilities |
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|-----------------|-------------|
+| **ML-based title classification** | "Use a trained model to detect junk titles" | Overkill for ~735 events. Training data doesn't exist. The junk patterns are deterministic (regex-catchable). ML adds latency, cost, and a model to maintain. | Extend `isNoiseTitle()` with more regex patterns. If false negatives persist, use Gemini classifier (already integrated) as a second pass. |
+| **Manual curation queue** | "Let an admin review flagged events before they go live" | No admin users exist. The app has zero authentication. Building an admin panel is out of scope for a solo project. Adds maintenance burden. | Auto-reject with high-confidence rules. Low-confidence events (Gemini score 0.5-0.7) get `is_active = false` and can be manually activated via Supabase dashboard if needed. |
+| **Cross-source deduplication by event URL** | "Same event on eventiesagre and assosagre should merge" | Already handled by `find_duplicate_sagra` which deduplicates by normalized title + city + dates and merges sources array. URL-based dedup adds little value since source URLs are always different across sites. | Keep current dedup. Enhance with trigram similarity for fuzzy title matching. |
+| **OCR on event poster images** | "Extract dates and details from locandina images" | Requires vision LLM or separate OCR service. High latency, high error rate on stylized poster text. Free-tier Gemini vision has limited capacity. | Defer to v2+. Text extraction from HTML is sufficient for now. |
 
 ---
 
-## Differentiators
+## Track 2: UI/UX Redesign Features
 
-Features that create the "wow, this is premium" feeling. Not expected, but make users go "this is better than any sagre site I've used."
+### Table Stakes (Modern Web App in 2026)
 
-### Page Transitions
+These are foundational for any redesign. Without them, new colors/effects feel like lipstick on a pig.
 
-| Feature | Value Proposition | Complexity | Dependencies |
-|---------|-------------------|------------|--------------|
-| **View Transitions API (native)** | GPU-accelerated cross-fade between pages with zero JS overhead. Feels 2-3x snappier than no transition. Browser support hit >85% in late 2025 (Chrome, Edge, Firefox 133+, Safari 18+). Next.js 15.2+ has experimental.viewTransition flag. Since Nemovia runs Next.js 15.5.12, this is available. | Low | next.config.ts: `experimental: { viewTransition: true }`. Wrap content with React's `<ViewTransition>`. Progressive enhancement -- unsupported browsers get instant navigation (current behavior). |
-| **Shared element transitions (card-to-detail)** | When user taps a SagraCard, the card image morphs into the detail page hero image. Creates spatial continuity. This is what makes apps feel "native." Uses CSS `view-transition-name` on matching elements. | Medium | Requires viewTransition enabled + matching `view-transition-name` on SagraCard image and SagraDetail hero image. CSS-only once framework support is in place. |
-| **Cross-fade page content** | Default view transition provides a smooth cross-fade between old and new page content instead of hard cut. Trivial to enable once viewTransition flag is set. | Low | Automatic with viewTransition: true |
+| Feature | Why Expected | Complexity | Dependencies |
+|---------|--------------|------------|--------------|
+| **Color palette refresh** | Current amber-600/stone-50 reads as "food blog template 2020." Modern apps (Linear, Vercel, Raycast) use deeper, richer palettes with intentional contrast. A contemporary food discovery app should feel warm but sophisticated -- not generic. | LOW | Swap OKLCH CSS variables in `globals.css`. All components use CSS variables already, so the change propagates automatically. No component code changes needed. |
+| **Typography upgrade (Geist)** | Inter is fine but generic. Geist, Vercel's typeface, has slightly rounder curves and friendlier apertures that align with the reference apps (Linear, Vercel, Raycast). Available via `next/font/google` with zero additional installs. Geist Mono provides complementary monospace for data-dense elements (dates, distances, prices). | LOW | Replace Inter import in `layout.tsx` with Geist + Geist_Mono. Update CSS variable in globals.css `@theme inline`. 3-line change total. |
+| **Refined spacing and proportions** | Current spacing feels tight in some areas (card content `p-3`) and loose in others. A consistent 4px/8px grid with intentional density creates visual rhythm. | LOW | Audit component padding/margin values. Standardize on Tailwind spacing scale. |
+| **Card component redesign** | Current SagraCard is functional but generic: rectangular image, stacked text. Modern cards use rounded corners (radius-xl+), subtle borders, refined shadows, and better information hierarchy. The image-to-content ratio should feel balanced. | MEDIUM | Redesign SagraCard.tsx. New visual treatment while keeping same data props. Larger corner radius, refined shadow, better tag presentation. |
+| **Consistent icon style** | Lucide icons are good but used inconsistently. Some are 3.5, some 4, some 5. Standardize sizes by context (nav: 5, card meta: 4, inline: 3.5). | LOW | Audit icon sizes across components. Define size constants. |
 
-**Why View Transitions API over Motion/framer-motion for page transitions:**
-- Motion's AnimatePresence does NOT work reliably with Next.js App Router (components unmount before exit animation completes)
-- View Transitions API is native browser, GPU-accelerated, zero bundle cost
-- Progressive enhancement: graceful fallback to instant navigation
-- Next.js 15.5 has built-in support via experimental flag
-- Avoids FrozenRouter hacks and template.tsx workarounds
+### Differentiators (WOW Effect)
 
-**Why NOT barba.js:** Incompatible with React/Next.js. Uses DOMParser (SSR error). Official docs say "use your framework's built-in transitions instead."
-
-### Micro-Interactions
+These create the "questo non sembra un sito di sagre" reaction the user wants.
 
 | Feature | Value Proposition | Complexity | Dependencies |
 |---------|-------------------|------------|--------------|
-| **Card hover lift + shadow** | Subtle scale(1.02) + shadow-lg on hover. Creates depth and interactivity on desktop. Current card only has `hover:shadow-md transition-shadow`. | Low | CSS or Motion's `whileHover` prop. Pure CSS preferred for performance. |
-| **Card press/tap feedback** | On mobile, brief scale(0.98) on tap creates tactile feedback. Makes cards feel like real buttons. | Low | Motion's `whileTap={{ scale: 0.98 }}` on the card Link wrapper |
-| **Button press animation** | Scale bounce on action buttons (Directions, Share, filters). Confirms the action was received. | Low | Motion's `whileTap={{ scale: 0.95 }}` |
-| **BottomNav icon animation** | Active tab icon gets a subtle bounce or morph on selection. Creates responsive navigation feel. | Low | Motion spring animation on active icon |
-| **Badge/tag hover pop** | Food tag badges scale slightly and brighten on hover. Invites interaction on desktop. | Low | CSS `hover:scale-105 hover:shadow-sm` transition |
-| **Image load fade-in** | Images fade from transparent to opaque as they load instead of popping in. Removes jarring layout shifts. | Low | Next.js Image `onLoad` callback + opacity transition |
+| **Glassmorphism navigation bar** | Frosted glass effect on TopNav and BottomNav using `backdrop-blur-xl bg-white/70` (or dark variant). Navigation floats over content with blur, creating depth without heaviness. This is the signature effect of Linear/Arc/Raycast. Tailwind v4 supports `backdrop-blur` natively. | LOW | Update TopNav.tsx and BottomNav.tsx: add `backdrop-blur-xl bg-white/70 border-b border-white/20`. Position `sticky top-0 z-50`. Browser support is excellent (all modern browsers except legacy Firefox ESR). |
+| **Mesh gradient hero** | Replace the flat `bg-gradient-to-br from-amber-50 via-orange-50 to-green-50` with an animated mesh gradient using layered radial gradients. CSS-only, no JS. Creates a living, breathing hero section that feels premium. Reference: Apple product pages, Stripe landing page. | MEDIUM | Create mesh gradient with 4-5 positioned `radial-gradient()` layers in CSS. Animate positions with `@keyframes` for subtle movement. Respect `prefers-reduced-motion`. |
+| **Bento grid homepage layout** | Replace the current linear stack (hero, quick filters, weekend, provinces) with a bento grid layout on desktop. Cards of varying sizes create visual interest and information density. Weekend sagre get hero-sized tiles, provinces get compact tiles, filters get a dedicated tile. | MEDIUM | Desktop-only layout change. Use CSS Grid with `grid-template-areas` and `grid-template-rows` for named regions. Mobile stays linear stack. New `BentoGrid` component wrapping existing sections. |
+| **Subtle grain/noise texture overlay** | A barely-visible noise texture (CSS `url(data:image/svg+xml,...)` or tiny repeating PNG) over backgrounds adds organic warmth and depth. This is a hallmark of premium design (Raycast, Notion, Arc). Prevents backgrounds from looking "too digital." | LOW | Single CSS pseudo-element (`::after`) on the body or main container with `opacity: 0.03-0.05`, `pointer-events: none`. SVG noise pattern inlined as data URI (~200 bytes). |
+| **Animated gradient borders on focus/hover** | Cards and inputs get a subtle animated gradient border on hover/focus instead of a static color. Creates a premium interactive feel. Reference: Vercel's input focus states, GitHub Copilot cards. | LOW | CSS `background-image: linear-gradient()` on a pseudo-element with `background-size: 200%` animated. Or use `@property` for direct gradient animation. |
+| **LazyMotion migration** | Reduce Motion bundle from 34KB to 6KB initial load. Since every component is being touched for the redesign, this is the perfect time to migrate from `motion.div` to `m.div` + `LazyMotion` provider. | MEDIUM | Update Providers.tsx with LazyMotion. Replace all `motion` imports with `m` across 15+ components. Use `strict` mode to catch missed imports. |
+| **Premium loading states** | Replace shimmer skeletons with more refined versions: slightly colored tint matching section context (warm shimmer for food sections, neutral for navigation). Skeleton shapes more closely match final content with rounded pill shapes for text. | LOW | Update Skeleton component with contextual color variants. Refine existing shimmer animation timing. |
 
-### Scroll Animations
+### Anti-Features (UI/UX)
 
-| Feature | Value Proposition | Complexity | Dependencies |
-|---------|-------------------|------------|--------------|
-| **Scroll-triggered section reveals** | Already using FadeIn with `whileInView`. Enhance with variety: some sections slide from left, others from right, creating rhythm. | Low | Extend FadeIn component with `direction` prop (up/left/right) |
-| **Scroll progress indicator** | Thin progress bar at top of page showing scroll depth. Especially useful on detail pages with long content. | Low | Motion's `useScroll()` hook + fixed progress bar |
-| **Parallax hero background** | Hero section gradient moves slightly slower than scroll, creating depth illusion. Subtle parallax (not aggressive). | Low | Motion's `useScroll` + `useTransform` on HeroSection background |
-
-### Desktop-Specific Polish
-
-| Feature | Value Proposition | Complexity | Dependencies |
-|---------|-------------------|------------|--------------|
-| **Desktop sidebar navigation** | Replace BottomNav with a persistent left sidebar on lg+ screens. Icons + labels vertically stacked: Home, Cerca, Mappa. Keeps navigation accessible without eating vertical space. | Medium | New DesktopSidebar component, hide BottomNav at lg:, show sidebar at lg:. CSS Grid layout. |
-| **Detail page side-by-side layout** | On desktop, show image + map on the left, info on the right (or vice versa). Better use of horizontal space than stacking everything vertically. | Medium | SagraDetail.tsx -- responsive grid: `grid-cols-1 lg:grid-cols-2` |
-| **Hover tooltip on map markers** | On desktop, show sagra name on marker hover without clicking. Faster discovery than requiring click. | Low | Leaflet tooltip (L.tooltip) bound to markers. Show on `mouseover`. |
-| **Card grid with 3 columns on xl** | XL screens (1280px+) show 3 cards per row for denser browsing. | Low | Grid class: `xl:grid-cols-3` |
-
----
-
-## Anti-Features
-
-Features to explicitly NOT build in this milestone. Each has a reason.
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| **Smooth scroll library (Lenis)** | Adds complexity and potential conflicts with Leaflet map scrolling. Lenis hijacks native scroll behavior which can break map pan/zoom. Also conflicts with Motion's scroll hooks. The user mentioned Lenis but it creates more problems than it solves for this app type with map interactions. | Use native browser scrolling with CSS `scroll-behavior: smooth` for anchor links only. Motion's `useScroll` for scroll-linked animations. |
-| **barba.js page transitions** | Incompatible with React and Next.js. Throws DOMParser errors on SSR. Official barba.js docs recommend using framework-native transitions instead. | Use View Transitions API via Next.js experimental flag. |
-| **React Bits library (reactbits)** | Copy-paste components with GSAP/other animation library dependencies. Adds bundle weight and conflicting animation systems. Nemovia already has Motion installed -- no need for a second animation framework. Some effects (PixelCard, Hyperspeed backgrounds) are eye-candy for marketing sites, not utility apps. | Cherry-pick inspiration from reactbits.dev but implement using Motion, which is already installed. Focus on subtle polish, not flashy effects. |
-| **Complex page enter/exit animations** | Slide-in/slide-out, morph, or staircase transitions add 300-500ms delay per navigation. For a utility app where users navigate rapidly between cards and search, speed trumps spectacle. | Use fast cross-fade (150-200ms) via View Transitions API. Instant navigation is the goal. |
-| **Dark mode** | Cosmetic feature that doubles CSS surface area. Not a priority for a daytime-use food discovery app. Sagre happen outdoors in daylight. | Warm, inviting light theme only. Revisit in v2+ if users request. |
-| **Animated backgrounds / particles** | Marketing site aesthetic. Distracts from content (sagre listings). Hurts performance on low-end phones. | Clean, warm gradient backgrounds (already using amber/green gradients). |
-| **Infinite scroll** | Complicates URL sharing, back button behavior, and accessibility. Pagination or "load more" is better for discovery with filters. | Keep current paginated/full-list approach. |
-| **Custom loading spinners** | Skeletons are strictly better than spinners for content-heavy UIs. Spinners provide no structural hint about incoming content. | Enhance existing skeleton loaders with shimmer effect. |
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|-----------------|-------------|
+| **Full dark mode** | "Modern apps have dark mode" | Doubles the CSS variable surface area. Sagre are outdoor daytime events -- dark mode is semantically wrong for the brand. User specifically asked for "colori WOW" not dark theme. Adds testing burden for every visual change. | Rich, warm light theme with deep saturated colors. Optional: subtle tinted backgrounds (dark teal/navy header section) for contrast without full dark mode. |
+| **Neo-brutalism style** | "It's trendy in 2025-2026" | Deliberately ugly aesthetic (thick black borders, raw colors, exposed grid) conflicts with the "curato" (curated/polished) tone from PROJECT.md. Neo-brutalism works for creative portfolios, not food discovery. | Refined modern aesthetic: clean lines, subtle depth (glassmorphism), warm colors. |
+| **3D elements / Three.js** | "3D globe or interactive food models" | Massive bundle cost (Three.js ~150KB min), GPU-intensive, kills mobile performance, adds complexity far beyond the project scope. Zero value for finding a sagra this weekend. | CSS-only depth effects: layered gradients, subtle parallax, box-shadow depth. These create perceived 3D without the performance cost. |
+| **Full-page scroll hijacking** | "Smooth section-by-section scrolling" | Lenis already rejected in v1.2 for Leaflet conflicts. Full-page scroll hijack (fullPage.js style) destroys content scanning speed. Users want to quickly scroll through cards, not watch animations. | Native scroll with subtle scroll-linked animations (already built). Fast, interruptible, accessible. |
+| **Animated page backgrounds (particles, waves)** | "Marketing site wow effect" | Performance killer on mobile. Distracts from content. Battery drain. This is a utility app, not a landing page. | Static or subtly animated mesh gradient on hero only. Content sections get clean, quiet backgrounds. |
+| **Custom cursor** | "Trendy on portfolio sites" | Inaccessible, breaks on touch devices, conflicts with browser defaults, performance cost. No user expects this on an event discovery app. | Standard cursor. Focus on making interactive elements respond to hover/tap with micro-interactions. |
+| **Horizontal scroll carousels** | "Swipeable card sections" | Mobile scroll hijack frustration. Accessibility nightmare. Content hidden off-screen. Breaks "scan and compare" behavior users need for choosing a sagra. | Vertical grid with responsive columns. All content visible. Better for comparison. |
+| **CSS-in-JS (Emotion/Styled-Components)** | "Dynamic theming" | Tailwind v4 + CSS custom properties already handle theming. CSS-in-JS adds runtime overhead or build complexity. | Stay with Tailwind utilities + OKLCH custom properties. |
 
 ---
 
 ## Feature Dependencies
 
 ```
-View Transitions API (page transitions)
-  --> next.config.ts experimental.viewTransition: true (no code deps)
-  --> CSS view-transition-name on SagraCard image + SagraDetail hero (shared element)
-  --> Progressive enhancement: no fallback code needed
+TRACK 1: DATA QUALITY
+======================
 
-Responsive Desktop Layout
-  --> Layout.tsx max-w change (foundation for everything)
-  --> DesktopNav/Sidebar component (depends on layout change)
-  --> Hide BottomNav at lg+ (depends on DesktopNav existing)
-  --> Multi-column grids (depends on wider container)
-  --> Detail page side-by-side (depends on wider container)
+Expired 2025 Events Removal (standalone)
+  --> Fix expire cron SQL (immediate retroactive cleanup)
+  --> No dependencies
 
-Micro-Interactions (independent, can be done in any order)
-  --> Card hover/tap (SagraCard.tsx)
-  --> Button press (DirectionsButton, ShareButton)
-  --> BottomNav icon animation (BottomNav.tsx)
-  --> Image load fade (SagraCard, SagraDetail)
+Past-Year Date Rejection (standalone)
+  --> Add year check to scrape-sagre normalizeRawEvent()
+  --> No dependencies
 
-Skeleton Enhancement
-  --> Shimmer CSS animation (Skeleton.tsx -- foundation)
-  --> Audit all loading.tsx files (depends on shimmer being added)
+Enhanced Junk Title Filter (standalone)
+  --> Extend isNoiseTitle() regex patterns
+  --> No dependencies
 
-Scroll Animations
-  --> FadeIn direction variants (extend existing component)
-  --> Scroll progress bar (standalone, any page)
-  --> Parallax hero (HeroSection.tsx)
+Calendar Date Duration Validation (standalone)
+  --> Add duration check after parseItalianDateRange()
+  --> Depends on: date parsing working correctly (already does)
 
-Bug Fixes (independent, do first)
-  --> TUTTE default on Cerca (SearchFilters.tsx)
-  --> Image placeholder on detail (SagraDetail.tsx -- already implemented, verify)
-  --> Back button visibility (BackButton.tsx -- already implemented, verify)
+Fuzzy Duplicate Detection
+  --> Requires: pg_trgm PostgreSQL extension enabled
+  --> Modify find_duplicate_sagra RPC to use similarity()
+  --> Should run AFTER title filter improvements (so fewer junk titles enter dedup)
 
-Accessibility
-  --> prefers-reduced-motion (globals.css + Motion config)
-  --> focus-visible states (global Tailwind utilities)
+"Is it a sagra?" LLM Classifier
+  --> Requires: Gemini API (already configured)
+  --> Add classification step to enrich-sagre Edge Function
+  --> Should run AFTER geocoding, BEFORE tag enrichment
+  --> Depends on: Gemini structured output with enum schema
+
+Image Quality Gating
+  --> Add dimension/size check at scrape or enrich time
+  --> Independent of other features
+  --> Enhances: card visual quality (pairs with UI redesign)
+
+Higher-Resolution Image Extraction
+  --> Requires: detail page scraping pass (new feature)
+  --> Depends on: image quality gating (to know what needs upgrading)
+  --> HIGH effort -- consider deferring to v1.4
+
+
+TRACK 2: UI/UX REDESIGN
+========================
+
+Color Palette Refresh (FOUNDATION -- do first)
+  --> Swap OKLCH variables in globals.css
+  --> ALL visual features depend on this being settled first
+
+Typography Upgrade (Geist)
+  --> Replace Inter import in layout.tsx
+  --> Independent but should align with color palette timing
+
+Glassmorphism Navigation
+  --> Depends on: color palette (blur tints match new palette)
+  --> Update TopNav.tsx + BottomNav.tsx
+
+Card Component Redesign
+  --> Depends on: color palette + typography (card uses both)
+  --> Redesign SagraCard.tsx
+
+Mesh Gradient Hero
+  --> Depends on: color palette (gradient colors derive from palette)
+  --> Update HeroSection.tsx
+
+Bento Grid Homepage
+  --> Depends on: card redesign (bento tiles contain cards)
+  --> Desktop-only. Mobile stays linear.
+
+Grain Texture Overlay (standalone)
+  --> CSS pseudo-element on body
+  --> No dependencies, can be added anytime
+
+Animated Gradient Borders (standalone)
+  --> CSS pseudo-element technique
+  --> No dependencies
+
+LazyMotion Migration (standalone but time with redesign)
+  --> Update Providers.tsx + all motion imports
+  --> Best done while touching all components for redesign
+
+CROSS-TRACK:
+  Data quality BEFORE redesign
+    (Clean data makes redesigned UI look better)
+
+  Image quality gating FEEDS INTO card redesign
+    (Fix bad images before designing around them)
 ```
 
 ---
 
 ## Phase Recommendation
 
-### Phase 1: Bug Fixes + Foundation (do first)
-Fix the 4 known bugs and set up responsive layout foundation.
+### Phase 1: Data Quality Cleanup (do first)
 
-1. TUTTE province filter default on Cerca
-2. Verify back button works (already built)
-3. Verify image placeholder on detail (already built)
-4. Responsive container width (max-w-lg to responsive breakpoints)
-5. prefers-reduced-motion CSS media query
+Fix the data before redesigning the UI. Users will judge the redesign harshly if junk data is still visible.
 
-### Phase 2: Desktop Layout
-Build the responsive desktop experience.
+- [ ] Fix expire cron to remove 2025 events and events with `end_date < NOW()`
+- [ ] Add past-year date rejection in scrape-sagre
+- [ ] Enhance `isNoiseTitle()` with new regex patterns
+- [ ] Add calendar date duration validation (>14 days = reject)
+- [ ] Enable `pg_trgm` and add fuzzy duplicate detection
 
-1. Desktop navigation (sidebar or top nav)
-2. Hide BottomNav on lg+ screens
-3. Multi-column card grids (md:2, lg:3, xl:4)
-4. Detail page side-by-side layout on desktop
-5. Map tooltips on hover (desktop)
+### Phase 2: LLM Classification + Image Quality
 
-### Phase 3: Page Transitions + Animations
-Add the "wow effect" layer.
+Higher-effort data quality features that use the enrichment pipeline.
 
-1. Enable viewTransition experimental flag
-2. Shared element transition (card image to detail hero)
-3. Card hover lift + tap feedback
-4. Button press animations
-5. BottomNav active icon animation
-6. Skeleton shimmer effect
-7. Image load fade-in
-8. Scroll progress indicator
-9. FadeIn direction variants
-10. Parallax hero (optional, subtle)
+- [ ] Add "is it a sagra?" LLM classifier to enrich-sagre
+- [ ] Add image quality gating (reject tiny thumbnails)
+- [ ] Retroactive cleanup run on existing 735 events
 
-**Rationale:** Fix bugs first (trust), then desktop layout (usability for 50% of users), then animations (delight). Each phase builds on the previous. Animation work should come last because it touches components that may change during layout refactoring.
+### Phase 3: Visual Foundation (color + typography + structure)
+
+Establish the new design system before building effects on top.
+
+- [ ] New OKLCH color palette in globals.css
+- [ ] Geist font swap (layout.tsx + globals.css)
+- [ ] Grain texture overlay (globals.css)
+- [ ] Spacing audit and standardization
+
+### Phase 4: Component Redesign + Effects
+
+Apply the new design system to components and add visual effects.
+
+- [ ] SagraCard redesign with new palette and proportions
+- [ ] Glassmorphism navigation (TopNav + BottomNav)
+- [ ] Mesh gradient hero
+- [ ] Animated gradient borders on interactive elements
+- [ ] Bento grid homepage layout (desktop)
+- [ ] LazyMotion migration
+- [ ] Premium loading states
+
+**Rationale:** Data quality first because visible junk undermines any visual improvements. Visual foundation before effects because effects are built on top of the palette and typography decisions. Component redesign last because it depends on both the settled design system and clean data to look right.
 
 ---
 
-## Complexity Budget
+## Feature Prioritization Matrix
 
-| Category | Estimated Effort | Risk Level |
-|----------|-----------------|------------|
-| Bug fixes | 1-2 hours | Low -- mostly verification of already-built features |
-| Responsive layout | 4-6 hours | Low -- Tailwind responsive utilities, well-understood pattern |
-| Desktop nav | 2-3 hours | Low -- new component but simple structure |
-| View Transitions | 1-2 hours | Medium -- experimental API, test across browsers |
-| Shared element transitions | 2-3 hours | Medium -- CSS view-transition-name matching |
-| Card micro-interactions | 1-2 hours | Low -- Motion whileHover/whileTap, CSS |
-| Skeleton shimmer | 30 min | Low -- CSS animation only |
-| Scroll animations | 1-2 hours | Low -- Motion hooks, well-documented |
-| Accessibility (reduced motion) | 30 min | Low -- CSS + Motion hook |
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|---------------------|----------|
+| Expired 2025 event removal | HIGH | LOW | **P1** |
+| Past-year date rejection | HIGH | LOW | **P1** |
+| Enhanced junk title filter | HIGH | LOW | **P1** |
+| Calendar date duration validation | HIGH | LOW | **P1** |
+| Fuzzy duplicate detection | HIGH | MEDIUM | **P1** |
+| "Is it a sagra?" LLM classifier | HIGH | MEDIUM | **P1** |
+| Image quality gating | MEDIUM | LOW | **P2** |
+| Color palette refresh | HIGH | LOW | **P1** |
+| Geist font swap | MEDIUM | LOW | **P1** |
+| Glassmorphism navigation | HIGH | LOW | **P1** |
+| Card component redesign | HIGH | MEDIUM | **P1** |
+| LazyMotion migration | MEDIUM | MEDIUM | **P1** |
+| Mesh gradient hero | MEDIUM | MEDIUM | **P2** |
+| Bento grid homepage | MEDIUM | MEDIUM | **P2** |
+| Grain texture overlay | LOW | LOW | **P3** |
+| Animated gradient borders | LOW | LOW | **P3** |
+| Higher-res image extraction | MEDIUM | HIGH | **P3** (defer) |
+| Data quality dashboard | LOW | LOW | **P3** |
 
-**Total estimated:** 12-20 hours of implementation work.
+**Priority key:**
+- P1: Must have for v1.3 launch. Directly addresses user-reported problems or creates the WOW effect.
+- P2: Should have. Enhances the experience but not blocking.
+- P3: Nice to have. Can ship without or defer to v1.4.
 
 ---
 
 ## Sources
 
-### Official Documentation (HIGH confidence)
-- [Next.js viewTransition experimental config](https://nextjs.org/docs/app/api-reference/config/next-config-js/viewTransition) -- experimental flag docs, usage with React ViewTransition component
-- [Next.js 15.2 release blog](https://nextjs.org/blog/next-15-2) -- viewTransition feature announcement
-- [Motion scroll animations docs](https://motion.dev/docs/react-scroll-animations) -- useScroll, useInView, whileInView
-- [Motion gestures docs](https://motion.dev/docs/react) -- whileHover, whileTap
-- [View Transition API MDN](https://developer.mozilla.org/en-US/docs/Web/API/View_Transition_API) -- browser API reference
-- [View Transitions browser support (caniuse)](https://caniuse.com/view-transitions) -- 85%+ support as of late 2025
+### Data Quality (HIGH confidence)
+- [PostgreSQL pg_trgm documentation](https://www.postgresql.org/docs/current/pgtrgm.html) -- trigram similarity for fuzzy dedup
+- [Gemini Structured Outputs](https://ai.google.dev/gemini-api/docs/structured-output) -- enum schemas for classification
+- [Supabase PostgreSQL Extensions](https://supabase.com/docs/guides/database/extensions) -- pg_trgm availability
 
-### Community/Ecosystem (MEDIUM confidence)
-- [next-view-transitions by Shuding](https://github.com/shuding/next-view-transitions) -- community library for View Transitions in Next.js App Router (alternative approach, but native experimental flag is preferred since Nemovia is on 15.5)
-- [React Bits](https://reactbits.dev/) -- animated component library for inspiration (not recommended as dependency)
-- [Lenis smooth scroll](https://github.com/darkroomengineering/lenis) -- evaluated and rejected for Nemovia due to Leaflet conflicts
-- [barba.js React incompatibility](https://github.com/barbajs/barba/issues/221) -- confirmed incompatible with React frameworks
+### UI/UX Design (MEDIUM confidence)
+- [Figma: Web Design Trends 2026](https://www.figma.com/resource-library/web-design-trends/) -- bento grids, vibrant palettes
+- [Elementor: Web Design Trends 2026](https://elementor.com/blog/web-design-trends-2026/) -- aurora gradients, organic shapes
+- [TheeDigital: Web Design Trends 2026](https://www.theedigital.com/blog/web-design-trends) -- dopamine design, mesh gradients
+- [Epic Web Dev: Glassmorphism with Tailwind](https://www.epicweb.dev/tips/creating-glassmorphism-effects-with-tailwind-css) -- implementation patterns
+- [Shakuro: Best Fonts for Web 2025](https://shakuro.com/blog/best-fonts-for-web-design) -- Geist vs Inter comparison
+- [Vercel: Geist Font](https://vercel.com/font) -- font design rationale
 
-### UX Research (MEDIUM confidence)
-- [Micro-interactions guide](https://www.frontendtools.tech/blog/micro-interactions-ui-ux-guide) -- timing (150-300ms), GPU-accelerated properties
-- [Motion UI trends 2025](https://www.betasofttechnology.com/motion-ui-trends-and-micro-interactions/) -- industry patterns
-- [Skeleton loading best practices](https://blog.logrocket.com/handling-react-loading-states-react-loading-skeleton/) -- shimmer effect, content-aware shapes
-- [prefers-reduced-motion W3C technique](https://www.w3.org/WAI/WCAG21/Techniques/css/C39) -- accessibility requirement
-- [Chrome View Transitions 2025 update](https://developer.chrome.com/blog/view-transitions-in-2025) -- cross-document transitions, types
+---
+*Feature research for: Nemovia v1.3 "Dati Puliti + Redesign"*
+*Researched: 2026-03-09*

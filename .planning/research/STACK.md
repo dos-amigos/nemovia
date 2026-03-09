@@ -1,7 +1,7 @@
 # Technology Stack
 
-**Project:** Nemovia v1.2 "Polish"
-**Researched:** 2026-03-07
+**Project:** Nemovia v1.3 "Dati Puliti + Redesign"
+**Researched:** 2026-03-09
 **Overall Confidence:** HIGH
 
 ## Existing Stack (DO NOT change)
@@ -11,309 +11,386 @@
 | Next.js | 15.5.12 | App Router, SSR, routing |
 | React | 19.1.0 | UI framework |
 | Tailwind CSS | v4 | Utility-first styling |
-| Shadcn/UI | latest | Component library (Card, Badge, Skeleton, etc.) |
-| Motion | 12.35.0 | Animations (FadeIn, StaggerGrid already built) |
+| Shadcn/UI | latest | Component library |
+| Motion | 12.35.0 | Animations (FadeIn, StaggerGrid, ScrollReveal, ParallaxHero) |
 | Leaflet | 1.9.4 | Maps |
 | nuqs | 2.8.9 | URL search param state |
 | tw-animate-css | 1.4.0 | Tailwind animation utilities |
+| Supabase | 2.98.0 | PostgreSQL + PostGIS, Edge Functions |
+| Cheerio | 1.x (npm:) | HTML scraping in Deno Edge Functions |
+| @google/genai | 1.x (npm:) | Gemini 2.5 Flash LLM in Deno Edge Functions |
+| Vitest | 4.0.18 | Unit testing |
 
-## Recommended Additions for v1.2
+## Track 1: Data Quality -- No New Dependencies
 
-### View Transitions API (native, via Next.js experimental flag)
+The entire data quality track requires **zero npm additions**. All improvements are logic changes in the existing Edge Functions (`scrape-sagre` and `enrich-sagre`) plus PostgreSQL extensions.
+
+### PostgreSQL Extension: pg_trgm (enable in Supabase)
 
 | Property | Value |
 |----------|-------|
-| **What** | Native browser API for page-to-page transitions |
-| **Install** | Nothing -- built into Next.js 15.2+ and modern browsers |
-| **Config** | `experimental: { viewTransition: true }` in next.config.ts |
-| **Browser support** | 89.25% global: Chrome 111+, Firefox 144+, Safari 18+, Edge 111+ |
-| **Confidence** | HIGH -- verified via official Next.js docs and Can I Use |
+| **What** | Trigram-based fuzzy string matching for deduplication |
+| **Install** | `CREATE EXTENSION IF NOT EXISTS pg_trgm;` in Supabase SQL Editor |
+| **Cost** | Free -- pg_trgm is a built-in PostgreSQL extension, available on all Supabase tiers |
+| **Confidence** | HIGH -- pg_trgm is listed in official Supabase extensions docs |
 
-**Why View Transitions API instead of Motion AnimatePresence for page transitions:**
+**Why pg_trgm for deduplication instead of client-side fuzzy matching:**
 
-1. **AnimatePresence is broken with App Router.** Next.js App Router aggressively unmounts/remounts components during navigation, breaking AnimatePresence's exit detection. The workarounds (FrozenRouter, template.tsx hacks) are fragile and poorly maintained. This is a known, long-standing issue (vercel/next.js#49279).
+1. **Server-side is correct for batch pipelines.** Dedup runs inside Edge Functions during scraping -- comparing against 700+ existing rows. Fetching all rows to do client-side Levenshtein is wasteful. pg_trgm's `similarity()` function runs inside PostgreSQL where the data already lives.
 
-2. **Zero bundle cost.** View Transitions are a native browser API -- no JS shipped for the transition itself. Motion is already in the bundle for existing animations; adding page transition logic would increase that further with no benefit.
+2. **GIN index support.** `CREATE INDEX idx_sagre_trgm ON sagre USING gin (title gin_trgm_ops);` enables fast fuzzy lookups without sequential scans. The existing `find_duplicate_sagra` RPC does exact normalized-title comparison; adding a `similarity(normalized_title, $1) > 0.6` threshold catches near-duplicates that slip through exact matching.
 
-3. **Progressive enhancement.** Browsers without support simply skip the animation -- the app works perfectly without it. No broken state, no fallback code needed.
+3. **No JS dependency to maintain.** Libraries like `string-similarity` (Dice coefficient) or `fastest-levenshtein` would need to be vendored into the Deno Edge Function. pg_trgm is built into PostgreSQL -- zero maintenance.
 
-4. **Official Next.js support.** The `experimental.viewTransition` flag exists precisely for this use case in Next.js 15.2+. While labeled experimental, the underlying browser API is stable (W3C Working Draft, 89% support). The "experimental" tag refers to deeper Next.js integration hooks (automatic transition types for navigations), not the core cross-fade functionality.
+**Implementation: Enhanced dedup RPC**
 
-**Implementation approach:**
+```sql
+-- Upgrade find_duplicate_sagra to use fuzzy matching
+CREATE OR REPLACE FUNCTION find_duplicate_sagra(
+  p_normalized_title text,
+  p_city text,
+  p_start_date date DEFAULT NULL,
+  p_end_date date DEFAULT NULL
+) RETURNS TABLE(id uuid, image_url text, price_info text, is_free boolean, sources text[]) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT s.id, s.image_url, s.price_info, s.is_free, s.sources
+  FROM sagre s
+  WHERE s.is_active = true
+    AND (
+      -- Exact match (existing behavior)
+      lower(s.location_text) = p_city
+      OR similarity(lower(s.location_text), p_city) > 0.5
+    )
+    AND (
+      -- Exact normalized title match
+      normalize_text(s.title) = p_normalized_title
+      -- OR fuzzy title match (catches "Sagra del Pesce" vs "Sagra Del Pesce di Mare")
+      OR similarity(normalize_text(s.title), p_normalized_title) > 0.6
+    )
+  ORDER BY similarity(normalize_text(s.title), p_normalized_title) DESC
+  LIMIT 1;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Data Quality Filters (pure TypeScript in Edge Functions)
+
+All 7 data quality problems map to filter functions added to the existing `scrape-sagre/index.ts` and `enrich-sagre/index.ts`. No new libraries needed.
+
+| Problem | Solution | Where | Library |
+|---------|----------|-------|---------|
+| Titoli spazzatura | Expand `isNoiseTitle()` with more patterns | scrape-sagre | None (regex) |
+| Date calendario | New `isCalendarDateRange()` -- reject if span > 14 days | scrape-sagre | None (date math) |
+| Duplicati | Upgrade `find_duplicate_sagra` RPC with pg_trgm | PostgreSQL | pg_trgm extension |
+| Durata assurda | New `isAbsurdDuration()` -- reject events > 14 days | scrape-sagre | None (date math) |
+| Eventi passati | Fix expire cron -- filter `end_date < NOW()` more aggressively | PostgreSQL cron | None (SQL) |
+| Non-sagre | Add LLM classification step in enrichment | enrich-sagre | Gemini 2.5 Flash (already used) |
+| Foto bassa risoluzione | Image URL resolution upgrade logic | scrape-sagre | None (URL manipulation) |
+
+### LLM-Based Non-Sagra Detection (Gemini 2.5 Flash structured output)
+
+The enrichment pipeline already uses Gemini 2.5 Flash with structured output (JSON schema). Adding a `is_sagra: boolean` classification field to the existing enrichment prompt costs zero additional API calls -- it rides the same batch request.
 
 ```typescript
-// next.config.ts -- only change needed
-const nextConfig: NextConfig = {
-  experimental: {
-    viewTransition: true,
+// Add to existing enrichment prompt in enrich-sagre/index.ts
+config: {
+  responseMimeType: "application/json",
+  responseSchema: {
+    type: "ARRAY",
+    items: {
+      type: "OBJECT",
+      properties: {
+        id: { type: "STRING" },
+        is_sagra: { type: "BOOLEAN" },  // NEW: classify event type
+        food_tags: { type: "ARRAY", items: { type: "STRING" } },
+        feature_tags: { type: "ARRAY", items: { type: "STRING" } },
+        enhanced_description: { type: "STRING" },
+      },
+      required: ["id", "is_sagra", "food_tags", "feature_tags", "enhanced_description"],
+    },
   },
-  images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "**" },
-    ],
-  },
-};
+},
 ```
 
-```tsx
-// In components wrapping page content (e.g., layout or individual pages):
-import { ViewTransition } from 'react';
+**Why this works:** Gemini 2.5 Flash has strong Italian text comprehension and can reliably distinguish "Sagra del Baccalà" (sagra) from "Mostra Antiquariato Padova" (not a sagra). The free tier (15 req/min) is sufficient since this runs in the existing enrichment batches.
 
-<ViewTransition>
-  <div>{children}</div>
-</ViewTransition>
+### Image Quality Upgrade Strategy
+
+No new image processing library needed. The approach is **URL manipulation at scrape time**, not image resizing:
+
+1. **Source-specific thumbnail-to-full URL patterns.** Most sagre sites serve thumbnails in listings with predictable URL patterns (e.g., `-150x150.jpg` suffix, `/thumbs/` path segment). Replace these patterns with full-resolution URLs during extraction.
+
+2. **Next.js Image Optimization handles the rest.** The project already uses `next/image` with `hostname: "**"` in remotePatterns. Next.js automatically resizes, compresses (Sharp), and serves WebP/AVIF to capable browsers. No custom image proxy needed.
+
+3. **Fallback placeholder for truly tiny images.** Add a `MIN_IMAGE_WIDTH` check via `<img>` natural dimensions in the client component -- if the loaded image is < 200px wide, show the gradient placeholder instead.
+
+**Why NOT add Sharp as a direct dependency:**
+- Next.js already uses Sharp internally for its Image Optimization API
+- Adding Sharp as a build dependency increases bundle/deploy complexity on Vercel
+- The constraint is "zero costi fissi" -- Supabase Storage image transforms require Pro plan ($25/mo)
+- URL manipulation at scrape time is free and catches 90% of low-res issues
+
+## Track 2: UI/UX Redesign -- Minimal New Dependencies
+
+### Font: Geist (replaces Inter)
+
+| Property | Value |
+|----------|-------|
+| **What** | Vercel's modern variable font, designed for UI clarity |
+| **Install** | Already available via `next/font/google` -- no npm install needed |
+| **Bundle impact** | ~0 KB delta -- replaces Inter (both are variable fonts loaded the same way) |
+| **Confidence** | HIGH -- Geist is the default font for Next.js 15 projects |
+
+**Why Geist instead of Inter:**
+
+1. **Modern aesthetic.** Geist was designed by Vercel in collaboration with Basement Studio specifically for modern UI. It has slightly rounder curves, friendlier apertures, and more character spacing than Inter -- exactly the "non-anonimo" feel the user wants.
+
+2. **Reference app alignment.** The user cited Linear, Vercel, Raycast, and Arc Browser as inspiration. Vercel uses Geist. Linear and Raycast use similar geometric sans-serifs. Switching to Geist immediately aligns the typographic feel with these references.
+
+3. **Zero migration cost.** Geist is available in `next/font/google`. The change is a 3-line edit in `layout.tsx` and 1 line in `globals.css`.
+
+4. **Geist Mono for accents.** Geist Mono provides a complementary monospace variant useful for dates, prices, and distance numbers -- adding subtle typographic hierarchy without a separate font load.
+
+**Implementation:**
+
+```typescript
+// layout.tsx -- replace Inter with Geist
+import { Geist, Geist_Mono } from "next/font/google";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+// In <body>:
+<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
 ```
-
-**CSS for transitions (add to globals.css):**
 
 ```css
-::view-transition-old(root) {
-  animation: fade-out 150ms ease-out;
-}
-::view-transition-new(root) {
-  animation: fade-in 150ms ease-in;
-}
-
-@keyframes fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* globals.css -- update @theme inline */
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 ```
 
-### No New npm Dependencies Required
+### Color System: New OKLCH Palette (CSS only, no library)
 
-The entire v1.2 scope can be achieved with the existing stack. Here is why:
+| Property | Value |
+|----------|-------|
+| **What** | Complete color refresh from amber-600/stone-50 to a vibrant modern palette |
+| **Install** | Nothing -- pure CSS custom properties (already using OKLCH in globals.css) |
+| **Tooling** | oklch.fyi or oklch.org for palette generation |
+| **Confidence** | HIGH -- project already uses OKLCH values in CSS custom properties |
 
-| Capability Needed | Solution | Why No New Dependency |
-|-------------------|----------|----------------------|
-| Page transitions | View Transitions API (browser-native) + Next.js flag | Built into browser + Next.js 15.2+ |
-| Skeleton loaders | Already have Shadcn `<Skeleton>` + `SagraCardSkeleton` | Already built in v1.0 |
-| Hover effects | Motion `whileHover` + `whileTap` (already installed) | Motion 12.35.0 already in deps |
-| Scroll animations | Motion `whileInView` (already used in FadeIn) | Already used in FadeIn component |
-| Scroll progress bar | Motion `useScroll` hook | Already available in motion@12 |
-| Responsive desktop layout | Tailwind v4 responsive utilities + container queries | Built into Tailwind v4 core |
-| Back button | `useRouter().back()` or `<Link>` -- plain Next.js | Built into Next.js |
-| Image placeholder | Existing gradient placeholder pattern in SagraCard | Already implemented in cards |
-| Layout animations | Motion `layout` prop for smooth reflows | Already available in motion@12 |
+**Why OKLCH palette refresh needs no library:**
 
-## Libraries Explicitly NOT Adding
+The project already uses OKLCH color values in `globals.css` (e.g., `--primary: oklch(0.666 0.179 58.318)`). The redesign is a CSS-only change -- swapping the color values in `:root`, not adding dependencies.
 
-### barba.js -- REJECT
+**Recommended palette direction (warm-vibrant, not cold-corporate):**
 
-**Why mentioned:** User referenced it as an option for page transitions.
+The user wants "WOW, modernissimo" -- this suggests moving from the muted amber/stone/green toward a more vibrant palette. Given the food/festival domain:
 
-**Why not:**
-- barba.js is designed for vanilla JS multi-page sites, NOT React/Next.js SPAs
-- Known `DOMParser is not defined` errors in Next.js (GitHub barbajs/barba#650)
-- Conflicts with React's virtual DOM -- barba.js manipulates real DOM containers directly
-- Zero React integration -- no hooks, no component model, no TypeScript types
-- Motion + View Transitions cover the same use case without compatibility issues
+- **Primary:** Warm coral/terracotta (OKLCH hue ~25-30) -- replaces amber-600. More distinctive, works with food photography.
+- **Accent:** Deep teal or emerald (OKLCH hue ~165-175) -- replaces green-700. Higher chroma for more visual punch.
+- **Background:** Warm off-white with slight warmth (OKLCH lightness ~0.97, low chroma) -- replaces stone-50.
+- **Surface:** Pure white with subtle warm tint for cards.
 
-### lenis (smooth scroll) -- DEFER, not needed for v1.2
+**Specific values to be determined during implementation** with oklch.fyi, testing against actual sagra card images for contrast and harmony. The point is: this is a CSS variable swap, not a dependency change.
 
-**Why mentioned:** User referenced it for "wow effect" smooth scrolling.
+### Glassmorphism, Mesh Gradients, Bento Grids (CSS only)
 
-**Why not now:**
-- The app is a mobile-first sagre aggregator with short, scrollable pages -- not a portfolio/agency showcase site where smooth scroll adds value
-- Lenis adds ~8KB to the bundle and introduces a custom scroll layer that can conflict with Leaflet's scroll behavior on map pages
-- Known glitchy behavior on iPad with Magic Keyboard (relevant for Italian users)
-- Can be added in a future milestone if scroll-heavy content pages are introduced
-- The "wow effect" is better achieved through micro-interactions (hover, stagger, transitions) which Motion already provides
+| Effect | Implementation | Library Needed |
+|--------|----------------|----------------|
+| Glassmorphism cards/nav | `backdrop-blur-md bg-white/30 border border-white/20` | None -- Tailwind utilities |
+| Mesh gradients (hero/backgrounds) | CSS `radial-gradient` layering or generated via csshero.org/mesher | None -- pure CSS |
+| Bento grid layout | CSS Grid with `grid-template-rows` + `row-span` utilities | None -- Tailwind Grid |
+| Aurora gradient animation | `@property` + `@keyframes` hue rotation on OKLCH values | None -- pure CSS |
+| Animated gradient borders | `conic-gradient` + `@property` for hue animation | None -- pure CSS |
 
-### reactbits -- DO NOT ADD
+**Why pure CSS for all visual effects:**
 
-**Why mentioned:** User referenced it for modern UI components.
+1. **Browser support is sufficient.** `backdrop-filter` has 95% global support. CSS `@property` works in Chrome, Edge, Safari (Firefox lacks support but degrades gracefully -- the gradient just doesn't animate).
 
-**Why not:**
-- reactbits provides pre-built animated components (text effects, backgrounds, etc.) -- NOT a library you integrate alongside Shadcn
-- The app already has a consistent design system with Shadcn/UI + Motion
-- Adding reactbits would create two competing component libraries with different styling conventions
-- The specific effects (hover animations, scroll reveals) are trivially achievable with Motion's `whileHover`, `whileTap`, `whileInView` which are already installed
-- MIT + Commons Clause license is more restrictive than standard MIT
+2. **Zero bundle cost.** CSS effects ship in the stylesheet, not JavaScript. The user wants visual wow without compromising the "utility app should feel snappy" principle established in v1.2.
 
-### next-view-transitions (shuding/next-view-transitions) -- SKIP
+3. **Tailwind v4 integration.** All these effects compose naturally with Tailwind utility classes. No wrapper components or CSS-in-JS needed.
 
-**Why considered:** Popular community library for View Transitions in Next.js App Router.
+**Glassmorphism best practices for this project:**
 
-**Why not:**
-- Next.js 15.2+ has built-in `experimental.viewTransition` support, making this library redundant
-- The library (v0.3.5) wraps the same browser API but adds its own `<Link>` component and `<ViewTransitions>` wrapper that duplicate what Next.js now provides natively
-- Shuding (the author) works at Vercel -- the library was a precursor to the native support that landed in Next.js 15.2
+- Keep blur values 8-12px (not higher -- performance cost scales exponentially)
+- Use glassmorphism sparingly: nav bars, filter panels, card overlays -- NOT every surface
+- Always add `border border-white/20` for edge definition
+- Test on lower-end mobile devices (the primary audience is Italian users on mid-range phones)
+- Provide solid-color fallback for `@supports not (backdrop-filter: blur())` edge cases
 
-### next-transition-router -- SKIP
+### LazyMotion Migration (bundle optimization)
 
-**Why considered:** Allows animated page transitions with any animation library.
+| Property | Value |
+|----------|-------|
+| **What** | Replace `motion` component with `m` + `LazyMotion` for smaller bundle |
+| **Install** | Nothing -- already part of motion@12.35.0 |
+| **Bundle savings** | ~34KB to ~6KB initial load (async load remaining features) |
+| **Confidence** | HIGH -- verified in Motion docs, this was already flagged in PROJECT.md Active items |
 
-**Why not:**
-- Still in Beta, API may change
-- Adds routing wrapper complexity
-- View Transitions API achieves the same result with zero dependencies and better performance
+**Why do this now:** The v1.3 redesign touches every component anyway. Perfect time to migrate from `import { motion } from "motion/react"` to `import { m } from "motion/react"` + wrapping the app in `<LazyMotion>`.
 
-## Tailwind v4 Responsive Strategy for Desktop Layout
+**Implementation:**
 
-The main layout currently uses `max-w-lg` (32rem / 512px) which is aggressively mobile-scoped. For responsive desktop, this needs to scale up using Tailwind v4's built-in responsive utilities.
+```typescript
+// src/components/Providers.tsx
+"use client";
 
-### Breakpoints (built into Tailwind v4, no config needed)
+import { LazyMotion, MotionConfig } from "motion/react";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 
-| Breakpoint | Width | Use For |
-|------------|-------|---------|
-| (default) | < 640px | Mobile -- current behavior, single column |
-| `sm` | >= 640px | 2-column card grid (already used in StaggerGrid) |
-| `md` | >= 768px | Tablet -- wider content area, larger cards |
-| `lg` | >= 1024px | Desktop -- 3-column grid, wider max-width, potential sidebar |
-| `xl` | >= 1280px | Large desktop -- max content width with comfortable margins |
+// Async load animation features
+const loadFeatures = () =>
+  import("motion/react").then((mod) => mod.domAnimation);
 
-### Container Queries (new in Tailwind v4 core, no plugin needed)
-
-Container queries are built into Tailwind v4 core (the `@tailwindcss/container-queries` plugin is no longer needed). Useful for components that need to adapt to their container size rather than viewport:
-
-```html
-<!-- Parent defines container -->
-<div class="@container">
-  <!-- Child responds to container width, not viewport -->
-  <div class="flex flex-col @md:flex-row">
-    ...
-  </div>
-</div>
-```
-
-**Container query breakpoints are smaller than viewport breakpoints:**
-| Container | Width | Viewport equivalent |
-|-----------|-------|---------------------|
-| `@sm` | 320px | Much smaller than `sm` (640px) |
-| `@md` | 448px | Smaller than `md` (768px) |
-| `@lg` | 640px | Smaller than `lg` (1024px) |
-
-**When to use container queries vs breakpoints:**
-- **Breakpoints (`md:`, `lg:`)** -- For page-level layout changes (content max-width, grid columns, sidebar visibility, navigation style)
-- **Container queries (`@md:`, `@lg:`)** -- For component-level adaptation (SagraCard changing from vertical to horizontal layout when placed in a wider container)
-
-### Responsive Layout Changes
-
-**Current layout** (max-w-lg = 512px for all screen sizes):
-```tsx
-// (main)/layout.tsx -- CURRENT (too narrow on desktop)
-<main className="mx-auto max-w-lg px-4 py-4">{children}</main>
-```
-
-**Recommended responsive layout:**
-```tsx
-// (main)/layout.tsx -- RESPONSIVE
-<main className="mx-auto max-w-lg px-4 py-4 md:max-w-3xl lg:max-w-5xl xl:max-w-6xl">
-  {children}
-</main>
-```
-
-**Responsive card grids:**
-```tsx
-// StaggerGrid default className -- RESPONSIVE
-className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-```
-
-**Detail page -- centered content:**
-```tsx
-// sagra/[slug] detail content -- wider but not full-width
-className="mx-auto max-w-2xl"
-```
-
-**Desktop navigation consideration:**
-On `lg:` and above, the BottomNav should optionally transform into a top navigation bar or sidebar. Alternatively, keep BottomNav on all sizes (many modern apps do this successfully).
-
-## Motion Features Already Available (underutilized)
-
-The project has `motion@12.35.0` installed with only FadeIn and StaggerGrid built. These additional features are ready to use without any new install:
-
-### Hover and Tap Gestures (for SagraCard micro-interactions)
-
-```tsx
-import { motion } from "motion/react";
-
-// Wrap SagraCard link in motion.div for hover/tap feedback
-<motion.div
-  whileHover={{ scale: 1.02, y: -2 }}
-  whileTap={{ scale: 0.98 }}
-  transition={{ type: "spring", stiffness: 300, damping: 20 }}
->
-  <SagraCard sagra={sagra} />
-</motion.div>
-```
-
-### Scroll-Linked Progress Bar
-
-```tsx
-import { useScroll, motion } from "motion/react";
-
-function ScrollProgress() {
-  const { scrollYProgress } = useScroll();
+export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <motion.div
-      style={{ scaleX: scrollYProgress }}
-      className="fixed top-0 left-0 right-0 h-1 bg-primary origin-left z-50"
-    />
+    <LazyMotion features={loadFeatures} strict>
+      <MotionConfig reducedMotion="user">
+        <NuqsAdapter>{children}</NuqsAdapter>
+      </MotionConfig>
+    </LazyMotion>
   );
 }
 ```
 
-### Exit Animations (within a page, NOT page transitions)
+Then in all components, replace `motion.div` with `m.div`, `motion.span` with `m.span`, etc. The `strict` prop will warn if any component accidentally imports the full `motion` component.
 
-```tsx
-import { AnimatePresence, motion } from "motion/react";
+## Recommended Stack (Summary Table)
 
-// Use AnimatePresence for in-page elements: filter panels, modals, toasts, empty states
-// Do NOT use for page-level route transitions (use View Transitions instead)
-<AnimatePresence>
-  {isVisible && (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: "auto" }}
-      exit={{ opacity: 0, height: 0 }}
-    />
-  )}
-</AnimatePresence>
+### New Additions
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| pg_trgm (PostgreSQL extension) | Built-in | Fuzzy dedup matching | Server-side similarity in SQL, GIN-indexed, zero JS dependency |
+| Geist (via next/font/google) | Variable | Modern sans-serif font | Aligns with reference apps (Vercel, Linear), zero bundle delta |
+| Geist Mono (via next/font/google) | Variable | Monospace for dates/numbers | Typographic hierarchy for data-dense UI elements |
+
+### Infrastructure Changes (no new packages)
+
+| Change | Purpose | What Changes |
+|--------|---------|--------------|
+| OKLCH color palette swap | Modern, vibrant look | CSS custom properties in globals.css |
+| LazyMotion migration | 28KB bundle reduction | Providers.tsx + all motion imports |
+| Glassmorphism/mesh CSS | Visual wow effects | globals.css + component classes |
+| Enhanced data quality filters | Clean scraped data | scrape-sagre/index.ts logic |
+| LLM is_sagra classification | Filter non-sagre events | enrich-sagre/index.ts prompt |
+| pg_trgm fuzzy dedup | Better duplicate detection | PostgreSQL RPC + extension |
+
+## Alternatives Considered
+
+| Category | Recommended | Alternative | Why Not |
+|----------|-------------|-------------|---------|
+| Fuzzy matching | pg_trgm (PostgreSQL) | string-similarity (npm) | Client-side matching against 700+ rows is wasteful; pg_trgm runs where data lives |
+| Fuzzy matching | pg_trgm (PostgreSQL) | fastest-levenshtein (npm) | Same reason; also needs vendoring into Deno Edge Function |
+| Font | Geist | Inter (current) | Inter is ubiquitous/generic; user explicitly wants distinctive modern feel |
+| Font | Geist | Satoshi/Manrope | Not available in next/font/google; would require self-hosting |
+| Image quality | URL manipulation at scrape time | Sharp as direct dep | Next.js already uses Sharp internally; adding it directly increases deploy complexity |
+| Image quality | URL manipulation at scrape time | Supabase Storage transforms | Requires Pro plan ($25/mo); violates zero-cost constraint |
+| Image quality | URL manipulation at scrape time | imgproxy self-hosted | Requires Docker infrastructure; overkill for this use case |
+| Non-sagra detection | Gemini 2.5 Flash (existing) | Separate classifier model | Already paying 0 for Gemini free tier; adding field to existing prompt is free |
+| Gradient effects | Pure CSS mesh/aurora | Three.js / react-three-fiber | Massive bundle for simple visual effects; CSS achieves 95% of the wow factor |
+| Glassmorphism | Tailwind utilities | glassmorphism npm package | Package is just a CSS generator; Tailwind utilities are more flexible and integrated |
+| Animation bundle | LazyMotion | Full motion bundle (status quo) | 28KB savings for free; v1.3 redesign touches all components anyway |
+| Design tokens | CSS custom properties | Style Dictionary / Stitches | Overkill for single-theme app; CSS vars already established pattern in the project |
+
+## Libraries Explicitly NOT Adding
+
+### Three.js / react-three-fiber -- REJECT
+
+**Why considered:** User mentioned "3D elements" as a design trend.
+
+**Why not:**
+- Bundle size: react-three-fiber adds 150KB+ to the client bundle
+- The app is a mobile-first utility for finding sagre -- 3D elements add visual complexity without functional value
+- The "wow" factor is better achieved with CSS effects (glassmorphism, mesh gradients, animated borders) that cost zero JavaScript
+- 3D rendering on mid-range mobile devices (Italian market) causes battery drain and jank
+
+### Framer / Rive -- REJECT
+
+**Why considered:** Advanced animation tools for "design all'avanguardia."
+
+**Why not:**
+- Framer Site Builder is a separate product from the Motion library already in use
+- Rive adds a runtime player (~50KB) and requires creating animations in a separate tool
+- Motion's existing capabilities (whileHover, whileInView, layout, spring physics) cover all needed animation patterns
+- LazyMotion migration reduces Motion's footprint from 34KB to 6KB -- going in the right direction
+
+### Tailwind UI / DaisyUI / FlyonUI -- REJECT
+
+**Why considered:** Pre-built component libraries with modern aesthetics.
+
+**Why not:**
+- Shadcn/UI is already deeply integrated (Card, Badge, Button, Input, Select, Skeleton, Separator)
+- Adding another component library creates style conflicts and inconsistent patterns
+- The redesign is about color/typography/effects, not replacing the component system
+- Shadcn/UI components are unstyled by default -- the visual refresh comes from changing CSS variables, not swapping components
+
+### CSS-in-JS (Emotion / Styled-Components / Vanilla Extract) -- REJECT
+
+**Why considered:** Some modern design systems use CSS-in-JS for dynamic theming.
+
+**Why not:**
+- Tailwind v4 + CSS custom properties already handle theming through `globals.css`
+- CSS-in-JS adds runtime overhead (Emotion) or build complexity (Vanilla Extract)
+- The project has a clean CSS architecture: Tailwind utilities + OKLCH custom properties. No reason to add another styling paradigm.
+
+### next-themes -- DEFER
+
+**Why considered:** Dark mode is a 2025-2026 design trend.
+
+**Why not now:**
+- v1.3 scope is already large (data quality + full redesign)
+- Dark mode requires designing and testing a complete second color palette
+- The user's request is for "modern WOW" not specifically dark mode
+- Can be added in a future milestone with a simple `next-themes` + OKLCH dark palette addition
+
+## Installation
+
+```bash
+# No npm packages to install for v1.3
+
+# PostgreSQL extension (run in Supabase SQL Editor)
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+# Font change is a code edit, not an install:
+# layout.tsx: import { Geist, Geist_Mono } from "next/font/google";
 ```
-
-### Layout Animations (smooth reflows when list content changes)
-
-```tsx
-// Smooth layout shifts when filters change the result count
-<motion.div layout transition={{ type: "spring", damping: 25, stiffness: 200 }}>
-  {results.map(sagra => (
-    <motion.div layout key={sagra.id}>
-      <SagraCard sagra={sagra} />
-    </motion.div>
-  ))}
-</motion.div>
-```
-
-### Improved Stagger with whileInView
-
-The existing StaggerGrid uses `whileInView` with `once: true`. This pattern can be extended to other sections (ProvinceSection, QuickFilters) for a coordinated reveal effect across the page without any new code patterns.
-
-## Summary: What Changes in package.json
-
-**Nothing.** Zero new dependencies. The entire v1.2 milestone is achievable with:
-
-1. **View Transitions API** -- enabled via a single line in `next.config.ts` (already installed Next.js 15.5.12, which is >= 15.2)
-2. **Motion gestures and scroll** -- already installed (motion@12.35.0), currently underutilized. Only FadeIn and StaggerGrid are built; whileHover, whileTap, useScroll, layout animations are all available
-3. **Tailwind v4 responsive** -- already installed, just constrained by `max-w-lg` in the layout. Breakpoints (sm/md/lg/xl) and container queries (@container/@md) are built-in
-4. **Shadcn Skeleton** -- already installed and used in all loading.tsx files
-
-**The only config change:** Add `experimental: { viewTransition: true }` to `next.config.ts`.
 
 ## Sources
 
-- [Next.js viewTransition docs](https://nextjs.org/docs/app/api-reference/config/next-config-js/viewTransition) -- HIGH confidence, verified config syntax and version requirements
-- [Can I Use: View Transitions API](https://caniuse.com/view-transitions) -- HIGH confidence, 89.25% global support (Chrome 111+, Firefox 144+, Safari 18+, Edge 111+)
-- [Motion for React](https://motion.dev/docs/react) -- HIGH confidence, v12.35.0 confirmed on npm
-- [Motion changelog](https://motion.dev/changelog) -- HIGH confidence, AnimateView and useScroll improvements in v12.34-12.35
-- [Tailwind CSS v4 Responsive Design](https://tailwindcss.com/docs/responsive-design) -- HIGH confidence, breakpoints and container queries verified
-- [Tailwind CSS v4 Container Queries](https://www.sitepoint.com/tailwind-css-v4-container-queries-modern-layouts/) -- MEDIUM confidence, confirms no plugin needed
-- [AnimatePresence + App Router issue](https://github.com/vercel/next.js/issues/49279) -- HIGH confidence, confirmed broken
-- [barba.js Next.js DOMParser error](https://github.com/barbajs/barba/issues/650) -- HIGH confidence, confirmed incompatibility
-- [next-view-transitions](https://github.com/shuding/next-view-transitions) -- MEDIUM confidence, v0.3.5 superseded by native support
-- [Lenis smooth scroll](https://github.com/darkroomengineering/lenis) -- MEDIUM confidence, evaluated and deferred
-- [React Bits](https://reactbits.dev/) -- MEDIUM confidence, evaluated and rejected
+### HIGH Confidence (official docs or verified)
+
+- [Supabase PostgreSQL Extensions](https://supabase.com/docs/guides/database/extensions) -- pg_trgm availability confirmed
+- [PostgreSQL pg_trgm docs](https://www.postgresql.org/docs/current/pgtrgm.html) -- similarity(), GIN index, trigram matching
+- [Next.js Font Optimization](https://nextjs.org/docs/app/getting-started/fonts) -- Geist via next/font/google
+- [Geist Font](https://vercel.com/font) -- variable font, Vercel's official typeface
+- [Motion LazyMotion docs](https://motion.dev/docs/react-lazy-motion) -- m component, domAnimation, code splitting
+- [Motion Bundle Size Reduction](https://motion.dev/docs/react-reduce-bundle-size) -- 34KB to 6KB with LazyMotion
+- [Gemini Structured Output](https://ai.google.dev/gemini-api/docs/structured-output) -- JSON schema with BOOLEAN type for classification
+- [Tailwind CSS backdrop-filter](https://tailwindcss.com/docs/backdrop-filter-blur) -- glassmorphism utilities
+- [Next.js Image Component](https://nextjs.org/docs/app/api-reference/components/image) -- remotePatterns, Sharp integration
+- [@google/genai npm](https://www.npmjs.com/package/@google/genai) -- v1.44.0 latest, GA status confirmed
+
+### MEDIUM Confidence (multiple sources agree)
+
+- [Glassmorphism with Tailwind CSS (Epic Web Dev)](https://www.epicweb.dev/tips/creating-glassmorphism-effects-with-tailwind-css) -- implementation patterns
+- [Glassmorphism Implementation Guide 2025](https://playground.halfaccessible.com/blog/glassmorphism-design-trend-implementation-guide) -- performance best practices
+- [Web Design Trends 2026 (Figma)](https://www.figma.com/resource-library/web-design-trends/) -- bento grids, vibrant colors
+- [Web Design Trends 2026 (Elementor)](https://elementor.com/blog/web-design-trends-2026/) -- aurora gradients, organic shapes
+- [OKLCH ecosystem tools (Evil Martians)](https://evilmartians.com/chronicles/exploring-the-oklch-ecosystem-and-its-tools) -- oklch.fyi, palette generation
+- [Mesher CSS Mesh Gradient Tool](https://csshero.org/mesher/) -- pure CSS mesh gradient generation
+- [CSS Gradient Animation (Frontend Hero)](https://frontend-hero.com/how-to-animate-gradients-css) -- @property + @keyframes for gradient animation
+- [Geist + Tailwind v4 setup](https://www.buildwithmatija.com/blog/how-to-use-custom-google-fonts-in-next-js-15-and-tailwind-v4) -- CSS variable integration pattern
+- [Best Fonts for Web 2025 (Shakuro)](https://shakuro.com/blog/best-fonts-for-web-design) -- Geist vs Inter comparison
