@@ -39,7 +39,7 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 **Milestone Goal:** Fix UX bugs and add polish -- page transitions, responsive desktop layout, micro-interazioni -- per un'esperienza premium su ogni device.
 
 - [x] **Phase 11: Bug Fixes + Foundation** - Fix 4 broken UX flows and establish accessibility baseline for all animation work (completed 2026-03-07)
-- [x] **Phase 12: Responsive Desktop Layout** - Desktop-optimized layout with navigation, grids, and breakpoint-aware skeletons (completed 2026-03-07)
+- [x] **Phase 12: Responsive Desktop Layout** - Desktop-optimized layout with navigation, grids, and breakpoint-aware skeletons (completed 2026-03-07)
 - [ ] **Phase 13: Transitions + Micro-Interactions** - Page transitions, hover/tap effects, scroll animations, and shimmer loaders for premium feel
 
 ## Phase Details
@@ -72,8 +72,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 12-01-PLAN.md -- Navigation & layout shell (TopNav, BottomNav hide, responsive padding, map height)
-- [ ] 12-02-PLAN.md -- Responsive content & skeletons (multi-column grids, detail side-by-side, map tooltips, breakpoint-aware skeletons)
+- [x] 12-01-PLAN.md -- Navigation & layout shell (TopNav, BottomNav hide, responsive padding, map height)
+- [x] 12-02-PLAN.md -- Responsive content & skeletons (multi-column grids, detail side-by-side, map tooltips, breakpoint-aware skeletons)
 
 ### Phase 13: Transitions + Micro-Interactions
 **Goal**: Users experience smooth, premium-feeling interactions that make Nemovia feel like a native app
@@ -85,12 +85,12 @@ Plans:
   3. User sees images fade in smoothly as they load, BottomNav icons animate on selection, and all skeleton loaders display a shimmer sweep animation
   4. User scrolling the detail page sees a progress bar at the top, sections reveal with directional variety, and the hero section has a subtle parallax effect
   5. All animations from criteria 1-4 are suppressed when the user has prefers-reduced-motion enabled (enforced by A11Y-01 from Phase 11)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 13-01: TBD
-- [ ] 13-02: TBD
-- [ ] 13-03: TBD
+- [ ] 13-01-PLAN.md -- Page transitions, shimmer skeletons, and BottomNav active indicator
+- [ ] 13-02-PLAN.md -- Card/button/badge micro-interactions and image fade-in
+- [ ] 13-03-PLAN.md -- Scroll animations (progress bar, directional reveals, parallax hero)
 
 ## Progress
 
@@ -110,5 +110,5 @@ Phases execute in numeric order: 11 -> 12 -> 13
 | 9. Sagritaly Ingestion | v1.1 | 1/1 | Complete | 2026-03-07 |
 | 10. Data Quality Filters | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 11. Bug Fixes + Foundation | v1.2 | 2/2 | Complete | 2026-03-07 |
-| 12. Responsive Desktop Layout | 2/2 | Complete    | 2026-03-07 | - |
-| 13. Transitions + Micro-Interactions | v1.2 | 0/? | Not started | - |
+| 12. Responsive Desktop Layout | v1.2 | 2/2 | Complete | 2026-03-07 |
+| 13. Transitions + Micro-Interactions | v1.2 | 0/3 | Not started | - |
