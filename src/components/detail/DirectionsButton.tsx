@@ -1,3 +1,6 @@
+"use client";
+
+import { motion } from "motion/react";
 import { Navigation } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -13,14 +16,16 @@ interface DirectionsButtonProps {
 
 export default function DirectionsButton({ lat, lng }: DirectionsButtonProps) {
   return (
-    <a
+    <motion.a
       href={getDirectionsUrl(lat, lng)}
       target="_blank"
       rel="noopener noreferrer"
       className={cn(buttonVariants({ variant: "outline" }), "gap-2")}
+      whileTap={{ scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
     >
       <Navigation className="size-4" />
       Indicazioni
-    </a>
+    </motion.a>
   );
 }
