@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Dati Puliti + Redesign
-status: ready_to_plan
-stopped_at: Roadmap created, ready to plan Phase 14
-last_updated: "2026-03-09"
-last_activity: "2026-03-09 -- Roadmap created for v1.3 (4 phases, 21 requirements)"
+status: executing
+stopped_at: Completed 14-01-PLAN.md
+last_updated: "2026-03-09T14:04:14Z"
+last_activity: "2026-03-09 -- Completed Plan 14-01 (Heuristic Filter Functions)"
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 2
+  completed_plans: 1
+  percent: 50
 ---
 
 # Project State
@@ -26,24 +26,24 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 14 of 17 (Data Quality Heuristic Filters) -- first of 4 phases in v1.3
-Plan: --
-Status: Ready to plan
-Last activity: 2026-03-09 -- Roadmap created for v1.3
+Plan: 02 of 2 (next: Pipeline Integration, SQL Cleanup, Expire Cron Fix)
+Status: Executing
+Last activity: 2026-03-09 -- Completed Plan 14-01 (Heuristic Filter Functions)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0 (v1.3)
-- Average duration: --
-- Total execution time: --
+- Total plans completed: 1 (v1.3)
+- Average duration: 2min
+- Total execution time: 2min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 14 | 1/2 | 2min | 2min |
 
 *Updated after each plan completion*
 
@@ -52,6 +52,10 @@ Progress: [░░░░░░░░░░] 0%
 ### Decisions
 
 All v1.0/v1.1/v1.2 decisions archived to PROJECT.md Key Decisions table.
+
+- [14-01] Used getUTCDate() for timezone-safe calendar date range detection
+- [14-01] Multi-word "calendario" pattern to avoid false positives on legitimate sagra titles
+- [14-01] Dynamic year comparison in isPastYearEvent (no hardcoded 2026)
 
 ### Pending Todos
 
@@ -67,5 +71,5 @@ None active.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Roadmap created for v1.3 (4 phases, 21 requirements mapped)
+Stopped at: Completed 14-01-PLAN.md
 Resume file: None
