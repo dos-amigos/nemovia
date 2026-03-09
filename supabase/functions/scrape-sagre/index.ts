@@ -168,18 +168,92 @@ function parseItalianDateRange(raw: string): { start: string | null; end: string
 }
 
 // --- Section 2b: Noise title detection ---
-// Detects non-event entries that scrapers pick up (calendar pages, navigation text, etc.)
+// Inline copy from src/lib/scraper/filters.ts (Deno cannot import from src/).
+// Keep in sync with the canonical source. Tests live at src/lib/scraper/__tests__/filters.test.ts
 function isNoiseTitle(title: string): boolean {
   if (!title || title.length < 5 || title.length > 150) return true;
   const t = title.toLowerCase();
-  // Known noise patterns
+
+  // Calendar/navigation noise (original patterns from v1.1)
   if (/calendario\s.*(mensile|regioni|italian)/i.test(t)) return true;
-  if (/cookie|privacy\s*policy|termini\s*(e\s*)?condizion/i.test(t)) return true;
+  if (/cookie|privacy\s*policy|termini\s*(e\s*)?condizion/i.test(t))
+    return true;
   if (/cerca\s+sagr|ricerca\s+event/i.test(t)) return true;
   if (/^(menu|navigazione|home)\b/i.test(t)) return true;
-  if (/^[\d\s\-\/\.]+$/.test(title.trim())) return true; // all numeric/punct
+  if (/^[\d\s\-\/\.]+$/.test(title.trim())) return true;
   if (/tutte le sagre|elenco sagre|lista sagre/i.test(t)) return true;
   if (/gennaio.*dicembre|dicembre.*gennaio/i.test(t)) return true;
+
+  // NEW: Expanded calendar spam -- "calendario" combined with event keywords
+  // but NOT standalone "calendario" (avoids false positives like
+  // "Sagra della Polenta - Calendario 2026")
+  if (/calendario\b/i.test(t) && /\beventi\b|\bsagre\b|\bfeste\b/i.test(t))
+    return true;
+
+  // NEW: Program/schedule spam
+  if (/programma\s+(completo|mensile|settimanale)/i.test(t)) return true;
+
+  // NEW: "Discover all" / "See all" CTAs
+  if (/scopri\s+tutt[ei]|vedi\s+tutt[ei]/i.test(t)) return true;
+
+  // NEW: Newsletter/signup noise
+  if (/newsletter|iscriviti|registrati/i.test(t)) return true;
+
+  return false;
+}
+
+// --- Section 2c: Date quality filters ---
+// Inline copies from src/lib/scraper/filters.ts (Deno cannot import from src/).
+// Keep in sync with the canonical source. Tests live at src/lib/scraper/__tests__/filters.test.ts
+
+function isCalendarDateRange(
+  startDate: string | null,
+  endDate: string | null
+): boolean {
+  if (!startDate || !endDate) return false;
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  // Full-month range: starts on the 1st, ends on the 28th or later
+  if (start.getUTCDate() === 1 && end.getUTCDate() >= 28) {
+    return true;
+  }
+
+  return false;
+}
+
+function isExcessiveDuration(
+  startDate: string | null,
+  endDate: string | null,
+  maxDays: number = 7
+): boolean {
+  if (!startDate || !endDate) return false;
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diffMs = end.getTime() - start.getTime();
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+  return diffDays > maxDays;
+}
+
+function isPastYearEvent(
+  startDate: string | null,
+  endDate: string | null
+): boolean {
+  const currentYear = new Date().getFullYear();
+
+  if (startDate) {
+    const startYear = new Date(startDate).getFullYear();
+    if (startYear < currentYear) return true;
+  }
+
+  if (endDate) {
+    const endYear = new Date(endDate).getFullYear();
+    if (endYear < currentYear) return true;
+  }
+
   return false;
 }
 
@@ -531,6 +605,12 @@ async function scrapeSource(supabase: SupabaseClient, source: ScraperSource): Pr
         if (isNoiseTitle(raw.title)) continue;
 
         const normalized = normalizeRawEvent(raw, source.name);
+
+        // Date quality gates (Phase 14: DQ-02, DQ-03, DQ-04)
+        if (isCalendarDateRange(normalized.startDate, normalized.endDate)) continue;
+        if (isExcessiveDuration(normalized.startDate, normalized.endDate, 7)) continue;
+        if (isPastYearEvent(normalized.startDate, normalized.endDate)) continue;
+
         const result = await upsertEvent(supabase, normalized, source.name);
 
         eventsFound++;
