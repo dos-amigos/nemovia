@@ -43,9 +43,9 @@ Requirements for v1.2 milestone. Each maps to roadmap phases.
 
 ### Scroll Animations
 
-- [ ] **SCRL-01**: User sees sections reveal with directional variety (up, left, right) on scroll
-- [ ] **SCRL-02**: User sees a scroll progress bar at the top of the detail page
-- [ ] **SCRL-03**: User sees subtle parallax effect on the hero section background
+- [x] **SCRL-01**: User sees sections reveal with directional variety (up, left, right) on scroll
+- [x] **SCRL-02**: User sees a scroll progress bar at the top of the detail page
+- [x] **SCRL-03**: User sees subtle parallax effect on the hero section background
 
 ### Accessibility
 
@@ -114,9 +114,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MICRO-06 | Phase 13 | Complete |
 | SKEL-01 | Phase 13 | Complete |
 | SKEL-02 | Phase 12 | Complete |
-| SCRL-01 | Phase 13 | Pending |
-| SCRL-02 | Phase 13 | Pending |
-| SCRL-03 | Phase 13 | Pending |
+| SCRL-01 | Phase 13 | Complete |
+| SCRL-02 | Phase 13 | Complete |
+| SCRL-03 | Phase 13 | Complete |
 | A11Y-01 | Phase 11 | Complete |
 | A11Y-02 | Phase 11 | Complete |
 

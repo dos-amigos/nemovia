@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Polish
-status: active
-stopped_at: Completed 13-02-PLAN.md
-last_updated: "2026-03-09T09:45:08Z"
-last_activity: "2026-03-09 -- Phase 13 plan 02 completed (card/button micro-interactions, FadeImage, badge hover)"
+status: completed
+stopped_at: Completed 13-03-PLAN.md
+last_updated: "2026-03-09T09:54:38Z"
+last_activity: "2026-03-09 -- Phase 13 plan 03 completed (scroll animations: progress bar, parallax hero, directional reveals)"
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 7
-  completed_plans: 6
-  percent: 86
+  completed_plans: 7
+  percent: 100
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Phase 13 - Transitions + Micro-Interactions (plan 02 of 03 complete)
+**Current focus:** v1.2 milestone complete -- all 3 phases (7 plans) executed
 
 ## Current Position
 
 Phase: 13 of 13 (Transitions + Micro-Interactions)
-Plan: 2 of 3 in current phase
-Status: Plan 02 complete, continuing phase 13
-Last activity: 2026-03-09 -- Phase 13 plan 02 completed (card/button micro-interactions, FadeImage, badge hover)
+Plan: 3 of 3 in current phase (COMPLETE)
+Status: v1.2 milestone complete
+Last activity: 2026-03-09 -- Phase 13 plan 03 completed (scroll animations: progress bar, parallax hero, directional reveals)
 
-Progress: [█████████░] 86%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6 (v1.2)
+- Total plans completed: 7 (v1.2)
 - Average duration: ~6min
-- Total execution time: ~36min
+- Total execution time: ~40min
 
 **By Phase:**
 
@@ -45,7 +45,7 @@ Progress: [█████████░] 86%
 |-------|-------|-------|----------|
 | 11 - Bug Fixes + Foundation | 2/2 | ~16min | ~8min |
 | 12 - Responsive Desktop Layout | 2/2 | ~4min | ~2min |
-| 13 - Transitions + Micro-Interactions | 2/3 | ~16min | ~8min |
+| 13 - Transitions + Micro-Interactions | 3/3 | ~20min | ~7min |
 
 *Updated after each plan completion*
 
@@ -78,6 +78,9 @@ All v1.0/v1.1 decisions archived to PROJECT.md Key Decisions table.
 - [13-02]: ShareButton wrapped in motion.div rather than converting Shadcn Button to motion component
 - [13-02]: Badge hover effects use CSS-only (no motion import) to keep Badge as non-client component
 - [13-02]: FadeImage handles cached images via useEffect + img.complete check
+- [13-03]: ScrollReveal as separate component from FadeIn to avoid breaking existing usage throughout app
+- [13-03]: lg:!transform-none on ParallaxHero to disable parallax on desktop where sticky column conflicts
+- [13-03]: FadeIn retained for mini map in sticky left column; ScrollReveal used only in right column
 
 ### Pending Todos
 
@@ -91,6 +94,6 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-03-09
-Stopped at: Completed 13-02-PLAN.md
+Last session: 2026-03-09T09:54:38.993Z
+Stopped at: Completed 13-03-PLAN.md
 Resume file: None
