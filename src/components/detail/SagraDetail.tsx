@@ -1,11 +1,10 @@
-import Image from "next/image";
+import { FadeImage } from "@/components/animations/FadeImage";
 import {
   MapPin,
   Calendar,
   Tag,
   Euro,
   ExternalLink,
-  ArrowLeft,
   UtensilsCrossed,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +37,7 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
         {/* Hero image with back button */}
         <div className="relative -mx-4 -mt-4 h-48 w-[calc(100%+2rem)] lg:mx-0 lg:mt-0 lg:w-full lg:h-64 lg:rounded-xl lg:overflow-hidden">
           {sagra.image_url ? (
-            <Image
+            <FadeImage
               src={sagra.image_url}
               alt={sagra.title}
               fill
