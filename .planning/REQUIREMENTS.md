@@ -13,7 +13,7 @@ Requirements for v1.3 "Dati Puliti + Redesign". Each maps to roadmap phases.
 - [x] **DQ-02**: Pipeline rifiuta eventi con date calendario (range mensili tipo 1 gen → 31 gen) che non rappresentano sagre reali
 - [x] **DQ-03**: Pipeline rifiuta eventi con durata assurda (>7 giorni), dato che le sagre reali durano 2-3 giorni
 - [x] **DQ-04**: Pipeline rimuove eventi passati del 2025 e precedenti (il filtro expire funziona correttamente per l'anno in corso 2026)
-- [ ] **DQ-05**: Cleanup retroattivo dei dati esistenti in produzione che violano i nuovi filtri
+- [x] **DQ-05**: Cleanup retroattivo dei dati esistenti in produzione che violano i nuovi filtri
 
 ### Data Quality — Deduplicazione & Classificazione
 
@@ -80,7 +80,7 @@ Deferred to v1.4+. Tracked but not in current roadmap.
 | DQ-02 | Phase 14 | Complete |
 | DQ-03 | Phase 14 | Complete |
 | DQ-04 | Phase 14 | Complete |
-| DQ-05 | Phase 14 | Pending |
+| DQ-05 | Phase 14 | Complete |
 | DQ-06 | Phase 15 | Pending |
 | DQ-07 | Phase 15 | Pending |
 | DQ-08 | Phase 15 | Pending |

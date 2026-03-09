@@ -50,7 +50,7 @@ Full details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 
 **Milestone Goal:** Eliminare i dati spazzatura dalla pipeline e ridisegnare l'interfaccia con un'estetica moderna e d'impatto.
 
-- [ ] **Phase 14: Data Quality Heuristic Filters** - Deterministic validation filters in scrape pipeline reject garbage data before it reaches users
+- [x] **Phase 14: Data Quality Heuristic Filters** - Deterministic validation filters in scrape pipeline reject garbage data before it reaches users (completed 2026-03-09)
 - [ ] **Phase 15: Deduplication & Classification** - Fuzzy dedup via pg_trgm and LLM-based sagra/non-sagra classification eliminate duplicates and off-topic events
 - [ ] **Phase 16: Design System Foundation** - New Geist typography and vibrant OKLCH color palette replace the dated amber/stone aesthetic
 - [ ] **Phase 17: Visual Effects, Layout & Performance** - Glassmorphism, mesh gradients, bento grid, and LazyMotion deliver the WOW factor with optimized bundle
@@ -70,8 +70,8 @@ Full details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 **Plans**: 2 plans
 
 Plans:
-- [ ] 14-01-PLAN.md — TDD: Heuristic filter functions (isNoiseTitle, isCalendarDateRange, isExcessiveDuration, isPastYearEvent)
-- [ ] 14-02-PLAN.md — Pipeline integration, SQL retroactive cleanup, and expire cron fix
+- [x] 14-01-PLAN.md — TDD: Heuristic filter functions (isNoiseTitle, isCalendarDateRange, isExcessiveDuration, isPastYearEvent)
+- [x] 14-02-PLAN.md — Pipeline integration, SQL retroactive cleanup, and expire cron fix
 
 ### Phase 15: Deduplication & Classification
 **Goal**: Users see each sagra only once and never see non-sagra events (antique markets, exhibitions, generic markets) mixed in with real food festivals
@@ -141,7 +141,7 @@ Phases execute in numeric order: 14 → 15 → 16 → 17
 | 11. Bug Fixes + Foundation | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 12. Responsive Desktop Layout | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 13. Transitions + Micro-Interactions | v1.2 | 3/3 | Complete | 2026-03-09 |
-| 14. Data Quality Heuristic Filters | 1/2 | In Progress|  | - |
+| 14. Data Quality Heuristic Filters | v1.3 | 2/2 | Complete | 2026-03-09 |
 | 15. Deduplication & Classification | v1.3 | 0/? | Not started | - |
 | 16. Design System Foundation | v1.3 | 0/? | Not started | - |
 | 17. Visual Effects, Layout & Performance | v1.3 | 0/? | Not started | - |
