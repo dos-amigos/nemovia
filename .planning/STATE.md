@@ -3,30 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Polish
 status: active
-stopped_at: Completed 12-02-PLAN.md (Phase 12 done, ready for Phase 13)
-last_updated: "2026-03-07T13:01:19.173Z"
-last_activity: "2026-03-07 -- Phase 12 completed (2/2 plans: nav/layout + responsive content)"
+stopped_at: Completed 13-02-PLAN.md
+last_updated: "2026-03-09T09:45:08Z"
+last_activity: "2026-03-09 -- Phase 13 plan 02 completed (card/button micro-interactions, FadeImage, badge hover)"
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
----
-
----
-gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Polish
-status: active
-stopped_at: Completed 12-02-PLAN.md (Phase 12 done, ready for Phase 13)
-last_updated: "2026-03-07T12:55:22Z"
-last_activity: "2026-03-07 -- Phase 12 completed (2/2 plans: nav/layout + responsive content)"
-progress:
-  total_phases: 3
-  completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
-  percent: 90
+  total_plans: 7
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State
@@ -36,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Phase 13 - Animation Polish (next)
+**Current focus:** Phase 13 - Transitions + Micro-Interactions (plan 02 of 03 complete)
 
 ## Current Position
 
-Phase: 12 of 13 (Responsive Desktop Layout) -- COMPLETED
-Plan: 2 of 2 in current phase
-Status: Phase complete, ready for Phase 13
-Last activity: 2026-03-07 -- Phase 12 completed (2/2 plans: nav/layout + responsive content)
+Phase: 13 of 13 (Transitions + Micro-Interactions)
+Plan: 2 of 3 in current phase
+Status: Plan 02 complete, continuing phase 13
+Last activity: 2026-03-09 -- Phase 13 plan 02 completed (card/button micro-interactions, FadeImage, badge hover)
 
-Progress: [█████████░] 90%
+Progress: [█████████░] 86%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4 (v1.2)
-- Average duration: ~5min
-- Total execution time: ~20min
+- Total plans completed: 6 (v1.2)
+- Average duration: ~6min
+- Total execution time: ~36min
 
 **By Phase:**
 
@@ -60,6 +45,7 @@ Progress: [█████████░] 90%
 |-------|-------|-------|----------|
 | 11 - Bug Fixes + Foundation | 2/2 | ~16min | ~8min |
 | 12 - Responsive Desktop Layout | 2/2 | ~4min | ~2min |
+| 13 - Transitions + Micro-Interactions | 2/3 | ~16min | ~8min |
 
 *Updated after each plan completion*
 
@@ -83,6 +69,15 @@ All v1.0/v1.1 decisions archived to PROJECT.md Key Decisions table.
 - [12-02]: Skeleton count 4->8 for desktop density (fills 2 rows in 4-col grid)
 - [12-02]: Detail left column sticky (lg:sticky lg:top-20) so map stays visible while scrolling
 - [12-02]: Hero image on desktop contained with lg:rounded-xl instead of full-bleed
+- [13-01]: FrozenRouter pattern freezes LayoutRouterContext during exit animation to prevent new route rendering
+- [13-01]: Short transition durations (150ms enter, 100ms exit) to keep utility app feel snappy
+- [13-01]: Spring animation (stiffness: 500, damping: 35) for BottomNav indicator
+- [13-01]: Shimmer highlight oklch(0.95 0.001 106) slightly lighter than --muted for subtle sweep
+- [13-02]: SagraCard converted to client component -- safe since parent StaggerGrid is already client boundary
+- [13-02]: DirectionsButton converted to client for motion.a -- pure presentational, no server data affected
+- [13-02]: ShareButton wrapped in motion.div rather than converting Shadcn Button to motion component
+- [13-02]: Badge hover effects use CSS-only (no motion import) to keep Badge as non-client component
+- [13-02]: FadeImage handles cached images via useEffect + img.complete check
 
 ### Pending Todos
 
@@ -96,6 +91,6 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-03-07
-Stopped at: Completed 12-02-PLAN.md (Phase 12 done, ready for Phase 13)
+Last session: 2026-03-09
+Stopped at: Completed 13-02-PLAN.md
 Resume file: None
