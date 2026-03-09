@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Polish
-status: shipped
-stopped_at: Milestone v1.2 archived
+milestone: v1.3
+milestone_name: Dati Puliti + Redesign
+status: defining_requirements
+stopped_at: Defining requirements
 last_updated: "2026-03-09"
-last_activity: "2026-03-09 -- v1.2 milestone completed and archived"
+last_activity: "2026-03-09 -- Milestone v1.3 started"
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Planning next milestone
+**Current focus:** v1.3 Dati Puliti + Redesign
 
 ## Current Position
 
-Phase: All phases complete
-Plan: All plans complete
-Status: v1.2 shipped, ready for next milestone
-Last activity: 2026-03-09 -- v1.2 milestone completed and archived
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-09 — Milestone v1.3 started
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Accumulated Context
 
@@ -52,5 +52,5 @@ None active.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Milestone v1.2 archived
+Stopped at: Defining requirements for v1.3
 Resume file: None

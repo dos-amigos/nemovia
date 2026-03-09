@@ -65,7 +65,17 @@ Mostrare TUTTE le sagre del Veneto in un unico posto — dove sono, quando sono,
 - barba.js page transitions — incompatible with React/Next.js
 - Complex page enter/exit animations — hurts utility app speed
 
-## Latest Milestone: v1.2 "Polish" (Shipped 2026-03-09)
+## Current Milestone: v1.3 "Dati Puliti + Redesign"
+
+**Goal:** Eliminare i dati spazzatura dalla pipeline e ridisegnare l'interfaccia con un'estetica moderna e d'impatto.
+
+**Target features:**
+- Filtri data quality avanzati (titoli spazzatura, date calendario, durata assurda, duplicati, eventi passati, non-sagre)
+- Immagini ad alta risoluzione (fallback/upgrade da sorgenti)
+- UI/UX redesign completo (colori, layout, effetti visivi moderni)
+- Design system 2026 (glassmorphism, mesh gradients, bento grids, tipografia premium)
+
+## Previous Milestone: v1.2 "Polish" (Shipped 2026-03-09)
 
 **Delivered:** UX polish — bug fixes, responsive desktop layout, page transitions, micro-interactions, and scroll animations for a premium feel on every device.
 
