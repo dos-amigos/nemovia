@@ -50,6 +50,7 @@ Mostrare TUTTE le sagre del Veneto in un unico posto — dove sono, quando sono,
 - [ ] Recensioni e foto utenti
 - [ ] Expand to new scraper sources beyond the initial 5
 - [ ] LazyMotion migration (34kb → 5kb bundle optimization)
+- [ ] Espandere a mercatini, mostre, fiere e altri eventi (attualmente filtrati come non-sagre) — richiede filtro per categoria nell'UI
 
 ### Out of Scope
 

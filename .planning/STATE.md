@@ -87,6 +87,7 @@ All v1.0/v1.1/v1.2 decisions archived to PROJECT.md Key Decisions table.
 - Italian date format parsing may need refinement as real data volume grows
 - Gemini free tier limits may change (last checked Dec 2025)
 - Edge Function inline copies need a better solution (growing maintenance burden)
+- Futuro: includere mercatini, mostre, fiere e altri eventi non-sagre — servirebbero categorie nell'UI e filtro per tipo evento. Per ora filtrati via is_sagra=false e keyword heuristic (008 migration)
 - LazyMotion migration scheduled for Phase 17 (UI-10)
 
 ### Blockers/Concerns
