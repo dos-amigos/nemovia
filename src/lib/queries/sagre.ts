@@ -28,7 +28,8 @@ function parseWKBPoint(
 }
 
 /**
- * Fetch active sagre happening this weekend (today through +3 days).
+ * Fetch active sagre happening soon (today through next Sunday).
+ * Covers the current weekend even if today is early in the week.
  * Catches multi-day sagre whose start_date is in the past but end_date
  * is in the future (or null, treated as single-day).
  */
@@ -36,8 +37,12 @@ export async function getWeekendSagre(): Promise<SagraCardData[]> {
   try {
     const supabase = await createClient();
 
-    const today = new Date().toISOString().split("T")[0];
-    const threeDaysOut = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    // Next Sunday: days until Sunday (0=Sun, so 7-day%7, but if Sunday give 0)
+    const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, ...
+    const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+    const nextSunday = new Date(now.getTime() + daysUntilSunday * 24 * 60 * 60 * 1000)
       .toISOString()
       .split("T")[0];
 
@@ -46,7 +51,7 @@ export async function getWeekendSagre(): Promise<SagraCardData[]> {
       .select(SAGRA_CARD_FIELDS)
       .eq("is_active", true)
       .or(`end_date.gte.${today},end_date.is.null`)
-      .lte("start_date", threeDaysOut)
+      .lte("start_date", nextSunday)
       .order("start_date", { ascending: true })
       .limit(8);
 
@@ -169,21 +174,37 @@ export async function searchSagre(
 }
 
 /**
- * Get active sagra counts grouped by province.
+ * Get active, non-expired sagra counts grouped by province.
  * Used for province filter chips showing availability.
+ * Replaces RPC with direct query to include date filtering.
  */
 export async function getProvinceCounts(): Promise<ProvinceCount[]> {
   try {
     const supabase = await createClient();
+    const today = new Date().toISOString().split("T")[0];
 
-    const { data, error } = await supabase.rpc("count_sagre_by_province");
+    const { data, error } = await supabase
+      .from("sagre")
+      .select("province")
+      .eq("is_active", true)
+      .not("province", "is", null)
+      .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${today})`);
 
     if (error) {
       console.error("getProvinceCounts error:", error.message);
       return [];
     }
 
-    return (data as ProvinceCount[]) ?? [];
+    // Group and count in-memory
+    const counts = new Map<string, number>();
+    for (const row of data ?? []) {
+      const p = row.province as string;
+      counts.set(p, (counts.get(p) ?? 0) + 1);
+    }
+
+    return Array.from(counts.entries())
+      .map(([province, count]) => ({ province, count }))
+      .sort((a, b) => b.count - a.count) as ProvinceCount[];
   } catch (err) {
     console.error("getProvinceCounts unexpected error:", err);
     return [];
