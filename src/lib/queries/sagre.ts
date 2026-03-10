@@ -90,6 +90,16 @@ export async function searchSagre(
       }
 
       let results = (data as SagraCardData[]) ?? [];
+      const today = new Date().toISOString().split("T")[0];
+
+      // Default: hide past events
+      if (!da) {
+        results = results.filter(
+          (s) =>
+            (s.end_date != null && s.end_date >= today) ||
+            (s.end_date == null && s.start_date != null && s.start_date >= today)
+        );
+      }
 
       // Apply additional filters in-memory on RPC results
       if (provincia) {
@@ -116,6 +126,8 @@ export async function searchSagre(
     }
 
     // Standard query with chained filters
+    const today = new Date().toISOString().split("T")[0];
+
     let query = supabase
       .from("sagre")
       .select(SAGRA_CARD_FIELDS)
@@ -132,6 +144,9 @@ export async function searchSagre(
     }
     if (da) {
       query = query.gte("end_date", da);
+    } else {
+      // Default: hide past events (end_date >= today, or single-day with start_date >= today)
+      query = query.or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${today})`);
     }
     if (a) {
       query = query.lte("start_date", a);
@@ -183,11 +198,14 @@ export async function getMapSagre(): Promise<MapMarkerData[]> {
   try {
     const supabase = await createClient();
 
+    const today = new Date().toISOString().split("T")[0];
+
     const { data, error } = await supabase
       .from("sagre")
       .select(MAP_MARKER_FIELDS)
       .eq("is_active", true)
-      .not("location", "is", null);
+      .not("location", "is", null)
+      .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${today})`);
 
     if (error) {
       console.error("getMapSagre error:", error.message);
