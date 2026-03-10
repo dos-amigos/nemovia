@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 17 of 17 (Visual Effects, Layout, Performance)
-Plan: 1 of 3 complete
+Plan: 2 of 3 complete
 Status: Executing
-Last activity: 2026-03-10 -- Completed Plan 17-01 (Glassmorphism Nav Bars)
+Last activity: 2026-03-10 -- Completed Plan 17-02 (Card Overlay + Bento Grid)
 
 Progress: [████████░░] 89% (8/9 plans complete in v1.3 so far)
 
@@ -46,7 +46,7 @@ Progress: [████████░░] 89% (8/9 plans complete in v1.3 so fa
 | 14 | 2/2 | ~7min | ~3.5min |
 | 15 | 2/2 | ~38min | ~19min |
 | 16 | 2/2 | ~8min | ~4min |
-| 17 | 1/3 | ~4min | ~4min |
+| 17 | 2/3 | ~8min | ~4min |
 
 *Updated after each plan completion*
 
@@ -77,6 +77,10 @@ All v1.0/v1.1/v1.2 decisions archived to PROJECT.md Key Decisions table.
 - [17-01] Literal OKLCH values in glass CSS utilities (not CSS vars) to avoid backdrop-filter composition issues
 - [17-01] will-change: backdrop-filter on glass classes for GPU layer pre-allocation
 - [17-01] Max 3 simultaneous blur surfaces per viewport for mobile performance
+- [17-02] Inline mesh gradient style object (self-contained, no globals.css dependency)
+- [17-02] First weekendSagra as featured card (no DB change needed)
+- [17-02] Removed Card/CardContent wrappers from SagraCard (motion.div IS the card)
+- [17-02] Bento grid 4-col on lg with featured spanning 2x2
 
 ### Pending Todos
 
@@ -92,6 +96,6 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-03-10T11:54:27Z
-Stopped at: Completed 17-01-PLAN.md
-Resume file: .planning/phases/17-visual-effects-layout-performance/17-01-SUMMARY.md
+Last session: 2026-03-10T11:55:30Z
+Stopped at: Completed 17-02-PLAN.md
+Resume file: .planning/phases/17-visual-effects-layout-performance/17-02-SUMMARY.md
