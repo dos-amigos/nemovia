@@ -7,6 +7,7 @@ import {
   truncateDescription,
   chunkBatch,
   buildEnrichmentPrompt,
+  type EnrichmentResult,
 } from "../llm";
 
 describe("validateTags", () => {
@@ -58,6 +59,70 @@ describe("buildEnrichmentPrompt", () => {
     expect(prompt).toContain("Pesce");
     expect(prompt).toContain("Gratis");
     expect(prompt).toContain("Chioggia");
+  });
+
+  it("includes is_sagra classification instruction", () => {
+    const sagre = [{ id: "1", title: "Sagra del Pesce", location_text: "Chioggia", description: null }];
+    const prompt = buildEnrichmentPrompt(sagre);
+    expect(prompt).toContain("is_sagra");
+  });
+
+  it("uses 'Per ogni evento' instead of 'Per ogni sagra'", () => {
+    const sagre = [{ id: "1", title: "Test", location_text: "Verona", description: null }];
+    const prompt = buildEnrichmentPrompt(sagre);
+    expect(prompt).toContain("Per ogni evento");
+    expect(prompt).not.toContain("Per ogni sagra");
+  });
+});
+
+describe("is_sagra classification", () => {
+  it("prompt contains is_sagra instruction text", () => {
+    const sagre = [{ id: "1", title: "Mercato dell'Antiquariato", location_text: "Padova", description: "Mercato mensile" }];
+    const prompt = buildEnrichmentPrompt(sagre);
+    expect(prompt).toContain("is_sagra");
+  });
+
+  it("prompt mentions non-sagra classification criteria", () => {
+    const sagre = [{ id: "1", title: "Test", location_text: "Verona", description: null }];
+    const prompt = buildEnrichmentPrompt(sagre);
+    expect(prompt).toContain("antiquariato");
+    expect(prompt).toContain("mostra");
+    expect(prompt).toContain("mercato");
+  });
+
+  it("prompt still contains food_tags and feature_tags instructions (no regression)", () => {
+    const sagre = [{ id: "1", title: "Test", location_text: "Verona", description: null }];
+    const prompt = buildEnrichmentPrompt(sagre);
+    expect(prompt).toContain("food_tags");
+    expect(prompt).toContain("feature_tags");
+    expect(prompt).toContain("enhanced_description");
+  });
+
+  it("EnrichmentResult interface includes is_sagra boolean field", () => {
+    const result: EnrichmentResult = {
+      id: "test-1",
+      food_tags: ["Pesce"],
+      feature_tags: ["Gratis"],
+      enhanced_description: "Test description",
+      is_sagra: true,
+    };
+    expect(result.is_sagra).toBe(true);
+
+    const nonSagra: EnrichmentResult = {
+      id: "test-2",
+      food_tags: [],
+      feature_tags: [],
+      enhanced_description: "Not a sagra",
+      is_sagra: false,
+    };
+    expect(nonSagra.is_sagra).toBe(false);
+  });
+
+  it("prompt includes is_sagra in response format instruction", () => {
+    const sagre = [{ id: "1", title: "Test", location_text: "Verona", description: null }];
+    const prompt = buildEnrichmentPrompt(sagre);
+    // The response format instruction should mention is_sagra
+    expect(prompt).toMatch(/is_sagra.*food_tags|food_tags.*is_sagra/);
   });
 });
 
