@@ -23,8 +23,8 @@ Requirements for v1.3 "Dati Puliti + Redesign". Each maps to roadmap phases.
 
 ### Data Quality — Immagini
 
-- [ ] **DQ-09**: Pipeline tenta upgrade delle immagini a risoluzione maggiore tramite pattern URL source-specifici (thumbnail → full)
-- [ ] **DQ-10**: Card mostra placeholder gradevole quando l'immagine non è disponibile o è troppo piccola
+- [x] **DQ-09**: Pipeline tenta upgrade delle immagini a risoluzione maggiore tramite pattern URL source-specifici (thumbnail → full)
+- [x] **DQ-10**: Card mostra placeholder gradevole quando l'immagine non è disponibile o è troppo piccola
 
 ### UI/UX — Design System Foundation
 
@@ -84,8 +84,8 @@ Deferred to v1.4+. Tracked but not in current roadmap.
 | DQ-06 | Phase 15 | Pending |
 | DQ-07 | Phase 15 | Pending |
 | DQ-08 | Phase 15 | Pending |
-| DQ-09 | Phase 15 | Pending |
-| DQ-10 | Phase 15 | Pending |
+| DQ-09 | Phase 15 | Complete |
+| DQ-10 | Phase 15 | Complete |
 | UI-01 | Phase 16 | Pending |
 | UI-02 | Phase 16 | Pending |
 | UI-03 | Phase 16 | Pending |
