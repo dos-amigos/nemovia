@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Dati Puliti + Redesign
 status: executing
-stopped_at: Completed 15-01-PLAN.md
-last_updated: "2026-03-10T08:50:09Z"
-last_activity: 2026-03-10 -- Completed Plan 15-01 (Image Upgrade & Branded Placeholder)
+stopped_at: Completed 15-02-PLAN.md
+last_updated: "2026-03-10T09:25:00Z"
+last_activity: 2026-03-10 -- Completed Plan 15-02 (Deduplication & Classification)
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
-  percent: 75
+  completed_plans: 4
+  percent: 100
 ---
 
 # Project State
@@ -21,30 +21,30 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** v1.3 Dati Puliti + Redesign -- Phase 15 in progress, Plan 01 complete
+**Current focus:** v1.3 Dati Puliti + Redesign -- Phase 15 complete, Phase 16 next
 
 ## Current Position
 
-Phase: 15 of 17 (Deduplication & Classification) -- IN PROGRESS
-Plan: 1 of 2 (15-01 complete)
+Phase: 16 of 17 (Design System Foundation) -- NOT STARTED
+Plan: 0 of ? (awaiting planning)
 Status: Executing
-Last activity: 2026-03-10 -- Completed Plan 15-01 (Image Upgrade & Branded Placeholder)
+Last activity: 2026-03-10 -- Completed Plan 15-02 (Deduplication & Classification)
 
-Progress: [███████░░░] 75% (3/4 plans complete in v1.3)
+Progress: [██████████] 100% (4/4 plans complete in v1.3 so far)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3 (v1.3)
-- Average duration: ~3.3min
-- Total execution time: ~10min
+- Total plans completed: 4 (v1.3)
+- Average duration: ~11min
+- Total execution time: ~45min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 14 | 2/2 | ~7min | ~3.5min |
-| 15 | 1/2 | ~3min | ~3min |
+| 15 | 2/2 | ~38min | ~19min |
 
 *Updated after each plan completion*
 
@@ -62,6 +62,10 @@ All v1.0/v1.1/v1.2 decisions archived to PROJECT.md Key Decisions table.
 - [14-02] Expire cron unschedule-before-reschedule to avoid pg_cron duplicate job issue
 - [15-01] Source-specific image upgrade via switch statement for extensibility
 - [15-01] CSS custom properties (from-primary/via-accent) for palette-agnostic placeholders
+- [15-02] pg_trgm similarity thresholds: 0.6 title, 0.5 city for fuzzy dedup
+- [15-02] Retroactive dedup requires BOTH title similarity AND date overlap (never title alone)
+- [15-02] Non-sagra events deactivated with status classified_non_sagra (never deleted)
+- [15-02] is_sagra rides existing Gemini batch call -- zero additional API calls
 
 ### Pending Todos
 
@@ -77,5 +81,5 @@ None active.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 15-01-PLAN.md
+Stopped at: Completed 15-02-PLAN.md
 Resume file: None

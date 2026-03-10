@@ -17,9 +17,9 @@ Requirements for v1.3 "Dati Puliti + Redesign". Each maps to roadmap phases.
 
 ### Data Quality — Deduplicazione & Classificazione
 
-- [ ] **DQ-06**: Pipeline rileva e disattiva duplicati tramite fuzzy matching (pg_trgm similarity) su titolo e localit
-- [ ] **DQ-07**: Pipeline classifica ogni evento come sagra/non-sagra tramite LLM (Gemini is_sagra) e disattiva i non-sagre (antiquariato, mostre, mercati)
-- [ ] **DQ-08**: La classificazione LLM non genera chiamate API aggiuntive (campo aggiunto al prompt di enrichment esistente)
+- [x] **DQ-06**: Pipeline rileva e disattiva duplicati tramite fuzzy matching (pg_trgm similarity) su titolo e localit
+- [x] **DQ-07**: Pipeline classifica ogni evento come sagra/non-sagra tramite LLM (Gemini is_sagra) e disattiva i non-sagre (antiquariato, mostre, mercati)
+- [x] **DQ-08**: La classificazione LLM non genera chiamate API aggiuntive (campo aggiunto al prompt di enrichment esistente)
 
 ### Data Quality — Immagini
 
@@ -81,9 +81,9 @@ Deferred to v1.4+. Tracked but not in current roadmap.
 | DQ-03 | Phase 14 | Complete |
 | DQ-04 | Phase 14 | Complete |
 | DQ-05 | Phase 14 | Complete |
-| DQ-06 | Phase 15 | Pending |
-| DQ-07 | Phase 15 | Pending |
-| DQ-08 | Phase 15 | Pending |
+| DQ-06 | Phase 15 | Complete |
+| DQ-07 | Phase 15 | Complete |
+| DQ-08 | Phase 15 | Complete |
 | DQ-09 | Phase 15 | Complete |
 | DQ-10 | Phase 15 | Complete |
 | UI-01 | Phase 16 | Pending |

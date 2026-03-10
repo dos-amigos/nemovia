@@ -87,7 +87,7 @@ Plans:
 
 Plans:
 - [x] 15-01-PLAN.md — Image quality: tryUpgradeImageUrl TDD + branded placeholder in SagraCard/SagraDetail
-- [ ] 15-02-PLAN.md — LLM is_sagra classification in enrichment + pg_trgm fuzzy dedup SQL migration
+- [x] 15-02-PLAN.md — LLM is_sagra classification in enrichment + pg_trgm fuzzy dedup SQL migration
 
 ### Phase 16: Design System Foundation
 **Goal**: The app's visual identity is transformed -- modern Geist typography and a vibrant new color palette make every screen feel fresh and intentional
@@ -142,6 +142,6 @@ Phases execute in numeric order: 14 → 15 → 16 → 17
 | 12. Responsive Desktop Layout | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 13. Transitions + Micro-Interactions | v1.2 | 3/3 | Complete | 2026-03-09 |
 | 14. Data Quality Heuristic Filters | v1.3 | Complete    | 2026-03-09 | 2026-03-09 |
-| 15. Deduplication & Classification | v1.3 | 1/2 | In progress | - |
+| 15. Deduplication & Classification | v1.3 | 2/2 | Complete | 2026-03-10 |
 | 16. Design System Foundation | v1.3 | 0/? | Not started | - |
 | 17. Visual Effects, Layout & Performance | v1.3 | 0/? | Not started | - |
