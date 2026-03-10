@@ -15,7 +15,7 @@ export function TopNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="hidden lg:block sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
+    <nav className="hidden lg:block sticky top-0 z-50 glass-nav border-b border-white/15">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-8">
         <Link href="/" className="text-lg font-bold text-primary">
           Nemovia

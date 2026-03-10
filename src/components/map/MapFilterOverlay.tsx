@@ -11,7 +11,7 @@ export default function MapFilterOverlay() {
   return (
     <div className="absolute top-3 left-3 z-[1000]">
       {open ? (
-        <div className="bg-background/95 backdrop-blur rounded-lg shadow-lg p-3 max-w-[280px]">
+        <div className="glass-overlay rounded-lg shadow-lg p-3 max-w-[280px]">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium">Filtri</span>
             <Button
@@ -29,7 +29,7 @@ export default function MapFilterOverlay() {
         <Button
           variant="outline"
           size="sm"
-          className="bg-background/95 backdrop-blur shadow-md"
+          className="glass-overlay shadow-md"
           onClick={() => setOpen(true)}
         >
           <SlidersHorizontal className="h-4 w-4" />

@@ -37,7 +37,7 @@ export default function LocationButton({ onLocate }: LocationButtonProps) {
         <Button
           variant="outline"
           size="sm"
-          className="bg-background/95 backdrop-blur shadow-md"
+          className="glass-overlay shadow-md"
           onClick={requestLocation}
           disabled={loading}
         >

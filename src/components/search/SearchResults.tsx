@@ -23,7 +23,7 @@ export function SearchResults({
       <div className="relative -mx-4" style={{ height: "calc(100vh - 16rem)" }}>
         <MapViewDynamic sagre={mapSagre} />
         <MapFilterOverlay />
-        <p className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[1000] bg-background/90 backdrop-blur px-3 py-1 rounded-full text-sm">
+        <p className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[1000] bg-background/85 backdrop-blur-[10px] border border-white/12 px-3 py-1 rounded-full text-sm">
           {mapSagre.length} risultati sulla mappa
         </p>
       </div>
