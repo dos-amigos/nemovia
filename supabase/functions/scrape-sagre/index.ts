@@ -202,6 +202,44 @@ function isNoiseTitle(title: string): boolean {
   return false;
 }
 
+// --- Section 2b: Non-sagra title filter ---
+// Inline copy from src/lib/scraper/filters.ts (Deno cannot import from src/).
+// Keep in sync with the canonical source. Tests live at src/lib/scraper/__tests__/filters.test.ts
+function isNonSagraTitle(title: string): boolean {
+  if (!title || title.length === 0) return false;
+  const t = title.toLowerCase();
+
+  // Whitelist: if title contains sagra/festa/food keywords, NEVER reject
+  if (
+    /\b(sagra|sagre|festa|feste|gastronomic|enogastronomic|degustazion|polenta|baccal[aà]|pesce|gnocch|risott|tortel|formagg|asparag|radicchi|funghi|vino|birra|griglia)/i.test(
+      t
+    )
+  ) {
+    return false;
+  }
+
+  // Non-sagra patterns: reject if the primary subject is a non-sagra event
+  if (
+    /\b(passeggiata|camminata|marcia)\b/i.test(t) ||
+    /\bcarnevale\b/i.test(t) ||
+    /\b(concerto|concerti|recital)\b/i.test(t) ||
+    /\b(mostra|mostre|esposizione)\b/i.test(t) ||
+    /\b(antiquariato|collezionismo)\b/i.test(t) ||
+    /\b(teatro|teatrale|commedia|spettacolo)\b/i.test(t) ||
+    /\b(maratona|corsa|gara\s+ciclistica|gara\s+podistica)\b/i.test(t) ||
+    /\b(convegno|conferenza|seminario)\b/i.test(t) ||
+    /\b(cinema|cineforum|proiezione)\b/i.test(t) ||
+    /\b(yoga|fitness|pilates)\b/i.test(t) ||
+    /\b(mercato|mercatino|mercatini)\b/i.test(t) ||
+    /\bfiera\b/i.test(t) ||
+    /\brassegna\b/i.test(t)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 // --- Section 2c: Date quality filters ---
 // Inline copies from src/lib/scraper/filters.ts (Deno cannot import from src/).
 // Keep in sync with the canonical source. Tests live at src/lib/scraper/__tests__/filters.test.ts
@@ -634,6 +672,9 @@ async function scrapeSource(supabase: SupabaseClient, source: ScraperSource): Pr
 
         // Skip noise entries (calendar pages, navigation text, generic non-event strings)
         if (isNoiseTitle(raw.title)) continue;
+
+        // Skip non-sagra events (standalone concerts, markets, theatre, etc.)
+        if (isNonSagraTitle(raw.title)) continue;
 
         const normalized = normalizeRawEvent(raw, source.name);
 
