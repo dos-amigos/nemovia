@@ -1,0 +1,112 @@
+-- =============================================================================
+-- 007_dedup_classification.sql -- Phase 15: Deduplication & Classification
+-- pg_trgm fuzzy matching for dedup RPC + retroactive dedup of existing data.
+-- Run in Supabase SQL Editor (manual execution, one section at a time).
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- Section 1: Enable pg_trgm extension
+-- Using 'extensions' schema (Supabase convention for extensions).
+-- If this fails due to cross-schema GIN operator class issues, use:
+--   CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA public;
+-- and adjust all extensions.similarity() calls below to just similarity().
+-- -----------------------------------------------------------------------------
+CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA extensions;
+
+-- -----------------------------------------------------------------------------
+-- Section 2: GIN trigram index on normalized_title
+-- Accelerates similarity() lookups for fuzzy dedup matching.
+-- Uses extensions.gin_trgm_ops because pg_trgm was installed in extensions schema.
+-- If pg_trgm was installed in public schema, use just gin_trgm_ops.
+-- -----------------------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS idx_sagre_title_trgm
+  ON public.sagre USING gin (normalized_title extensions.gin_trgm_ops);
+
+-- -----------------------------------------------------------------------------
+-- Section 3: Upgrade find_duplicate_sagra RPC with fuzzy matching (DQ-06)
+-- Replaces exact-only title matching with pg_trgm similarity():
+--   - Title: exact match OR similarity > 0.6 (moderately strict to avoid
+--     false positives like "Sagra del Pesce" vs "Sagra del Fungo")
+--   - City: exact match OR similarity > 0.5 (looser to catch accent differences
+--     and minor spelling variations like "San Dona" vs "San Dona di Piave")
+--   - Date overlap: unchanged from original RPC
+--   - Added is_active = true filter (not in original RPC)
+--   - Results ordered by title similarity DESC
+-- Changed from LANGUAGE sql to plpgsql for RETURN QUERY support.
+-- Added DEFAULT NULL for date parameters (research recommendation).
+-- -----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.find_duplicate_sagra(
+  p_normalized_title TEXT,
+  p_city TEXT,
+  p_start_date DATE DEFAULT NULL,
+  p_end_date DATE DEFAULT NULL
+) RETURNS TABLE (id UUID, image_url TEXT, price_info TEXT, is_free BOOLEAN, sources TEXT[])
+LANGUAGE plpgsql STABLE AS $$
+BEGIN
+  RETURN QUERY
+    SELECT s.id, s.image_url, s.price_info, s.is_free, s.sources
+    FROM public.sagre s
+    WHERE s.is_active = true
+      AND (
+        s.normalized_title = p_normalized_title
+        OR extensions.similarity(s.normalized_title, p_normalized_title) > 0.6
+      )
+      AND (
+        lower(s.location_text) = lower(p_city)
+        OR extensions.similarity(lower(s.location_text), lower(p_city)) > 0.5
+      )
+      AND (
+        (p_start_date IS NOT NULL AND s.start_date IS NOT NULL
+         AND daterange(s.start_date, COALESCE(s.end_date, s.start_date), '[]')
+             && daterange(p_start_date, COALESCE(p_end_date, p_start_date), '[]'))
+        OR (p_start_date IS NULL OR s.start_date IS NULL)
+      )
+    ORDER BY extensions.similarity(s.normalized_title, p_normalized_title) DESC
+    LIMIT 1;
+END;
+$$;
+
+-- -----------------------------------------------------------------------------
+-- Section 4: Retroactive dedup (DQ-06 retroactive)
+-- Deactivates the NEWER duplicate (higher created_at) while keeping the older.
+-- Requires BOTH title similarity AND either date overlap or both having null
+-- dates -- never dedup on title alone (per Pitfall 5 in RESEARCH.md).
+-- -----------------------------------------------------------------------------
+
+-- DRY-RUN: Review duplicate candidates before executing UPDATE
+-- SELECT a.id, a.title, a.location_text, b.id as dup_id, b.title as dup_title,
+--        extensions.similarity(a.normalized_title, b.normalized_title) as sim
+-- FROM sagre a JOIN sagre b ON a.id < b.id
+-- WHERE a.is_active = true AND b.is_active = true
+--   AND extensions.similarity(a.normalized_title, b.normalized_title) > 0.6
+--   AND (lower(a.location_text) = lower(b.location_text)
+--        OR extensions.similarity(lower(a.location_text), lower(b.location_text)) > 0.5)
+-- ORDER BY sim DESC;
+
+WITH dupes AS (
+  SELECT DISTINCT ON (LEAST(a.id, b.id), GREATEST(a.id, b.id))
+    CASE WHEN a.created_at <= b.created_at THEN b.id ELSE a.id END AS dup_id
+  FROM sagre a
+  JOIN sagre b ON a.id < b.id
+  WHERE a.is_active = true AND b.is_active = true
+    AND extensions.similarity(a.normalized_title, b.normalized_title) > 0.6
+    AND (lower(a.location_text) = lower(b.location_text)
+         OR extensions.similarity(lower(a.location_text), lower(b.location_text)) > 0.5)
+    AND (
+      (a.start_date IS NOT NULL AND b.start_date IS NOT NULL
+       AND daterange(a.start_date, COALESCE(a.end_date, a.start_date), '[]')
+           && daterange(b.start_date, COALESCE(b.end_date, b.start_date), '[]'))
+      OR (a.start_date IS NULL OR b.start_date IS NULL)
+    )
+)
+UPDATE sagre SET is_active = false, updated_at = NOW()
+WHERE id IN (SELECT dup_id FROM dupes);
+
+-- -----------------------------------------------------------------------------
+-- Section 5: Verification queries (run after each section)
+-- -----------------------------------------------------------------------------
+-- SELECT count(*) FROM sagre WHERE is_active = true;
+-- SELECT count(*) FROM sagre WHERE is_active = false AND updated_at > NOW() - INTERVAL '5 minutes';
+-- Check fuzzy matching works:
+-- SELECT extensions.similarity('sagra del pesce', 'sagra del pesce fresco');
+-- SELECT * FROM find_duplicate_sagra('sagra del pesce', 'chioggia', NULL, NULL);
