@@ -3,30 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Dati Puliti + Redesign
 status: executing
-stopped_at: Phase 17 context gathered
-last_updated: "2026-03-10T11:21:45.470Z"
-last_activity: 2026-03-10 -- Completed Plan 16-02 (Component Color Migration)
+stopped_at: Completed 17-02-PLAN.md
+last_updated: "2026-03-10T11:55:30Z"
+last_activity: 2026-03-10 -- Completed Plan 17-02 (Card Overlay + Bento Grid)
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
----
-
----
-gsd_state_version: 1.0
-milestone: v1.3
-milestone_name: Dati Puliti + Redesign
-status: executing
-stopped_at: Completed 16-02-PLAN.md
-last_updated: "2026-03-10T10:38:17Z"
-last_activity: 2026-03-10 -- Completed Plan 16-02 (Component Color Migration)
-progress:
-  total_phases: 4
-  completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  total_plans: 9
+  completed_plans: 8
+  percent: 89
 ---
 
 # Project State
@@ -36,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** v1.3 Dati Puliti + Redesign -- Phase 17 next
+**Current focus:** v1.3 Dati Puliti + Redesign -- Phase 17 in progress
 
 ## Current Position
 
-Phase: 16 of 17 (Design System Foundation) -- COMPLETE
-Plan: 2 of 2 complete
+Phase: 17 of 17 (Visual Effects, Layout, Performance)
+Plan: 1 of 3 complete
 Status: Executing
-Last activity: 2026-03-10 -- Completed Plan 16-02 (Component Color Migration)
+Last activity: 2026-03-10 -- Completed Plan 17-01 (Glassmorphism Nav Bars)
 
-Progress: [██████████] 100% (6/6 plans complete in v1.3 so far)
+Progress: [████████░░] 89% (8/9 plans complete in v1.3 so far)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6 (v1.3)
-- Average duration: ~9min
-- Total execution time: ~53min
+- Total plans completed: 8 (v1.3)
+- Average duration: ~7min
+- Total execution time: ~57min
 
 **By Phase:**
 
@@ -61,6 +46,7 @@ Progress: [██████████] 100% (6/6 plans complete in v1.3 so f
 | 14 | 2/2 | ~7min | ~3.5min |
 | 15 | 2/2 | ~38min | ~19min |
 | 16 | 2/2 | ~8min | ~4min |
+| 17 | 1/3 | ~4min | ~4min |
 
 *Updated after each plan completion*
 
@@ -88,6 +74,9 @@ All v1.0/v1.1/v1.2 decisions archived to PROJECT.md Key Decisions table.
 - [16-02] Hero gradient uses from-primary/10 via-primary/5 to-accent/10 for subtle coral-to-teal wash
 - [16-02] Active state buttons use bg-accent/10 border-accent/30 text-accent pattern consistently
 - [16-02] All dark: prefixed color classes removed -- dark mode out of scope
+- [17-01] Literal OKLCH values in glass CSS utilities (not CSS vars) to avoid backdrop-filter composition issues
+- [17-01] will-change: backdrop-filter on glass classes for GPU layer pre-allocation
+- [17-01] Max 3 simultaneous blur surfaces per viewport for mobile performance
 
 ### Pending Todos
 
@@ -103,6 +92,6 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-03-10T11:21:45.466Z
-Stopped at: Phase 17 context gathered
-Resume file: .planning/phases/17-visual-effects-layout-performance/17-CONTEXT.md
+Last session: 2026-03-10T11:54:27Z
+Stopped at: Completed 17-01-PLAN.md
+Resume file: .planning/phases/17-visual-effects-layout-performance/17-01-SUMMARY.md

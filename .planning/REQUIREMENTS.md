@@ -35,8 +35,8 @@ Requirements for v1.3 "Dati Puliti + Redesign". Each maps to roadmap phases.
 
 ### UI/UX — Effetti Visivi
 
-- [ ] **UI-05**: Glassmorphism applicato a TopNav e BottomNav (backdrop-blur, bg semi-trasparente, bordi vetro)
-- [ ] **UI-06**: Glassmorphism applicato a card e overlay dove appropriato (max 2-3 superfici blur per viewport su mobile)
+- [x] **UI-05**: Glassmorphism applicato a TopNav e BottomNav (backdrop-blur, bg semi-trasparente, bordi vetro)
+- [x] **UI-06**: Glassmorphism applicato a card e overlay dove appropriato (max 2-3 superfici blur per viewport su mobile)
 - [ ] **UI-07**: Mesh gradients su hero section e sfondi pagina per profondità visiva
 - [ ] **UI-08**: Componenti chiave (SagraCard, Hero, pagine) ridisegnati con estetica moderna
 
@@ -44,7 +44,7 @@ Requirements for v1.3 "Dati Puliti + Redesign". Each maps to roadmap phases.
 
 - [ ] **UI-09**: Homepage ridisegnata con bento grid layout (CSS Grid responsivo)
 - [ ] **UI-10**: LazyMotion migration completata (da 34kb a ~5kb bundle iniziale)
-- [ ] **UI-11**: Performance glassmorphism verificata su mobile (blur ≤12px, nessun jank su scroll)
+- [x] **UI-11**: Performance glassmorphism verificata su mobile (blur ≤12px, nessun jank su scroll)
 
 ## Future Requirements
 
@@ -90,13 +90,13 @@ Deferred to v1.4+. Tracked but not in current roadmap.
 | UI-02 | Phase 16 | Complete |
 | UI-03 | Phase 16 | Complete |
 | UI-04 | Phase 16 | Complete |
-| UI-05 | Phase 17 | Pending |
-| UI-06 | Phase 17 | Pending |
+| UI-05 | Phase 17 | Complete |
+| UI-06 | Phase 17 | Complete |
 | UI-07 | Phase 17 | Pending |
 | UI-08 | Phase 17 | Pending |
 | UI-09 | Phase 17 | Pending |
 | UI-10 | Phase 17 | Pending |
-| UI-11 | Phase 17 | Pending |
+| UI-11 | Phase 17 | Complete |
 
 **Coverage:**
 - v1.3 requirements: 21 total
