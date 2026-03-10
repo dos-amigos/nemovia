@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Esperienza Completa
-status: roadmap_created
-stopped_at: "Phase 18 planning ready to begin"
-last_updated: "2026-03-10T16:30:00Z"
-last_activity: 2026-03-10 -- Roadmap created for v1.4
+status: executing
+stopped_at: "Completed 18-02-PLAN.md"
+last_updated: "2026-03-10T17:10:43Z"
+last_activity: 2026-03-10 -- Completed 18-02 Province Normalization
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 3
+  completed_plans: 2
+  percent: 11
 ---
 
 # Project State: Nemovia v1.4
@@ -28,13 +28,13 @@ progress:
 ## Current Position
 
 **Phase**: 18 - Data Pipeline Restoration
-**Plan**: None (phase planning not started)
-**Status**: Roadmap created, ready for Phase 18 planning
-**Progress**: 0/6 phases complete (0%)
+**Plan**: 2/3 complete, next: 18-03
+**Status**: Executing Phase 18 plans
+**Progress**: 0/6 phases complete (11%)
 
 ```
-v1.4 Progress: [                                                  ] 0%
-Phase 18:      [                                                  ] 0%
+v1.4 Progress: [=====                                             ] 11%
+Phase 18:      [=================================                 ] 67%
 ```
 
 ## Performance Metrics
@@ -43,9 +43,9 @@ Phase 18:      [                                                  ] 0%
 
 **Timeline**: Started 2026-03-10
 **Phases complete**: 0/6
-**Plans complete**: 0/?
-**Commits**: 0
-**LOC delta**: +0/-0
+**Plans complete**: 2/3 (Phase 18)
+**Commits**: 8
+**LOC delta**: +200/-3
 
 ### Previous Milestone: v1.3 (Shipped 2026-03-10)
 
@@ -60,6 +60,16 @@ Phase 18:      [                                                  ] 0%
 ## Accumulated Context
 
 ### Recent Decisions
+
+**18-01 Filter Recalibration (2026-03-10)**
+- **Decision**: Whitelist-first approach for isNonSagraTitle() -- check sagra/festa/food keywords before non-sagra rejection
+- **Decision**: Dedup guard in re-activation SQL prevents duplicates from re-activated events
+- **Decision**: SQL migration 009 mirrors isNonSagraTitle() logic in PostgreSQL regex for retroactive cleanup
+
+**18-02 Province Normalization (2026-03-10)**
+- **Decision**: Veneto viewbox 10.62,44.79,13.10,46.68 with bounded=1 restricts Nominatim to Veneto region
+- **Decision**: Province codes stored as 2-letter format (BL,PD,RO,TV,VE,VR,VI) not Nominatim raw text
+- **Decision**: SQL migration for retroactive normalization of existing province values
 
 **v1.4 Roadmap Structure (2026-03-10)**
 - **Decision**: 6-phase structure prioritizing data pipeline restoration before all UI work
@@ -83,12 +93,13 @@ Phase 18:      [                                                  ] 0%
 
 ### Active TODOs
 
-**Phase 18 Planning (Next Action)**
-- [ ] Investigate scraper_logs and scraper_sources for event count drop root cause
-- [ ] Plan diagnostic queries for filter rejection rates
-- [ ] Design Veneto bounding box parameters for Nominatim
-- [ ] Plan heuristic filters for non-sagre detection (passeggiata, carnevale, mostra, concerto)
-- [ ] Plan province code normalization SQL migration
+**Phase 18 Execution (Next: 18-03)**
+- [x] Investigate scraper_logs and scraper_sources for event count drop root cause (18-01)
+- [x] Plan diagnostic queries for filter rejection rates (18-01)
+- [x] Design Veneto bounding box parameters for Nominatim (18-02)
+- [x] Plan heuristic filters for non-sagre detection (18-01)
+- [x] Plan province code normalization SQL migration (18-02)
+- [ ] Execute 18-03 plan (next)
 
 **Research Integration**
 - [ ] Review research/SUMMARY.md pitfalls section during phase planning
@@ -151,7 +162,7 @@ cat .planning/REQUIREMENTS.md
 
 **Phase 18 requirements**: DATA-01 (restore 100+ events), DATA-02 (Veneto gating), DATA-03 (non-sagre filter), DATA-04 (province display), SCRAPE-02 (investigate new sources)
 
-**Next action**: Run `/gsd:plan-phase 18` to begin planning data pipeline restoration tasks.
+**Next action**: Run `/gsd:execute-phase 18` to execute plan 18-03 (remaining phase 18 plan).
 
 ---
 

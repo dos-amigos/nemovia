@@ -84,7 +84,7 @@ Full details: [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
 4. Every sagra's location displays with provincia in parentheses (e.g. "Zugliano (VI)")
 5. Scraper health dashboard shows all sources active or failing sources identified with new candidates added
 
-**Plans:** 3 plans
+**Plans:** 2/3 plans executed
 
 Plans:
 - [ ] 18-01-PLAN.md — Filter recalibration: isNonSagraTitle() TDD + SQL re-activation of false positives
@@ -201,7 +201,7 @@ Plans:
 | 15. Deduplication & Classification | v1.3 | 2/2 | Complete | 2026-03-10 |
 | 16. Design System Foundation | v1.3 | 2/2 | Complete | 2026-03-10 |
 | 17. Visual Effects, Layout & Performance | v1.3 | 3/3 | Complete | 2026-03-10 |
-| 18. Data Pipeline Restoration | v1.4 | 0/3 | Planned | - |
+| 18. Data Pipeline Restoration | 2/3 | In Progress|  | - |
 | 19. Image Quality Foundation | v1.4 | 0/? | Not started | - |
 | 20. Layout & Branding | v1.4 | 0/? | Not started | - |
 | 21. Netflix Rows Homepage | v1.4 | 0/? | Not started | - |
