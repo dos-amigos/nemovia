@@ -1,464 +1,392 @@
-# Domain Pitfalls
+# Pitfalls Research
 
-**Domain:** Advanced data quality filters + UI/UX redesign for existing Next.js 15 + Supabase sagre aggregator
-**Researched:** 2026-03-09
+**Domain:** Netflix scroll rows, Unsplash API, city autocomplete, scraper expansion, full-width layout, data quality fixes for existing Next.js 15 + Supabase sagre aggregator
+**Researched:** 2026-03-10
 **Confidence:** HIGH
 
 ---
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites, data loss, or major regressions.
-
 ---
 
-### Pitfall 1: Overly Aggressive Filters Kill Real Sagre (False Positives in Data Quality)
+### Pitfall 1: Nominatim Explicitly Forbids Autocomplete -- City Search Will Get IP Banned
 
 **What goes wrong:**
-New data quality filters designed to catch junk data inadvertently deactivate legitimate sagre. The v1.3 data quality requirements target seven problems (titoli spazzatura, date calendario, duplicati, durata assurda, eventi passati, foto bassa risoluzione, non-sagre). Each filter individually seems reasonable, but stacked together they create an aggressive exclusion chain where a real sagra can be rejected at multiple stages. With only 735 active sagre, losing 10-15% to false positives is catastrophic -- users see empty search results for their province.
+The v1.4 requirement calls for "search bar home -> autocomplete citta -> redirect Cerca con citta + slider raggio km." The natural implementation is to call Nominatim on every keystroke (debounced to 300ms) to resolve city names to coordinates. This violates Nominatim's usage policy, which explicitly states: **"Auto-complete search... you must not implement such a service on the client side using the API."** The OSM Foundation will block the application's IP address, which also breaks the existing geocoding pipeline used by the enrich-sagre Edge Function.
 
 **Why it happens:**
-The precision-recall tradeoff is fundamental to classification. Each heuristic filter has a false positive rate. When you chain seven filters, false positives compound multiplicatively. Specific risks in the v1.3 scope:
+Developers assume "rate limit 1 req/sec, so debounce to 1 second" is sufficient compliance. It is not. Nominatim's policy is an explicit prohibition on autocomplete, not a rate limit issue. Their infrastructure is not designed for the query patterns autocomplete generates (partial queries like "Pad" returning irrelevant global results, repeated queries for the same prefix chain "P" -> "Pa" -> "Pad" -> "Pado" -> "Padov" -> "Padova"). Even at 1 req/sec, this pattern generates systematic queries that will trigger automatic blocking.
 
-1. **Duration filter ("durata assurda"):** Real sagre CAN last longer than 3 days. Multi-weekend sagre (e.g., "Festa del Radicchio" spanning 3 consecutive weekends) might have a start-to-end span of 15+ days. A naive "reject if duration > 7 days" filter would kill these.
+**How to avoid:**
+Use a local static dataset of Italian comuni (municipalities) for autocomplete instead of Nominatim:
 
-2. **Non-sagre filter ("e una sagra?"):** Using Gemini to classify "is this a sagra?" will produce false negatives for events with titles like "Festa della Birra" (legitimate sagra, but could be classified as a "beer festival" rather than "sagra"). The boundary between sagra, festa, mercato, and fiera is culturally fuzzy -- even Italians disagree.
+1. **Static JSON list of Veneto comuni.** Italy has ~7,900 comuni, Veneto has ~563. Create a static JSON file (~15KB gzipped) with `{ name, province_code, lat, lng }` sourced from ISTAT data (freely available at `github.com/topics/comuni-italiani`). Ship it in the client bundle or load it at page mount.
+2. **Client-side fuzzy filter.** Use a simple `startsWith` or `includes` filter on the static list. No API calls needed. Response is instant (sub-millisecond for 563 items).
+3. **Nominatim only for geocoding on submit.** If the user selects a city from the autocomplete and clicks search, the static dataset already has lat/lng coordinates, so no Nominatim call is needed at all.
+4. **Never call Nominatim from the client.** All Nominatim calls must go through the server (Edge Functions) for geocoding new scraper entries only, where rate limiting is already implemented.
 
-3. **Title noise filter (expanding existing isNoiseTitle):** Tightening the existing regex patterns (currently 150-char max) risks rejecting real sagre with long descriptive titles that some sources provide (e.g., "LXIII Sagra del Baccala alla Vicentina di Sandrigo con Degustazione Piatti Tipici").
-
-4. **Duplicate detection:** Fuzzy matching between "Sagra del Pesce - Chioggia" and "Sagra del Pesce Fritto - Chioggia" could incorrectly merge two distinct events at different locations in the same city.
-
-**Consequences:**
-- Users searching for sagre in their province find fewer results
-- The 735 active sagre drops to 500-600 without the user seeing any quality improvement
-- Data loss is invisible until a user complains their local sagra is missing
-- Rolled-back filters require manual reactivation of incorrectly deactivated rows
-
-**Prevention:**
-1. **DRY RUN first:** Every filter MUST run in "audit mode" before "enforcement mode." Query how many sagre would be deactivated, review the list manually, THEN enable the filter. SQL pattern: `SELECT id, title FROM sagre WHERE is_active = true AND <new_filter_condition>` before any `UPDATE`.
-2. **Add a `deactivation_reason` column:** When a filter deactivates a sagra, store WHY (e.g., "duration_exceeded", "non_sagra_classification", "duplicate_of:uuid"). This enables review and rollback of specific filter false positives.
-3. **Duration filter:** Use 21 days as max duration (covers 3-weekend sagre), not 7 days. Log and review anything between 7-21 days.
-4. **Non-sagre LLM classification:** Use a confidence threshold. Gemini returns text, but you can prompt for a confidence score. Only reject when confidence > 0.85 that it is NOT a sagra. Below that, keep it.
-5. **Test against known-good data:** Take 50 known-real sagre from production and verify every new filter passes them. This is the "golden set" regression test.
-
-**Detection:**
-- Active sagra count drops significantly after filter deployment (monitor `SELECT count(*) FROM sagre WHERE is_active = true` before and after)
-- Users report missing sagre they know exist
-- Province-level counts become unbalanced (one province suddenly has 2 sagre instead of 30)
+**Warning signs:**
+- Network tab showing Nominatim requests during typing
+- 429 or connection timeout errors from nominatim.openstreetmap.org
+- Geocoding in the enrich-sagre Edge Function suddenly failing (shared IP ban on Vercel)
 
 **Phase to address:**
-Phase: Data Quality Filters. Every filter task must include a "dry run" step with manual review before enforcement.
+Phase: Homepage UX (city autocomplete task). The static dataset approach must be the architectural decision from the start -- do NOT prototype with Nominatim and "plan to switch later."
 
 ---
 
-### Pitfall 2: Gemini Free Tier Rate Limits Break the Classification Pipeline
+### Pitfall 2: Unsplash API Free Tier Is 50 Requests/Hour -- Hero Image Will Break on Any Traffic
 
 **What goes wrong:**
-Adding LLM-based classification ("is this a sagra?") to the enrichment pipeline exhausts Gemini 2.5 Flash free tier limits. The current pipeline already uses Gemini for tag generation and description enrichment (BATCH_SIZE=8, up to 25 batches per invocation = 200 sagre). Adding a classification step doubles LLM calls. The free tier limits for Gemini 2.5 Flash are approximately 10 RPM and 250 RPD. A single enrich-sagre invocation with 200 sagre at BATCH_SIZE=8 = 25 requests. Running this twice daily for enrichment = 50 RPD. Adding classification at the same batch size = another 50 RPD. Total: 100 RPD, which fits within 250 RPD. BUT: classification should happen BEFORE enrichment (why enrich a non-sagra?), which means running classification on ALL pending items, not just the 200 that get enriched. With 735+ sagre and continuous scraping, backlog can spike.
+The v1.4 requirement calls for "Hero con foto sagra Unsplash API" and "Immagini low-res -> fallback Unsplash a tema." In demo/development mode, the Unsplash API is rate-limited to **50 requests per hour**. The hero image is rendered server-side on the homepage. Every page load = 1 Unsplash API request. 50 unique visitors in an hour exhausts the limit. The 51st visitor sees a broken hero or a fallback placeholder, defeating the purpose of the feature.
+
+Even after production approval (requires a review process), the limit is 5,000 requests/hour. But if Unsplash images are used as fallbacks for low-res scraped images across all cards, each search results page could trigger 10-50 Unsplash API calls, burning through the production limit in minutes with moderate traffic.
 
 **Why it happens:**
-The current pipeline assumes a fixed enrichment load (200 sagre/invocation, 2x/day). Adding classification changes the flow from `scrape -> geocode -> enrich` to `scrape -> geocode -> classify -> enrich`. Classification runs on more items than enrichment because it must evaluate items that might be rejected. If scraping discovers 100 new items per day and classification happens before enrichment, you need 100/8 = 13 classification requests + 25 enrichment requests = 38 requests per invocation. Two invocations = 76 RPD. This seems safe, but a backlog from a scraper outage recovery (e.g., 3 days of accumulated items = 300 items needing classification = 38 requests just for classification) can spike past RPM limits.
+Developers treat Unsplash API like a CDN for on-demand image serving. It is not. Unsplash is designed for "pick an image" workflows (like Notion's cover photo picker), not "serve an image on every page load." The API returns metadata (URLs, photographer info, dimensions), and the actual image files come from `images.unsplash.com` which has no rate limit. But you must call the API first to get the URL.
 
-**Consequences:**
-- Gemini returns 429 (rate limit) errors, classification fails silently
-- Sagre stuck in "pending_classification" status indefinitely
-- Pipeline log shows "LLM batch enrichment error" repeatedly
-- New sagre never appear in the app because they are stuck in an intermediate status
+**How to avoid:**
+1. **Pre-select and cache hero images.** At build time or via a scheduled function, call the Unsplash API once to fetch 10-20 relevant images (query: "Italian food festival", "sagra italy", "italian countryside"). Store the URLs, photographer names, and attribution data in a Supabase table (`hero_images`). Rotate through them on the frontend with zero API calls at runtime.
+2. **For card fallback images, use a curated set.** Pre-fetch 30-50 food/event category images from Unsplash (one per food tag: "fish market", "grilled meat", "polenta", etc.). Store in `unsplash_fallbacks` table. Map to food tags. This requires ~5 API calls total (not per page load).
+3. **Trigger download tracking server-side.** Unsplash requires calling `photo.links.download_location` when an image is "used." Do this once when you pre-fetch and store the URL, not on every page view.
+4. **Apply for production before launch.** Submit the production application early -- it requires screenshots, description, and a review period of up to 7 business days.
+5. **NEVER call the Unsplash API from client-side code.** API keys must remain server-side. Use a server action or API route to proxy requests if needed.
 
-**Prevention:**
-1. **Combine classification with enrichment in ONE LLM call.** Do not make two separate LLM requests (one for "is sagra?" and one for tags/description). Instead, expand the existing enrichment prompt to include: `is_sagra: boolean` in the response schema. This means zero additional LLM requests -- the same 25 batches that generate tags also classify.
-2. **Add status "rejected_non_sagra" as an enrichment outcome.** After the combined LLM call, if `is_sagra === false`, set `status = "rejected_non_sagra"` and `is_active = false` instead of writing tags.
-3. **Implement exponential backoff on 429 errors.** The current catch block in `runLLMPass` logs the error and continues to the next batch. Add a retry with delay: 429 -> wait 10s -> retry once. If second attempt fails, skip batch and continue.
-4. **Monitor RPD usage.** Add a counter in `enrich_logs` for `llm_requests_count` to track how many API calls were made per invocation. Alert (via log) when approaching 200 RPD.
-
-**Detection:**
-- `enrich_logs` showing `llm_count = 0` when there are pending items
-- Error messages containing "429" or "RESOURCE_EXHAUSTED" in Edge Function logs
-- Growing backlog: `SELECT count(*) FROM sagre WHERE status IN ('pending_llm', 'pending_classification')` increasing over time
+**Warning signs:**
+- Unsplash returning 403 or rate limit headers showing 0 remaining
+- Hero section showing broken image or flickering between images
+- Response header `X-Ratelimit-Remaining: 0`
 
 **Phase to address:**
-Phase: Data Quality Filters (LLM classification task). The combined-prompt approach must be the architectural decision from the start.
+Phase: Homepage UX (hero image task). Pre-fetch and cache approach must be designed before any Unsplash API code is written.
 
 ---
 
-### Pitfall 3: CSS Variable Swap During Redesign Breaks Every Shadcn Component
+### Pitfall 3: Netflix Scroll Rows on Existing Bento Grid Create Layout Chaos
 
 **What goes wrong:**
-Changing the OKLCH color values in `globals.css` `:root` block to achieve the new "modern, WOW" aesthetic breaks Shadcn/UI components that depend on specific contrast relationships between `--primary`, `--primary-foreground`, `--accent`, `--accent-foreground`, `--muted`, and `--muted-foreground`. A designer picks a beautiful new primary color (e.g., a vibrant indigo) but does not update `--primary-foreground` to maintain WCAG 4.5:1 contrast. Result: white text on a light-colored button becomes unreadable.
+The current homepage has a specific vertical flow: HeroSection -> QuickFilters -> Bento Grid (featured + 4 regular cards) -> WeekendSection (remaining cards) -> ProvinceSection. Adding Netflix-style horizontal scroll rows ("mix smart: weekend, vicino a te, tipo cucina, provincia") means inserting 4-8 new horizontally scrolling sections into this vertical flow. The problems compound:
+
+1. **Bento grid conflict:** The bento grid uses `lg:grid-cols-4` with a featured card spanning `lg:col-span-2 lg:row-span-2`. Netflix rows use horizontal scroll with `overflow-x-auto`. These are fundamentally different layout paradigms. Mixing them creates visual confusion -- users scroll down to a horizontal section, then need to scroll right, then scroll down again to the next section. This "zigzag" pattern is fatiguing, especially on mobile.
+
+2. **Duplicate card rendering:** The "weekend" row may show the same sagre already in the bento grid. The "vicino a te" row may overlap with sagre in the "provincia" row. Without deduplication across rows, users see the same card 3 times.
+
+3. **Performance with many rows:** Each Netflix row renders 10-20 SagraCard components. With 6 rows, that is 60-120 cards rendered on initial page load, each with a Next.js Image component fetching external images. The current homepage renders at most 13 cards (1 featured + 4 regular + 8 remaining).
+
+4. **Empty rows on low data:** With the event count dropping from 735 to 26, most category rows will be empty or show 1-2 cards. A Netflix row with 1 card is worse than no row at all.
 
 **Why it happens:**
-Shadcn/UI's component library is built on paired CSS variables. Every `--X` has a corresponding `--X-foreground`. The components use `bg-primary text-primary-foreground`, `bg-accent text-accent-foreground`, etc. These pairs MUST maintain contrast ratios. When you change `--primary` from amber-600 (oklch 0.666 0.179 58.318) to, say, a lighter cyan, the existing `--primary-foreground: oklch(1 0 0)` (white) may no longer have sufficient contrast against the new primary.
+Netflix scroll rows work because Netflix has thousands of items per category and a professional content team curating each row. A sagre aggregator with 26-100 active events cannot populate 6 meaningful rows without significant overlap or empty states.
 
-The current Nemovia palette has 8 paired variables in `:root`:
-- `--primary` / `--primary-foreground` (amber-600 / white)
-- `--secondary` / `--secondary-foreground` (stone-100 / stone-900)
-- `--accent` / `--accent-foreground` (green-700 / white)
-- `--muted` / `--muted-foreground` (stone-100 / stone-500)
-- `--destructive` / `--destructive-foreground`
-- `--card` / `--card-foreground`
-- `--popover` / `--popover-foreground`
-- `--background` / `--foreground`
+**How to avoid:**
+1. **Replace the bento grid with Netflix rows, do not layer them on top.** The homepage should be: Hero -> Search Bar -> Row 1 (Questo Weekend) -> Row 2 (Vicino a Te, if geo available) -> Row 3 (Per Tipo) -> ProvinceSection. Remove the bento grid entirely.
+2. **Minimum card threshold per row.** Only render a row if it has 3+ items. Below 3, the horizontal scroll pattern looks broken (nothing to scroll). Merge low-count rows into an "Altre sagre" grid fallback.
+3. **Deduplicate across rows.** Build all row datasets server-side. After populating Row 1 (weekend), exclude those IDs from Row 2 (nearby). After Row 2, exclude from Row 3 (by type). This ensures each sagra appears at most once.
+4. **Lazy render off-screen rows.** Only the first 2 rows should render immediately. Rows 3+ should use IntersectionObserver or `whileInView` to defer rendering until the user scrolls near them. This keeps initial card count under 30.
+5. **CSS scroll snap, not JS carousel.** Use `overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;` with CSS. No JS-based carousel library needed. The app already has `scrollbar-hide` utility in globals.css.
+6. **Keyboard accessibility.** Add `tabindex="0"`, `role="region"`, and `aria-label="Sagre del weekend"` to each scroll row container. This is frequently missed in Netflix-style implementations.
 
-Changing ANY of these requires checking contrast of the pair AND checking how that variable is used across all components (badges, buttons, inputs, cards, nav elements).
-
-Additionally, the current design uses hardcoded color references outside the CSS variable system:
-- `HeroSection.tsx`: `bg-gradient-to-br from-amber-50 via-orange-50 to-green-50`
-- `SagraCard.tsx`: `bg-gradient-to-br from-amber-100 to-green-100` (fallback placeholder)
-- `SagraDetail.tsx`: `bg-gradient-to-br from-amber-100 to-green-100` (fallback placeholder)
-
-These hardcoded Tailwind colors will NOT update when CSS variables change, creating visual inconsistency.
-
-**Consequences:**
-- Unreadable text on buttons, badges, inputs
-- Visual inconsistency between themed components and hardcoded gradients
-- Accessibility violations (WCAG contrast failure)
-- The "new look" partially applied -- some elements look modern, others look like the old design
-
-**Prevention:**
-1. **Change ALL paired variables together.** Never change `--primary` without updating `--primary-foreground`. Use a contrast checker (e.g., tweakcn.com, the Shadcn theme generator) to validate all pairs before committing.
-2. **Audit hardcoded colors first.** Before touching CSS variables, grep the codebase for hardcoded Tailwind color classes (`amber-`, `green-`, `stone-`, `orange-`) and convert them to use CSS variables or create new semantic variables (e.g., `--gradient-start`, `--gradient-end`).
-3. **Use a theme generator.** The tweakcn.com tool generates complete Shadcn v4 themes with OKLCH values and validated contrast ratios. Generate the full theme, then swap ALL variables at once.
-4. **Test every Shadcn component after variable swap.** Visit every page and interact with every component type: buttons (all variants), badges (default, secondary, outline), inputs, selects, cards, separators. Check in both light background sections and darker sections.
-
-**Detection:**
-- Text visually disappearing against backgrounds
-- Lighthouse accessibility audit flagging contrast issues
-- Gradients clashing with new color scheme
+**Warning signs:**
+- Homepage rendering 100+ Image components (check React DevTools component count)
+- Empty rows with 0-1 cards visible on the homepage
+- Same sagra card appearing in 3 different rows
+- LCP (Largest Contentful Paint) increasing above 2.5s
 
 **Phase to address:**
-Phase: UI/UX Redesign (color system task). This MUST be the first task in the redesign track -- every subsequent visual change builds on the color foundation.
+Phase: Homepage UX (Netflix rows task). Architectural decision to REPLACE bento grid, not layer on top. Deduplication logic must be in the server component data-fetching layer.
 
 ---
 
-### Pitfall 4: Redesigning UI While Animation System Is Tightly Coupled
+### Pitfall 4: Full-Width Layout Migration Breaks Every Existing Page
 
 **What goes wrong:**
-The existing animation system (FadeIn, StaggerGrid, ScrollReveal, ParallaxHero, FrozenRouter, page transitions via AnimatePresence) is deeply wired into the component tree. Changing component structure during the redesign (e.g., moving from a simple card grid to a bento grid, or adding glassmorphism containers) breaks animations that depend on specific DOM structure and component hierarchy.
+The current layout wrapper in `(main)/layout.tsx` constrains all content to `max-w-7xl` (1280px) with `px-4 sm:px-6 lg:px-8` padding. The v1.4 requirement for "Layout full-width responsive desktop" means removing or widening this constraint. But the constraint is applied at the layout level, affecting ALL pages -- Home, Cerca, Mappa, and Sagra detail. Removing `max-w-7xl` without adjusting every page's internal layout creates:
+
+1. **Unreadable text on ultrawide monitors.** Text paragraphs stretching to 2560px are unreadable. The sagra detail page description would span the full viewport.
+2. **Card grid going too wide.** The SagraGrid uses `xl:grid-cols-4`. Without max-width, on a 2560px monitor this creates 4 cards each 600px wide with massive gaps.
+3. **Search filters stretching.** The SearchFilters grid uses `lg:grid-cols-4`. At full width, each filter input becomes 400px wide -- awkward and wasted space.
+4. **Map page is already full-width.** The Mappa page's MapView likely wants full viewport width, but the Cerca page's map toggle should remain constrained.
 
 **Why it happens:**
-The current animation architecture has specific coupling points:
+"Full-width" is ambiguous. It could mean: (a) the hero/nav/footer span full width while content remains constrained, (b) the entire layout has no max-width, or (c) some sections are full-width (hero, Netflix rows) while others remain constrained (search filters, text content). The common mistake is implementing (b) when the intent is (c).
 
-1. **`template.tsx` uses AnimatePresence + FrozenRouter** for page cross-fade transitions. The FrozenRouter freezes `LayoutRouterContext` during exit. If the redesign adds new layout wrappers (e.g., a glassmorphism container between template and page content), the frozen context may not propagate correctly, causing either no exit animation or the wrong content being frozen.
+**How to avoid:**
+1. **Keep the layout `max-w-7xl` constraint but use `full-bleed` patterns for specific sections.** The layout wrapper stays as-is. Sections that need full width (hero, Netflix scroll rows, footer) use negative margins or break out of the container: `mx-[-1rem] sm:mx-[-1.5rem] lg:mx-[-2rem] px-4 sm:px-6 lg:px-8`.
+2. **Alternatively, move to a per-section max-width model.** Remove `max-w-7xl` from the layout. Add it to each page's content sections individually. Full-width sections (hero, rows, footer) get no max-width. Text/form sections get `max-w-7xl mx-auto`.
+3. **The hero and Netflix rows should be full-bleed.** These benefit from edge-to-edge display on large screens.
+4. **Text content and forms should NEVER be full-width.** Maximum readable line length is 75 characters (~750px for body text). Use `max-w-prose` or `max-w-3xl` for description text.
+5. **Test at 1920px, 2560px, and 3840px.** Chrome DevTools responsive mode can simulate these widths. Most developers only test at 1440px.
 
-2. **`SagraCard` has motion.div with whileHover/whileTap/exit.** If the card component is restructured (e.g., horizontal layout for bento grid), the motion wrapper must move with the interactive element. Wrapping a new card structure in motion.div without adjusting the animation targets creates janky hover effects on the wrong element.
-
-3. **`ScrollReveal` uses `whileInView` with directional variants** (up, left, right). If the redesign changes the scroll container (e.g., adding a horizontal scroll section for featured sagre), elements inside a horizontal scroll won't trigger `whileInView` correctly because the intersection calculation assumes vertical scrolling.
-
-4. **`ParallaxHero` uses `useScroll` + `useTransform`** and is disabled on desktop with `lg:!transform-none`. If the redesign changes the hero section layout, this CSS override must be updated or the parallax will either break or appear on desktop unintentionally.
-
-5. **`BottomNav` uses `layoutId="bottomnav-active"`** for the animated active indicator. If the nav is redesigned (e.g., adding more tabs, changing to a different pattern), the layoutId animation must be preserved or replaced.
-
-**Consequences:**
-- Page transitions stop working or cause flashing/flickering
-- Hover effects trigger on wrong elements or at wrong scale
-- Scroll animations fire at wrong times or not at all
-- The app looks "broken" during the redesign transition period
-
-**Prevention:**
-1. **Redesign in layers: colors first, then layout, then component structure.** Do NOT change colors + layout + component DOM simultaneously. Each layer affects animations differently.
-2. **Keep animation wrappers stable while changing inner content.** If SagraCard is redesigned, keep the outer `motion.div` wrapper identical and change only the inner Card content.
-3. **Test animations at each design change step.** After every component modification, verify: (a) page transitions still work, (b) card hover/tap works, (c) scroll reveal triggers correctly, (d) parallax works on mobile only.
-4. **If switching from bento grid to a new layout pattern, update StaggerGrid's stagger timing.** The current `staggerChildren: 0.08` assumes grid items of similar size. Bento grids with mixed-size items need different stagger values or per-item delays.
-
-**Detection:**
-- Page navigation causing flash of unstyled content (FOUC)
-- Cards "jumping" on hover instead of smooth scale
-- Elements animating in from the wrong direction
-- ParallaxHero visible on desktop (the `lg:!transform-none` override stopped working)
+**Warning signs:**
+- Text lines exceeding 120 characters on desktop
+- Card grid gaps larger than card width
+- Filter inputs stretching beyond 300px
+- Content looking "lost" in the center of ultrawide screens
 
 **Phase to address:**
-Phase: UI/UX Redesign. Color changes FIRST (no animation impact), then component visual changes (test animations after each), then layout structural changes LAST (highest risk to animations).
+Phase: Layout and Branding (full-width task). Define a clear full-bleed vs constrained strategy before touching the layout wrapper. Per-section approach is safer than removing the global constraint.
 
 ---
 
-## Moderate Pitfalls
-
----
-
-### Pitfall 5: Edge Function Inline Copy Drift Gets Worse with New Filters
+### Pitfall 5: Unsplash Attribution and Hotlinking Non-Compliance Gets API Access Revoked
 
 **What goes wrong:**
-The existing tech debt of maintaining inline copies of pure functions in Edge Functions (documented in PROJECT.md as a revisit item) compounds when adding new data quality filters. Currently, `normalize.ts`, `date-parser.ts`, and `geocode.ts` are duplicated between `src/lib/` and `supabase/functions/`. Adding new filter functions (duration validation, title classification, duplicate detection) means more inline copies in Edge Functions. If a bug is fixed in `src/lib/scraper/normalize.ts` but not in `supabase/functions/scrape-sagre/index.ts`, the scraper behaves differently from local tests.
+Unsplash API terms require three specific compliance elements that are frequently missed:
+
+1. **Attribution:** Every displayed Unsplash image must show "Photo by [Name] on Unsplash" with clickable links including UTM parameters (`?utm_source=nemovia&utm_medium=referral`). On SagraCard overlays (white text on dark gradient), the attribution text competes with the card's title/location/date information. Developers either omit attribution entirely or add it as tiny, invisible text -- both violate the terms.
+
+2. **Hotlinking:** You MUST use URLs from `photo.urls` (served from `images.unsplash.com`). You CANNOT download images and re-host them on Supabase Storage or your own CDN. This conflicts with the common pattern of downloading scraped images for reliability.
+
+3. **Download tracking:** When you "use" an image (display it as a hero, set it as a fallback), you must trigger a GET request to `photo.links.download_location`. This is separate from displaying the image. Missing this tracking is the #1 reason for API access revocation.
 
 **Why it happens:**
-Deno Edge Functions cannot import from the Next.js `src/` directory. This is a fundamental constraint of the Supabase Edge Function runtime. The project made a pragmatic decision in v1.0 to inline copies, and it worked fine with 3-4 small functions. But v1.3 adds potentially 5+ new filter functions across both Edge Functions, making the inline-copy approach increasingly fragile.
+The Unsplash License says "free to use, no attribution required" for the license itself. But the **API Terms** add additional requirements on top of the license. Developers read the license, skip the API terms, and assume attribution is optional. It is not optional when using the API.
 
-**Prevention:**
-1. **Create a shared utility file in `supabase/functions/_shared/`.** Supabase Edge Functions support shared modules via the `_shared` directory convention. Move all pure utility functions there. Both `scrape-sagre` and `enrich-sagre` can import from `../_shared/filters.ts`.
-2. **If `_shared` is not viable**, at minimum add a comment header to every inlined function: `// SYNC: Must match src/lib/scraper/normalize.ts normalizeText()` with date of last sync. Add a CI step or pre-commit check that diffs the inline copy against the canonical source.
-3. **Add unit tests in `src/lib/` for every filter function.** Even though the Edge Function uses an inline copy, the test validates the canonical logic. If the canonical function passes tests, syncing the inline copy is safe.
+**How to avoid:**
+1. **Store full Unsplash metadata.** When pre-fetching images, store not just the URL but also: `photographer_name`, `photographer_username`, `photographer_profile_url`, `download_location_url`, `unsplash_id`. Create a `unsplash_images` table with these columns.
+2. **Attribution component.** Build a reusable `<UnsplashAttribution photographerName="..." profileUrl="..." />` component that renders the required text. Place it on the hero section and any card using an Unsplash fallback.
+3. **Trigger download endpoint on first use.** When the hero image is first loaded from the pre-fetched cache, call the `download_location` URL server-side (via a Supabase Edge Function or Next.js server action). Do this once per image, not once per page view. Track with a boolean `download_tracked` column.
+4. **Do not store Unsplash images in Supabase Storage.** Hotlink from `images.unsplash.com` using the URLs returned by the API. This is not a performance issue -- Unsplash CDN (Imgix) is fast globally.
+5. **Use `photo.urls.regular` (1080px width) for hero, `photo.urls.small` (400px) for card fallbacks.** Do not use `photo.urls.full` -- it is the original upload resolution and can be 30MB+.
 
-**Detection:**
-- Scraper behavior differs from local test expectations
-- Bug fixed locally but still occurring in production
-- Two different filter results for the same input (one from src/lib test, one from Edge Function)
+**Warning signs:**
+- Unsplash images showing without photographer credit
+- Images served from your own domain instead of `images.unsplash.com`
+- API access revoked with email from Unsplash compliance team
+- Missing UTM parameters on attribution links
 
 **Phase to address:**
-Phase: Data Quality Filters (first task). Resolve the shared module approach before adding new filter functions.
+Phase: Homepage UX (hero image task) and Data Quality (image fallback task). Attribution component must be built and tested before any Unsplash image is displayed.
 
 ---
 
-### Pitfall 6: Calendar Date Ranges Produce Invalid Date Spans
+### Pitfall 6: Event Count Collapse (26 vs 735) Makes Every New Feature Look Broken
 
 **What goes wrong:**
-The v1.3 requirement to reject "date calendario" (entries like "1 gen -> 31 gen" that represent calendar pages, not real events) requires enhancing the date parser. But the current `parseItalianDateRange` function in the Edge Function already handles complex multi-segment date formats. Adding a "reject if span > N days" check after parsing creates false positives for legitimate multi-weekend sagre. Worse, some source sites encode recurring weekly events as a date range (e.g., "every Friday in June" becomes "01/06/2026 al 30/06/2026"), which looks like a calendar range but represents a real event series.
+The PROJECT.md notes a "calo drastico eventi (26 vs 735)." With only 26 active events, every v1.4 feature will appear broken:
+
+- Netflix rows: 5 rows with 26 events total = 5 cards per row on average. Most rows will have 1-3 cards. Horizontal scroll with 2 cards is useless.
+- "Vicino a te" row: With 26 events across all of Veneto, the nearby row for most users will be empty.
+- City autocomplete: User types "Padova", selects it, finds 0-2 results within 30km.
+- Province section: 7 provinces, 26 events = some provinces show 0.
+- Hero "SCOPRI LE SAGRE DEL VENETO" over an empty app is embarrassing.
+
+This is not a UI bug but a data problem. Building features against 26 events will produce a misleading experience. Features tested with 26 events will have different performance, layout, and UX characteristics than the same features with 500+ events.
 
 **Why it happens:**
-The fundamental problem is that a date range alone does not distinguish between:
-- A calendar page listing (1 Jan - 31 Dec) -- NOISE
-- A month-long festival (15 Jul - 15 Aug) -- REAL but unusual
-- A multi-weekend sagra (5-6, 12-13, 19-20 Jul) -- REAL, encoded as range
-- A weekly recurring event (every Sat in June) -- REAL, encoded as range
+The v1.3 data quality filters (heuristic filters + LLM classification + fuzzy dedup) were likely too aggressive, or scraper sources have changed their HTML structure causing parse failures, or seasonal variation means March has fewer sagre than summer. The scraper's `consecutive_failures` circuit breaker may have disabled sources. Regardless of cause, building UI features on an empty dataset is building on sand.
 
-The date parser produces start/end dates but loses the semantic context of whether the range represents continuous days, specific dates within a range, or a navigation/calendar artifact.
+**How to avoid:**
+1. **Fix the data pipeline BEFORE building any UI features.** Investigate the event count collapse first: check `scrape_logs` for error rates, check `scraper_sources` for disabled sources, review filter rejection rates. This is the most critical v1.4 task.
+2. **Add new scraping sources.** The requirement already calls for this. Identify 2-3 additional sagre listing sites. Configure them in `scraper_sources` before spending time on Netflix rows.
+3. **Review filter aggressiveness.** The v1.3 `isExcessiveDuration` filter rejects events > 7 days, but many legitimate multi-day sagre span 10-14 days. The `isCalendarDateRange` filter may reject legitimate month-long festivals. Run: `SELECT deactivation_reason, count(*) FROM sagre WHERE is_active = false GROUP BY deactivation_reason` to find which filter is killing the most events.
+4. **Seed test data for UI development.** Create 100+ realistic test sagre in a separate `sagre_test` table (or use a dev branch with seeded data). Develop UI features against this dataset. Then validate against production data once the pipeline is fixed.
+5. **Add an admin dashboard query.** Create an RPC or view: `SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE is_active) as active, COUNT(*) FILTER (WHERE status = 'pending_geocode') as pending_geocode` etc. Monitor daily.
 
-**Prevention:**
-1. **Combine date span check with title analysis.** A 30-day range WITH a title containing "calendario", "elenco", or month names is noise. A 30-day range WITH a title like "Sagra del Baccala" is likely a real multi-weekend event.
-2. **Use tiered thresholds:**
-   - Span > 90 days: Always reject (no sagra lasts 3+ months)
-   - Span 30-90 days: Reject if title matches noise patterns, otherwise flag for review
-   - Span 7-30 days: Accept (legitimate multi-weekend events)
-   - Span 1-7 days: Accept (typical sagra duration)
-3. **Store the raw date text.** Add a `raw_date_text` column to preserve the original scraped date string. This enables post-hoc analysis of date parsing accuracy and manual review of edge cases.
-4. **Handle null dates explicitly.** Currently, if `parseItalianDateRange` returns `{ start: null, end: null }`, the event is inserted with null dates. These should be flagged for review (they may be valid events with unparseable dates or navigation noise).
-
-**Detection:**
-- Sagre with month-long duration being deactivated
-- Province counts dropping after duration filter
-- `raw_date_text` values showing patterns the parser mishandles
+**Warning signs:**
+- Homepage showing "Nessuna sagra questo weekend" empty state
+- Province counts all showing 0-1
+- Netflix rows not rendering (below minimum threshold)
+- Users landing on an apparently empty app
 
 **Phase to address:**
-Phase: Data Quality Filters (date validation task). Implement tiered thresholds, not a single cutoff.
+Phase: Data Quality (pipeline investigation). This MUST be Phase 1 -- before any UI work begins. Without data, every UI feature is built in the dark.
 
 ---
 
-### Pitfall 7: Glassmorphism / Mesh Gradients Tank Mobile Performance
+## Technical Debt Patterns
 
-**What goes wrong:**
-The v1.3 redesign targets "WOW effect" aesthetics including glassmorphism (frosted glass via `backdrop-filter: blur()`), mesh gradients, and potentially 3D elements. These CSS effects are GPU-intensive. On the mid-range Android phones typical of Italian sagre-searching users (Samsung Galaxy A series, Xiaomi Redmi Note), glassmorphism on large surfaces or multiple overlapping elements causes:
-- Scroll jank (dropped frames below 30fps)
-- Increased battery drain
-- Visible rendering artifacts on low-end GPUs
+Shortcuts that seem reasonable but create long-term problems.
 
-**Why it happens:**
-`backdrop-filter: blur()` is one of the most expensive CSS properties. It requires the browser to:
-1. Render everything behind the element
-2. Apply a Gaussian blur to that rendered layer
-3. Composite the blurred layer with the semi-transparent foreground
-
-This happens on EVERY frame if the content behind the element is scrolling. On desktop GPUs, this is unnoticeable. On a Qualcomm Adreno 610 (Galaxy A series GPU), it causes frame drops. The problem compounds when:
-- Multiple glassmorphic elements overlap (each needs its own blur pass)
-- The glassmorphic element is large (full-width nav bar, hero section)
-- The background contains complex content (images, gradients, text)
-
-Mesh gradients (`background: conic-gradient(...)` or canvas-based) are less problematic but still GPU-intensive when animated.
-
-**Prevention:**
-1. **Limit glassmorphism to 2-3 small elements per viewport.** Use it for nav bars, floating action buttons, or modal overlays -- NOT for full-width sections, card backgrounds, or every Badge.
-2. **Reduce blur radius on mobile.** Use `backdrop-filter: blur(8px)` instead of `blur(20px)`. Lower blur = fewer GPU passes. Use a CSS media query: `@media (max-width: 768px) { .glass { backdrop-filter: blur(6px); } }`
-3. **Never animate glassmorphic elements.** Do not use Motion to animate opacity, scale, or position on elements with `backdrop-filter`. The blur recomputation on every animation frame destroys performance.
-4. **Use static mesh gradients, not animated ones.** Mesh gradients as backgrounds are fine (single paint). Animated mesh gradients (CSS animations on gradient stops) are expensive and add little value.
-5. **Test with Chrome DevTools paint flashing.** Enable "Paint flashing" in Rendering panel. Green flashes on every scroll = the element is being repainted every frame. Glassmorphic elements should NOT flash green during scroll unless they are in a `position: fixed` layer.
-6. **Provide a reduced-motion fallback.** For users with `prefers-reduced-motion`, replace `backdrop-filter: blur()` with a solid semi-transparent background (`background: oklch(0.97 0 0 / 0.85)`). This is already partially supported by the MotionConfig wrapper.
-
-**Detection:**
-- Scroll FPS below 30 on Chrome DevTools with CPU 4x throttle
-- Paint flashing on scroll behind glassmorphic elements
-- Users on older phones reporting sluggish navigation
-- Lighthouse Performance score dropping
-
-**Phase to address:**
-Phase: UI/UX Redesign (visual effects task). Every glassmorphism addition must be performance-tested on CPU-throttled mobile viewport.
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| Calling Unsplash API on every page load for hero | Dynamic hero image, easy to implement | Hits rate limit at 50 visits/hour, API access revoked | Never -- always pre-fetch and cache |
+| Using Nominatim for autocomplete with debounce | Quick prototype, works in dev | IP banned in production, breaks geocoding pipeline | Never -- use static dataset |
+| Removing `max-w-7xl` globally for full-width | Quick, one-line change | Every page breaks on wide screens, unreadable text | Never -- use per-section approach |
+| Rendering all Netflix rows eagerly | Simpler code, no lazy loading | 100+ Image components on homepage, LCP regression | Only acceptable if total cards < 30 |
+| Storing Unsplash images in Supabase Storage | Faster loading, no external dependency | Violates API terms, gets access revoked | Never when using Unsplash API |
+| Skipping row deduplication | Simpler server queries, each row independent | Same card in 3 rows, user thinks data is wrong | Never -- deduplicate at query level |
+| Inline copy of new filter functions in Edge Function | Quick to add, existing pattern | 4th milestone of growing drift, 8+ duplicated functions | Acceptable only if `_shared/` directory is used |
+| Hard-coding Unsplash search queries | Specific, relevant images | Images become stale, no variety | Acceptable for hero (curated), not for fallbacks (need category mapping) |
 
 ---
 
-### Pitfall 8: Image Resolution Upgrade Creates Unpredictable External Fetches
+## Integration Gotchas
 
-**What goes wrong:**
-The v1.3 requirement for higher-resolution images means the pipeline needs to either: (a) find higher-res versions of existing scraped images, or (b) fetch from the source detail page to find a better image. Both approaches introduce new HTTP fetches during the scraping/enrichment pipeline, which can:
-- Exceed Edge Function wall clock timeout (150s free tier)
-- Get blocked by source sites (increased request volume)
-- Produce broken image URLs that fail at render time
-- Introduce new external domains that need to be whitelisted in `next.config.ts` `remotePatterns`
+Common mistakes when connecting to external services.
 
-**Why it happens:**
-Current scraping extracts image URLs from listing pages, which often use thumbnails (100x80px). To get full-resolution images, you need to fetch the detail page for each sagra, parse it for a larger image, and store that URL. This means one additional HTTP request per sagra per scrape cycle. With 735+ sagre and 5 sources, that is hundreds of additional requests per scrape cycle, each with a 10-second timeout. The Edge Function wall clock limit of 150s (free tier) cannot accommodate this volume.
-
-The current `next.config.ts` uses a catch-all `**` hostname pattern for images, which works but is a security concern. Adding image upgrade logic means even more unpredictable external domains.
-
-**Prevention:**
-1. **Do NOT fetch detail pages during scraping.** Instead, store the detail page URL (already in `source_url` column) and create a separate, dedicated Edge Function (`upgrade-images`) that runs independently, processes a small batch (10-20 sagre per invocation), and updates `image_url` with higher-res versions. This decouples image upgrade from the critical scrape->geocode->enrich pipeline.
-2. **Use Supabase Storage for image proxying.** Instead of storing external URLs, download images to Supabase Storage and serve them from your own domain. This eliminates the `remotePatterns` wildcard issue and gives you control over image optimization. BUT: Supabase free tier storage is 1GB -- with 735 sagre at ~100KB each = ~73MB, well within limits.
-3. **Validate image URLs before storing.** Send a HEAD request to check the image exists and is a reasonable size (> 5KB, < 5MB). Discard URLs returning 404, redirects to generic "no image" placeholders, or images smaller than 200x200px.
-4. **Keep the existing image URL as fallback.** Store `image_url_hires` alongside the existing `image_url`. Display the high-res version if available, fall back to the original. Never overwrite a working image URL with an unvalidated one.
-
-**Detection:**
-- Broken images appearing on cards (image URL 404)
-- Edge Function timing out more frequently
-- Source sites blocking the scraper (increased request volume triggers rate limits)
-- Next.js build warnings about unoptimized external images
-
-**Phase to address:**
-Phase: Data Quality Filters (image upgrade task). Implement as a separate Edge Function with small batch size.
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| Unsplash API | Calling API from client-side JS, exposing API key | Server-only: use Next.js server actions or API routes. Store key in `.env`, never in client bundle |
+| Unsplash API | Using `photo.urls.full` for hero | Use `photo.urls.regular` (1080px) for hero, `photo.urls.small` (400px) for card fallbacks. `full` can be 30MB+ |
+| Unsplash API | Forgetting to call `download_location` endpoint | Call it once when image is first cached, not on every page view. Track with `download_tracked` boolean |
+| Nominatim | Using it for autocomplete | Use static ISTAT comuni dataset. Nominatim is for geocoding new scraper entries only |
+| Nominatim | Calling from client-side without User-Agent | All Nominatim calls must include a valid `User-Agent` identifying the app. Calls without it are blocked |
+| Next.js Image + Unsplash | Not configuring `remotePatterns` for `images.unsplash.com` | Already have `**` wildcard, but should tighten to specific hostnames: `images.unsplash.com` |
+| New scraper sources | Using the same User-Agent and timing for all sources | Each source may have different rate limits and blocking strategies. Vary politeness delay (1.5s-3s) per source |
+| New scraper sources | Not checking robots.txt | Read robots.txt for every new source. Document allowed paths. Respect `Crawl-delay` directives |
 
 ---
 
-## Minor Pitfalls
+## Performance Traps
+
+Patterns that work at small scale but fail as usage grows.
+
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| Rendering 100+ SagraCard components on homepage (6 Netflix rows x 15-20 cards) | LCP > 4s, scroll jank, memory pressure on mobile | Lazy-render rows 3+, limit per-row cards to 10, use IntersectionObserver | > 60 cards on initial render |
+| Each SagraCard using `<FadeImage>` with external `image_url` (100+ simultaneous image requests) | Network waterfall, images loading in random order, data usage spike on mobile | Use `loading="lazy"` on off-screen cards, set `sizes` prop accurately, limit eager images to first 2 rows | > 20 simultaneous image loads |
+| Netflix row scroll with motion `whileHover` on each card | CPU spike during scroll, frame drops as motion processes hover events for off-screen cards | Disable `whileHover` for cards inside scroll containers (use CSS `:hover` instead), or only enable for visible cards | > 10 motion-wrapped cards in scroll view |
+| Server component fetching 6 separate row datasets with individual Supabase queries | Cold start latency increase, 6 sequential DB round-trips, SSR timeout risk | Fetch all sagre once with a single query, partition into rows in JS, use `Promise.all` for independent queries | > 4 sequential queries per page |
+| Unsplash fallback images: each card without image_url triggers an Unsplash lookup | API rate limit exceeded, all fallback images break simultaneously | Pre-map categories to cached Unsplash URLs, never call API at render time | > 50 req/hour in demo, > 5000/hour in production |
 
 ---
 
-### Pitfall 9: Font Change Breaks Existing Layout Measurements
+## Security Mistakes
 
-**What goes wrong:**
-The redesign may involve switching from Inter (current font) to a different font for the "modern, WOW" look. Different fonts have different metrics (x-height, ascender/descender ratios, letter-spacing). Components with fixed heights (`h-16` for nav, `h-40` for card images, `h-48` for map) or line-clamp (`line-clamp-1`, `line-clamp-2`) will render differently with a new font, causing text overflow, clipping, or extra whitespace.
+Domain-specific security issues beyond general web security.
 
-**Prevention:**
-1. If changing fonts, do it in the SAME task as the color change (both are "design token" level changes).
-2. After font swap, visually inspect every component with real Italian text (long titles like "Sagra del Baccala alla Vicentina con Piatti Tipici Tradizionali").
-3. Use `next/font` for the new font (already the pattern with Inter) to ensure font loading does not cause layout shift.
-
-**Detection:**
-- Text being clipped in cards or nav
-- Layout shift on font load (CLS regression)
-- Italian characters with diacritics (a, e, o) rendering differently
-
-**Phase to address:**
-Phase: UI/UX Redesign (typography/color system task).
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| Exposing Unsplash API key in client-side code | Key theft, API abuse under your account, access revocation | Keep key server-side only. Use Next.js server actions to proxy API calls |
+| Wildcard `remotePatterns: [{ hostname: "**" }]` in next.config.ts | SSRF via image optimization -- attacker can force Next.js to fetch arbitrary URLs | Restrict to known hostnames: scraped source domains + `images.unsplash.com` |
+| Scraper User-Agent impersonating a real browser | Legal liability -- GDPR/Italy DPA views this as deceptive data collection | Use honest User-Agent: `Nemovia/1.4 (+https://nemovia.it)` as already implemented |
+| Storing personal data from scraped sites (organizer names, phone numbers) | GDPR violation -- scraping personal data without consent | Only scrape event metadata (title, dates, location, price). Never store organizer contact info |
+| Not having a privacy policy mentioning Unsplash tracking | GDPR non-compliance -- Unsplash hotlinks send user data to Unsplash/Imgix CDN | Add disclosure in privacy policy: "Images provided by Unsplash. When viewing images, your browser connects to Unsplash servers." |
 
 ---
 
-### Pitfall 10: Redesign Invalidates Existing OG Images and SEO Metadata
+## UX Pitfalls
 
-**What goes wrong:**
-The sagra detail page generates dynamic OG images via `opengraph-image.tsx`. These images use hardcoded colors and the current design style. After the redesign, the OG images will look inconsistent with the new design -- they will show the old amber/green color scheme when shared on WhatsApp/Facebook while the actual page shows the new design. Social sharing is a core use case for Nemovia (Laura sends the link to her husband), so mismatched OG images create a poor impression.
+Common user experience mistakes in this domain.
 
-**Prevention:**
-1. Update `opengraph-image.tsx` as part of the redesign color task -- not as a separate task later.
-2. After color variables change, regenerate and verify OG images for at least 3 sagre by visiting `/sagra/[slug]/opengraph-image` directly.
-3. Consider adding the new brand identity elements (new colors, possibly new logo mark) to the OG image template.
-
-**Detection:**
-- Sharing a link on WhatsApp/Facebook shows old-style preview image
-- OG image colors clashing with new design when seen side by side
-
-**Phase to address:**
-Phase: UI/UX Redesign (color system task, as a sub-task).
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| Netflix rows that are not swipeable on mobile (only scroll via touch drag) | Users on mobile expect swipe gesture, get confused when row does not respond | Use CSS `scroll-snap-type: x mandatory` with `overflow-x: auto`. Native touch scrolling works automatically. Do NOT use a JS drag library |
+| Hiding scrollbar on Netflix rows with no scroll indicator | Users do not know the row scrolls horizontally. They see only 2-3 cards and assume that is all | Add a subtle fade gradient on the right edge (from-transparent to-background) to hint at more content. Or show a ">" arrow button |
+| City autocomplete that clears on blur | User starts typing "Padova", clicks somewhere else (e.g., to read results), returns to input -- it is empty | Persist the autocomplete value in URL state via nuqs. Input should retain its value across focus/blur cycles |
+| Autocomplete dropdown covering the hero section content | On mobile, the dropdown pushes content down or covers the hero text | Position dropdown below input with `position: absolute`, use `max-h-48 overflow-y-auto` to limit height. On mobile, consider a full-screen search overlay |
+| Radius slider without visual feedback | User sets "30km" but has no sense of what that covers geographically | Show a small text indicator: "~Padova e dintorni" or "include Vicenza, Treviso" based on the radius value |
+| Empty Netflix row showing with just a title | Section header "Sagre di Pesce" with 0 cards below -- app looks broken | Never render a row section with fewer than 3 cards. Collapse empty sections entirely |
+| Full-width layout on mobile creating edge-to-edge cards with no breathing room | Cards touching screen edges feel cramped, buttons near edges are hard to tap | Maintain `px-4` (16px) side padding on mobile even in "full-width" mode. Full-bleed only on desktop/tablet |
 
 ---
 
-### Pitfall 11: Duplicate Detection with Fuzzy Matching Creates Incorrect Merges
+## "Looks Done But Isn't" Checklist
 
-**What goes wrong:**
-The current deduplication uses `find_duplicate_sagra` RPC with normalized title + city + dates. The v1.3 requirement to improve duplicate detection (same junk event repeated multiple times) may lead to loosening the matching criteria. Looser matching causes distinct events to be merged. Example: "Sagra del Pesce" in Chioggia (July) and "Sagra del Pesce" in Chioggia (September) are DIFFERENT events at the same location. If the fuzzy matcher ignores dates, they merge into one.
+Things that appear complete but are missing critical pieces.
 
-**Prevention:**
-1. NEVER relax date matching in dedup. Two events at the same city with different dates are always different events.
-2. For same-city, same-title, same-date duplicates across sources: the current merge logic (keep first, merge sources array) is correct. Do not change it.
-3. For detecting "same junk repeated multiple times": look for exact title matches (after normalization), not fuzzy matches. Junk entries typically have identical titles because they come from the same template page.
-4. Add dedup metrics to `scrape_logs`: `events_deduped` count per scrape run.
+### Data Pipeline
+- [ ] **Event count recovery:** Active sagre count is back above 100 -- verify with `SELECT count(*) FROM sagre WHERE is_active = true`
+- [ ] **Scraper sources healthy:** All sources in `scraper_sources` have `is_active = true` and `consecutive_failures = 0`
+- [ ] **Filter calibration:** Run `SELECT deactivation_reason, count(*) FROM sagre WHERE is_active = false GROUP BY deactivation_reason` to verify no single filter is rejecting > 20% of events
+- [ ] **New sources producing data:** Any new scraper sources have at least 1 successful run in `scrape_logs`
+- [ ] **Province always displayed:** Every active sagra has a non-null `province` field -- verify with `SELECT count(*) FROM sagre WHERE is_active = true AND province IS NULL`
 
-**Detection:**
-- Distinct sagre disappearing from search results
-- Source count on merged sagre suspiciously high (5+ sources for one sagra)
-- Users reporting that a well-known sagra is missing
+### Unsplash Integration
+- [ ] **Attribution visible:** Every Unsplash image shows "Photo by [Name] on Unsplash" with working links
+- [ ] **UTM parameters present:** All Unsplash links include `?utm_source=nemovia&utm_medium=referral`
+- [ ] **Download tracking:** `download_tracked = true` for all cached Unsplash images
+- [ ] **API key server-side only:** No Unsplash API key in any client-side bundle (check Next.js build output)
+- [ ] **Rate limit headroom:** Pre-fetched images cached in DB, zero Unsplash API calls at runtime
 
-**Phase to address:**
-Phase: Data Quality Filters (duplicate detection task).
+### Netflix Rows
+- [ ] **Row deduplication:** Same sagra ID never appears in two different rows on the homepage
+- [ ] **Empty row suppression:** Rows with < 3 items are not rendered
+- [ ] **Keyboard navigation:** Each scroll row is focusable with `tabindex="0"` and has `role="region"` + `aria-label`
+- [ ] **Scroll hint visible:** Right-edge fade gradient or arrow button visible when row has more content to scroll
+- [ ] **Reduced motion:** `prefers-reduced-motion` disables smooth scroll behavior on rows
 
----
+### City Autocomplete
+- [ ] **No Nominatim calls on keystrokes:** Network tab shows zero requests to nominatim.openstreetmap.org during typing
+- [ ] **Static dataset complete:** All 563 Veneto comuni are in the dataset with correct lat/lng/province_code
+- [ ] **Province in parentheses:** Autocomplete suggestions show "Padova (PD)", "Zugliano (VI)" format
+- [ ] **URL state persistence:** Selected city and radius survive page refresh (stored via nuqs)
 
-## Phase-Specific Warnings
+### Full-Width Layout
+- [ ] **Text readability on ultrawide:** Description text never exceeds `max-w-prose` width
+- [ ] **Card grid sane at 2560px:** Cards do not stretch beyond 350px width
+- [ ] **Existing pages not broken:** Cerca, Mappa, and Sagra detail pages still look correct
+- [ ] **Mobile padding preserved:** `px-4` minimum side padding on all mobile views
 
-| Phase Topic | Likely Pitfall | Mitigation |
-|-------------|---------------|------------|
-| Data quality: title filters | False positives killing real sagre (#1) | Dry run every filter, manual review before enforcement |
-| Data quality: LLM classification | Rate limit exhaustion (#2) | Combine classification with existing enrichment prompt |
-| Data quality: duration filter | Multi-weekend sagre falsely rejected (#6) | Tiered thresholds (7/30/90 days), not a single cutoff |
-| Data quality: duplicate detection | Distinct events incorrectly merged (#11) | Never relax date matching, use exact title match for junk |
-| Data quality: image upgrade | Edge Function timeout, broken URLs (#8) | Separate Edge Function, small batches, fallback URL |
-| Data quality: expired events filter | Events with null dates getting deactivated (#6) | Null dates should flag for review, not auto-deactivate |
-| UI/UX: color system change | Shadcn component contrast breakage (#3) | Use theme generator, change all paired variables together |
-| UI/UX: layout restructuring | Animation system breakage (#4) | Change colors first, then layout, then DOM structure |
-| UI/UX: glassmorphism/effects | Mobile performance regression (#7) | Max 2-3 glass elements, test with CPU throttle |
-| UI/UX: font change | Text overflow and layout shift (#9) | Test with real Italian text after font swap |
-| UI/UX: new design | OG images outdated (#10) | Update opengraph-image.tsx with color system |
-| Both tracks: Edge Function changes | Inline copy drift (#5) | Create `_shared/` directory or add sync comments |
-
----
-
-## "Looks Done But Isn't" Checklist for v1.3
-
-### Data Quality Track
-- [ ] **Dry run verification:** Every filter was run in audit mode (SELECT) before enforcement (UPDATE) with results manually reviewed
-- [ ] **Golden set regression:** 50 known-real sagre still pass all filters after deployment
-- [ ] **Active count stability:** `SELECT count(*) FROM sagre WHERE is_active = true` is within 5% of pre-filter count (unless legitimate junk was extensive)
-- [ ] **Province balance:** No province dropped to < 5 active sagre without explanation
-- [ ] **Deactivation reasons:** Every deactivated sagra has a `deactivation_reason` value
-- [ ] **Rate limit headroom:** `enrich_logs` shows `llm_requests_count` staying below 200 RPD
-- [ ] **Pipeline still completes:** scrape-sagre + enrich-sagre cron cycle completes within 150s wall clock
-- [ ] **Null date handling:** Sagre with unparseable dates are flagged for review, not auto-deactivated
-
-### UI/UX Redesign Track
-- [ ] **Contrast validation:** All Shadcn component color pairs (primary/primary-foreground, etc.) meet WCAG 4.5:1
-- [ ] **Hardcoded colors eliminated:** No remaining `amber-`, `green-`, `stone-`, `orange-` Tailwind classes outside the design system
-- [ ] **Page transitions still work:** Navigate between Home/Cerca/Mappa/Sagra detail -- AnimatePresence cross-fade works
-- [ ] **Card animations intact:** Hover scale on desktop, tap scale on mobile, exit animation on navigation
-- [ ] **ScrollReveal triggers:** Scroll down sagra detail page, sections animate in from correct directions
-- [ ] **ParallaxHero mobile-only:** Parallax effect visible on mobile, disabled on desktop (lg:!transform-none still active)
-- [ ] **BottomNav indicator:** layoutId animation on BottomNav still smoothly slides between tabs
-- [ ] **Glassmorphism performance:** Chrome DevTools CPU 4x throttle, scroll through card grid with glass elements -- 30+ FPS
-- [ ] **OG images updated:** Share a sagra link on WhatsApp, preview image shows new design colors
-- [ ] **Skeleton-to-content match:** Loading skeletons match redesigned component structure at all breakpoints
-- [ ] **Real device test:** Tested on actual Android phone (not just Chrome DevTools), touch interactions work correctly
+### Footer and Logo
+- [ ] **Footer does not overlap BottomNav:** On mobile, footer content is above the `pb-20` spacer, not behind the fixed BottomNav
+- [ ] **SVG logo accessible:** Logo has `aria-label` and works at 24x24 (TopNav) and larger (footer) sizes
+- [ ] **Footer links functional:** All footer links (if any) work and open correctly
 
 ---
 
 ## Recovery Strategies
 
+When pitfalls occur despite prevention, how to recover.
+
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| False positive filter kills real sagre (#1) | LOW if deactivation_reason tracked | Query by deactivation_reason, bulk UPDATE is_active = true WHERE deactivation_reason = 'offending_filter'. 30 minutes |
-| Gemini rate limit exhaustion (#2) | MEDIUM | Reduce batch frequency from 2x/day to 1x/day. Or switch to Gemini 2.5 Flash-Lite (15 RPM, 1000 RPD). 1-2 hours |
-| CSS variables break components (#3) | LOW | Revert globals.css to pre-change values. The entire color system is in one file. 5 minutes revert, 2 hours to redo correctly |
-| Animations broken by DOM restructure (#4) | HIGH | Requires understanding which animation wrapper broke and why. Each animation component (FadeIn, ScrollReveal, StaggerGrid, ParallaxHero, template.tsx) must be individually diagnosed. 4-8 hours |
-| Edge Function inline copy drift (#5) | MEDIUM | Diff all inline copies against src/lib/ canonical copies. Sync manually. 2-3 hours |
-| Duration filter rejects multi-weekend sagre (#6) | LOW | Widen threshold, reactivate falsely rejected sagre. 30 minutes |
-| Glassmorphism performance regression (#7) | LOW | Remove or reduce backdrop-filter blur values. Replace with solid semi-transparent backgrounds. 1-2 hours |
-| Image upgrade breaks pipeline (#8) | LOW | Disable image upgrade Edge Function, revert to original image URLs. 15 minutes |
-| Font change breaks layout (#9) | LOW | Revert to Inter font in layout.tsx. 5 minutes |
-| OG images outdated (#10) | LOW | Update colors in opengraph-image.tsx. 30 minutes |
-| Incorrect merges from fuzzy dedup (#11) | MEDIUM | Identify merged records, split them (requires creating new rows from merged data). 2-4 hours |
+| Nominatim IP ban from autocomplete (#1) | HIGH | Contact OSM Foundation to request unblock. Switch to static dataset. All geocoding broken until unblocked. 24-48 hours minimum |
+| Unsplash rate limit exhausted (#2) | LOW | Pre-fetch images into DB cache. Zero API calls at runtime going forward. 2-3 hours to implement caching layer |
+| Netflix rows creating layout chaos (#3) | MEDIUM | Remove Netflix rows, revert to bento grid. Incremental approach: add one row at a time. 2-4 hours per revert/re-implementation |
+| Full-width layout breaks pages (#4) | LOW | Revert layout.tsx to `max-w-7xl`. 5 minutes revert, 2-4 hours to implement per-section approach correctly |
+| Unsplash API access revoked for non-compliance (#5) | HIGH | Remove all Unsplash images. Switch to branded placeholders. Reapply for API access (7+ business day review). 1-2 days |
+| Event count too low for meaningful UX (#6) | MEDIUM | Seed with historical/test data for development. Fix pipeline in parallel. 4-8 hours to diagnose and fix scraper issues |
+| Scraper blocked by source site | MEDIUM | Check robots.txt, increase politeness delay to 3-5 seconds, add request jitter. May need to find alternative source. 2-4 hours |
+| Edge Function inline copy drift (expanded) | MEDIUM | Diff all inline copies against `src/lib/` canonical copies. Create `_shared/` directory. 3-4 hours |
+
+---
+
+## Pitfall-to-Phase Mapping
+
+How roadmap phases should address these pitfalls.
+
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| Nominatim autocomplete ban (#1) | Homepage UX -- city search task | Network tab shows zero Nominatim requests during autocomplete |
+| Unsplash rate limit (#2) | Homepage UX -- hero image task | `unsplash_images` table populated, zero API calls in production request logs |
+| Netflix row layout chaos (#3) | Homepage UX -- scroll rows task | Homepage renders < 40 total cards, no duplicate IDs across rows |
+| Full-width layout breakage (#4) | Layout & Branding -- layout task | All pages visually correct at 1920px, 2560px. Text < 80 chars per line |
+| Unsplash non-compliance (#5) | Homepage UX -- hero image task | Attribution visible, UTM params in links, download tracking active |
+| Event count collapse (#6) | Data Quality -- FIRST PHASE | Active sagre count > 100 before any UI work begins |
+| Scraper expansion blocking (#7) | Data Quality -- new sources task | robots.txt checked, politeness delay documented, User-Agent honest |
+| Edge Function drift (ongoing) | Data Quality -- first task | `_shared/` directory created, no more inline copies in function files |
+| Empty state handling across features | All phases | Every section has a meaningful empty state, not broken layout |
+| Filter calibration too aggressive/loose | Data Quality -- filter review task | No filter rejects > 20% of events; non-sagre count < 5% of active |
 
 ---
 
 ## Sources
 
-### Data Quality & Classification
-- [Gemini API Free Tier Rate Limits 2026](https://www.aifreeapi.com/en/posts/gemini-api-free-tier-rate-limits) - MEDIUM confidence (third-party aggregation, verified against multiple sources)
-- [Supabase Edge Function Limits](https://supabase.com/docs/guides/functions/limits) - HIGH confidence (official docs: 150s wall clock free tier, 2s CPU time, 256MB memory)
-- [Data Deduplication and Canonicalization in Scraped Knowledge Graphs](https://scrapingant.com/blog/data-deduplication-and-canonicalization-in-scraped) - MEDIUM confidence (industry best practices)
-- [Supabase Edge Function Troubleshooting](https://supabase.com/docs/guides/functions/troubleshooting) - HIGH confidence (official docs)
+### Unsplash API
+- [Unsplash API Documentation -- Rate Limits](https://unsplash.com/documentation) - HIGH confidence (official docs: 50 req/hr demo, 5000 req/hr production)
+- [Unsplash API Guidelines -- Hotlinking](https://help.unsplash.com/en/articles/2511271-guideline-hotlinking-images) - HIGH confidence (must use `photo.urls`, no self-hosting)
+- [Unsplash API Guidelines -- Attribution](https://help.unsplash.com/en/articles/2511315-guideline-attribution) - HIGH confidence ("Photo by [Name] on Unsplash" with UTM params required)
+- [Unsplash API Terms](https://unsplash.com/api-terms) - HIGH confidence (download tracking, GDPR compliance, API key confidentiality)
+- [Next.js Image Config -- remotePatterns](https://nextjs.org/docs/app/api-reference/config/next-config-js/images) - HIGH confidence (official docs)
 
-### UI/UX Redesign
-- [Shadcn/UI Theming - OKLCH CSS Variables](https://ui.shadcn.com/docs/theming) - HIGH confidence (official Shadcn docs)
-- [tweakcn.com - Shadcn Theme Generator](https://tweakcn.com/) - HIGH confidence (generates validated OKLCH themes with contrast checks)
-- [Glassmorphism Performance Best Practices](https://playground.halfaccessible.com/blog/glassmorphism-design-trend-implementation-guide) - MEDIUM confidence (practical implementation guide with performance metrics)
-- [Glassmorphism: Limit to 2-3 Elements, Reduce Mobile Blur](https://invernessdesignstudio.com/glassmorphism-what-it-is-and-how-to-use-it-in-2026) - MEDIUM confidence (design guide with mobile-specific recommendations)
-- [Customizing Shadcn/UI Themes Without Breaking Updates](https://medium.com/@sureshdotariya/customizing-shadcn-ui-themes-without-breaking-updates-a3140726ca1e) - MEDIUM confidence (community guide for safe theme changes)
+### Nominatim
+- [Nominatim Usage Policy](https://operations.osmfoundation.org/policies/nominatim/) - HIGH confidence (official OSM Foundation: "you must not implement [autocomplete]", 1 req/sec, cache results)
+- [Nominatim Search API](https://nominatim.org/release-docs/latest/api/Search/) - HIGH confidence (official docs)
+- [Italian Comuni Dataset (ISTAT via GitHub)](https://github.com/topics/comuni-italiani) - HIGH confidence (multiple open-source repos with ISTAT data)
 
-### Animation System
-- [Motion: AnimatePresence Common Bug](https://medium.com/javascript-decoded-in-plain-english/understanding-animatepresence-in-framer-motion-attributes-usage-and-a-common-bug-914538b9f1d3) - MEDIUM confidence (documents fragment children issue)
-- [Next.js Image Component - External Images](https://nextjs.org/docs/app/api-reference/components/image) - HIGH confidence (official docs for remotePatterns configuration)
+### Web Scraping Legal (Italy)
+- [Italian DPA Web Scraping Guidance](https://morrirossetti.it/en/insight/publications/the-italian-data-protection-authority-puts-a-stop-to-web-scraping.html) - MEDIUM confidence (law firm analysis of Garante rulings)
+- [Web Scraping Legal Guide 2025](https://www.browserless.io/blog/is-web-scraping-legal) - MEDIUM confidence (industry overview, cites relevant cases)
+- [GDPR and Web Scraping Risks](https://medium.com/deep-tech-insights/web-scraping-in-2025-the-20-million-gdpr-mistake-you-cant-afford-to-make-07a3ce240f4f) - MEDIUM confidence (cites Clearview AI 20M EUR fine)
 
-### Existing Codebase (PRIMARY source for pitfalls)
-- `supabase/functions/scrape-sagre/index.ts` - Current scraping pipeline with isNoiseTitle, 5 source-specific branches
-- `supabase/functions/enrich-sagre/index.ts` - Current enrichment pipeline with Gemini batching, geocoding, province validation
-- `src/app/globals.css` - Current OKLCH color system with 8 paired variables
-- `src/app/(main)/template.tsx` - AnimatePresence + FrozenRouter page transition system
-- `src/components/sagra/SagraCard.tsx` - Card with motion.div hover/tap/exit animations
-- `src/components/detail/SagraDetail.tsx` - Detail page with ScrollReveal, ParallaxHero, ScrollProgress
-- `.planning/PROJECT.md` - Documented tech debt: inline Edge Function copies, wildcard image hostname
+### CSS Scroll / Netflix Rows
+- [Building CSS Carousels (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Overflow/Carousels) - HIGH confidence (official MDN docs)
+- [CSS Scroll Snap Best Practices](https://ishadeed.com/article/css-scroll-snap/) - MEDIUM confidence (well-known frontend author)
+- [Bidirectional Scrolling Accessibility](https://adamsilver.io/blog/bidirectional-scrolling-whats-not-to-like/) - MEDIUM confidence (accessibility expert, cited by CSS-Tricks)
+
+### Existing Codebase (PRIMARY source for integration pitfalls)
+- `src/app/(main)/layout.tsx` -- `max-w-7xl px-4 sm:px-6 lg:px-8` constraint that full-width migration must address
+- `src/app/(main)/page.tsx` -- Current bento grid structure that Netflix rows must replace/integrate with
+- `src/components/home/HeroSection.tsx` -- Current mesh gradient hero that will be replaced with Unsplash photo hero
+- `src/components/sagra/SagraCard.tsx` -- Motion-wrapped card with FadeImage that Netflix rows will render 60-100x
+- `src/components/search/SearchFilters.tsx` -- Existing nuqs-based filter state that city autocomplete must integrate with
+- `supabase/functions/scrape-sagre/index.ts` -- Full scraping pipeline with inline filter copies, source-specific extraction
+- `src/app/globals.css` -- `scrollbar-hide` utility already exists for Netflix rows
+- `next.config.ts` -- Wildcard `**` hostname in remotePatterns (security concern to tighten)
 
 ---
-*Pitfalls research for: Nemovia v1.3 "Dati Puliti + Redesign" -- data quality filters + UI/UX redesign*
-*Researched: 2026-03-09*
+*Pitfalls research for: Nemovia v1.4 "Esperienza Completa" -- Netflix rows, Unsplash API, city autocomplete, scraper expansion, full-width layout, data quality fixes*
+*Researched: 2026-03-10*

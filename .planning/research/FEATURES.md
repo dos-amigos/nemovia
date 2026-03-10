@@ -1,289 +1,449 @@
-# Feature Research
+# Feature Landscape
 
-**Domain:** Data quality filtering + UI/UX redesign for food festival (sagre) aggregator
-**Researched:** 2026-03-09
-**Milestone:** v1.3 "Dati Puliti + Redesign"
-**Confidence:** HIGH (data quality) / MEDIUM (UI redesign -- design trends require subjective validation)
+**Domain:** Food festival (sagre) aggregator -- UX upgrade + data quality fixes
+**Milestone:** v1.4 "Esperienza Completa"
+**Researched:** 2026-03-10
+**Overall confidence:** HIGH (implementation patterns well-established, zero novel technology)
 
 ## Existing State Assessment
 
-Features already built that this milestone extends or fixes:
+Features already built that v1.4 extends, replaces, or fixes:
 
-| Existing Feature | Status | Relevance to v1.3 |
+| Existing Feature | Status | Relevance to v1.4 |
 |------------------|--------|-------------------|
-| `isNoiseTitle()` heuristic filter | Built (scrape-sagre) | Catches some junk but misses calendar titles, non-sagre events |
-| `parseItalianDateRange()` | Built | Parses dates but does not validate duration or reject impossible ranges |
-| `find_duplicate_sagra` RPC | Built (PostgreSQL) | Exact-match dedup by normalized title + city + dates. No fuzzy matching. |
-| Expire cron job | Built (pg_cron daily) | Deactivates past events but may not catch 2025 events correctly |
-| Veneto province gating | Built (enrich-sagre) | Filters non-Veneto after geocoding. Working correctly. |
-| Gemini structured output enrichment | Built | Tags + descriptions. Could be extended to classify event type. |
-| OKLCH color system in globals.css | Built | amber-600 primary, green-700 accent, stone-50 background. Ready to swap. |
-| Shadcn/UI component library | Built | Provides base components. Theme swap via CSS variables is trivial. |
-| Motion animation system | Built | FadeIn, StaggerGrid, ScrollReveal, ParallaxHero, page transitions all exist |
-| Responsive desktop layout | Built (v1.2) | TopNav, multi-col grids, side-by-side detail already done |
+| HeroSection (mesh gradient + CTA link) | Built (v1.3) | **Replace** with photo hero + search bar + city autocomplete |
+| QuickFilters (horizontal chip scroll) | Built (v1.0) | **Keep** but move below Netflix rows |
+| Bento grid homepage | Built (v1.3) | **Replace** with Netflix-style horizontal scroll rows |
+| WeekendSection (standard grid) | Built (v1.0) | **Replace** -- content moves into scroll rows |
+| ProvinceSection (grid of province links) | Built (v1.0) | **Replace** with province scroll row |
+| SearchFilters (nuqs-driven, geo, raggio Input) | Built (v1.0) | **Extend** with city autocomplete field + radius slider |
+| TopNav (glassmorphism, text logo) | Built (v1.2) | **Replace** text logo with SVG logo |
+| BottomNav (glassmorphism) | Built (v1.2) | **Keep** |
+| Main layout (max-w-7xl container) | Built (v1.2) | **Modify** for full-width sections |
+| SagraCard (image overlay) | Built (v1.3) | **Keep** -- used inside scroll rows |
+| FeaturedSagraCard | Built (v1.3) | **Keep** for potential use in hero area |
+| MapView on /cerca | Built (v1.0) | **Fix** -- currently broken |
+| MapView on /mappa | Built (v1.0) | **Extend** with filter overlay at top |
+| Branded placeholder (gradient + icon) | Built (v1.3) | **Fix** -- not visible, needs Unsplash fallback |
+| Heuristic filters + LLM classification | Built (v1.3) | **Extend** with tighter Veneto gating + non-sagre cleanup |
+| Scraping pipeline (5 sources) | Built (v1.1) | **Investigate** event count drop + add new sources |
 
 ---
 
-## Track 1: Data Quality Features
+## Table Stakes
 
-### Table Stakes (Users Expect Clean Data)
+Features users expect. Missing any of these = product feels incomplete or broken.
 
-Features that fix visible data corruption. Users seeing junk events = immediate loss of trust.
+### TS-1: Fix Broken Map on Search Page
 
-| Feature | Why Expected | Complexity | Dependencies |
-|---------|--------------|------------|--------------|
-| **Expired event removal (2025 events)** | Events from 2025 are still showing in March 2026. The expire cron must check `end_date < NOW()` and also handle events with no end_date where `start_date < NOW() - interval '3 days'`. Users opening the app see stale events and assume the data is abandoned. | LOW | Expire SQL query fix. No code dependencies. Run once as retroactive cleanup + fix cron logic. |
-| **Calendar date rejection** | Dates like "1 gennaio - 31 gennaio" or "1 gen - 31 dic" are calendar page artifacts, not real sagra dates. Real sagre last 1-7 days max, with rare exceptions up to 14 days. Duration > 14 days should be flagged as suspicious and rejected. | LOW | Add duration validation to `scrape-sagre` after `parseItalianDateRange()`. If `endDate - startDate > 14 days`, mark as noise. |
-| **Junk title filter enhancement** | Current `isNoiseTitle()` catches "Calendario mensile" but misses patterns like "Calendario eventi sagre [month] [region]", "Sagre del mese di [month]", generic listing titles. These are navigation/index page artifacts, not event names. | LOW | Extend `isNoiseTitle()` regex patterns. Add: titles containing multiple month names, "del mese di", "eventi in [region]", and titles that are pure category listings. |
-| **Duplicate detection improvement** | Same junk event appears multiple times because `find_duplicate_sagra` matches on normalized_title + city + start_date. If the junk passes with slightly different dates or missing city, it creates duplicates. Need fuzzy matching on title similarity. | MEDIUM | Enhance `find_duplicate_sagra` RPC to use `pg_trgm` trigram similarity for fuzzy title matching (threshold 0.7). PostgreSQL extension, no external deps. |
-| **Past-year event filtering** | Events scraped with year 2025 dates should be auto-rejected at scrape time, not just expired later. The scraper currently accepts any parsed date regardless of year. | LOW | Add year check in `scrape-sagre`: if `startDate` year < current year, skip the event. Simple integer comparison. |
+| Attribute | Detail |
+|-----------|--------|
+| **Why expected** | The /cerca page advertises a list/map toggle. Clicking "Mappa" does nothing or shows a blank map. A broken feature is worse than no feature. |
+| **Complexity** | LOW |
+| **Dependencies** | Existing MapView.dynamic.tsx, ViewToggle, SearchFilters |
+| **Notes** | Likely a state sync issue between nuqs filters and map data fetching. The map probably needs the same filtered sagre data passed as markers. Debug before building new features. |
 
-### Differentiators (Better Than Competitors)
+### TS-2: Fix Branded Placeholder Images Not Visible
 
-| Feature | Value Proposition | Complexity | Dependencies |
-|---------|-------------------|------------|--------------|
-| **"Is it a sagra?" LLM classifier** | Non-sagre events (antique markets, art exhibitions, trade fairs) slip through because the scraper has no concept of event type. Use Gemini to classify: `{type: "sagra" | "mercato" | "mostra" | "fiera" | "altro", confidence: 0.0-1.0, reason: "..."}`. Only keep events classified as "sagra" or "fiera gastronomica" with confidence > 0.7. This is the single highest-impact data quality feature. | MEDIUM | Add classification step to `enrich-sagre` Edge Function, between geocoding and tag enrichment. Use Gemini structured output with enum response schema. Batch 8 events per request (same as current enrichment). Adds ~2s per batch. |
-| **Image quality gating** | Scraped images are often tiny thumbnails (50x50, 100x75). These look terrible on cards with `h-40` (160px) height. Filter images below a minimum dimension threshold (e.g., width < 200px or height < 150px). Replace sub-threshold images with the styled placeholder (gradient + icon). | LOW | At scrape time or enrich time, HEAD request the image URL and check `Content-Length` (very small = likely thumbnail) or, better, fetch image headers to get dimensions. If below threshold, set `image_url = null` so the placeholder renders. |
-| **Higher-resolution image extraction** | Many source sites serve thumbnail URLs in listing pages but have full-res images on detail pages. Scraping the detail page URL for each event to find `<meta property="og:image">` or the largest `<img>` could yield much better images. | HIGH | Requires a second scraping pass per event (detail page fetch). Rate-limited by politeness delays. Could add 5-10 minutes per scraper run. Best done as a separate enrichment step, not blocking the main scrape. |
-| **Automated data quality dashboard** | Track metrics over time: % of events rejected by each filter, % with images, % with valid dates, duplicate rate. Log to `data_quality_logs` table. Helps detect when a source site changes format and breaks the scraper. | LOW | New DB table + INSERT at end of each scrape/enrich run. No UI needed initially -- query via Supabase dashboard. |
+| Attribute | Detail |
+|-----------|--------|
+| **Why expected** | Cards with missing images show a faint gradient + icon that is nearly invisible against the light background. Users see blank cards. |
+| **Complexity** | LOW |
+| **Dependencies** | SagraCard, FeaturedSagraCard |
+| **Notes** | Two paths: (1) Increase gradient opacity and icon visibility, (2) Use Unsplash food fallback images. Recommend path 2 -- every card should have an image. |
 
-### Anti-Features (Data Quality)
+### TS-3: Unsplash Fallback Images for Missing/Low-Res Photos
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| **ML-based title classification** | "Use a trained model to detect junk titles" | Overkill for ~735 events. Training data doesn't exist. The junk patterns are deterministic (regex-catchable). ML adds latency, cost, and a model to maintain. | Extend `isNoiseTitle()` with more regex patterns. If false negatives persist, use Gemini classifier (already integrated) as a second pass. |
-| **Manual curation queue** | "Let an admin review flagged events before they go live" | No admin users exist. The app has zero authentication. Building an admin panel is out of scope for a solo project. Adds maintenance burden. | Auto-reject with high-confidence rules. Low-confidence events (Gemini score 0.5-0.7) get `is_active = false` and can be manually activated via Supabase dashboard if needed. |
-| **Cross-source deduplication by event URL** | "Same event on eventiesagre and assosagre should merge" | Already handled by `find_duplicate_sagra` which deduplicates by normalized title + city + dates and merges sources array. URL-based dedup adds little value since source URLs are always different across sites. | Keep current dedup. Enhance with trigram similarity for fuzzy title matching. |
-| **OCR on event poster images** | "Extract dates and details from locandina images" | Requires vision LLM or separate OCR service. High latency, high error rate on stylized poster text. Free-tier Gemini vision has limited capacity. | Defer to v2+. Text extraction from HTML is sufficient for now. |
+| Attribute | Detail |
+|-----------|--------|
+| **Why expected** | A premium visual product cannot show empty placeholders or pixelated thumbnails. Users judge quality by image quality. |
+| **Complexity** | MEDIUM |
+| **Dependencies** | Unsplash API account, Next.js Image optimization, SagraCard |
+| **Implementation approach** | Pre-fetch a curated set of Italian food/festival images from Unsplash keyed by food_tag (e.g., "pesce" -> fish dishes, "carne" -> grilled meat). Store URLs in a static map or Supabase table. Assign at enrichment time, not at render time. This avoids runtime API calls entirely. |
+| **Unsplash constraints** | **Demo mode: 50 req/hr.** Production approval needed for 5,000 req/hr. Attribution required: photographer name + link to Unsplash profile with UTM params. Image URLs must be hotlinked directly (images.unsplash.com does not count against rate limit). Must trigger `/photos/:id/download` endpoint on each download for tracking. |
+| **Caching strategy** | Pre-fetch 50-100 food images at build time or via a one-time script. Store the Unsplash URLs + photographer attribution in Supabase. Assign a random food-tag-matched URL to sagre missing images during enrichment. Never call Unsplash API at request time. |
+| **Attribution** | Display "Photo by [Photographer] on Unsplash" somewhere accessible -- footer, image tooltip, or detail page. Not required on every card but must be reachable. |
+
+### TS-4: Province Always Visible After City Name
+
+| Attribute | Detail |
+|-----------|--------|
+| **Why expected** | "Zugliano" means nothing to most users. "Zugliano (VI)" instantly locates it. Province context is essential for a regional discovery app. |
+| **Complexity** | LOW |
+| **Dependencies** | SagraCard, FeaturedSagraCard, detail page, map popups |
+| **Notes** | The `province` field already exists in the DB and is already shown conditionally in SagraCard (`{sagra.province && \`(\${sagra.province})\`}`). Issue may be that some records have null province. Fix at data level (ensure enrichment always sets province) and at display level (always format as "City (XX)"). |
+
+### TS-5: Fix Events Outside Veneto
+
+| Attribute | Detail |
+|-----------|--------|
+| **Why expected** | "San Miniato" (Tuscany) appearing in a Veneto app destroys credibility. Users will not trust the data. |
+| **Complexity** | LOW |
+| **Dependencies** | enrich-sagre Edge Function, Nominatim geocoding |
+| **Notes** | The Veneto gating already exists (checks province after geocoding). Issue is likely: (a) some events bypass enrichment, (b) province extraction from Nominatim response is flawed for edge cases, or (c) events were imported before gating was added and never cleaned. Need retroactive cleanup query + gating audit. |
+
+### TS-6: Fix Non-Sagre Events Still Present
+
+| Attribute | Detail |
+|-----------|--------|
+| **Why expected** | "Passeggiata lungo il fiume" and "Carnevale di Venezia" are not food events. Their presence signals broken data quality. |
+| **Complexity** | LOW-MEDIUM |
+| **Dependencies** | LLM is_sagra classification (v1.3), heuristic filters |
+| **Notes** | The LLM classification exists but may have false negatives or was not applied retroactively. Need: (1) Check if is_sagra field is properly filtering in queries, (2) Run retroactive LLM classification on events that predate v1.3, (3) Add explicit heuristic rules for known non-sagra patterns ("passeggiata", "carnevale", "mercatino", etc.). |
+
+### TS-7: Investigate and Fix Event Count Drop (26 vs 735)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Why expected** | Going from 735 to 26 active events means the app looks empty and abandoned. This is a critical data pipeline issue. |
+| **Complexity** | MEDIUM-HIGH |
+| **Dependencies** | All 5 scraper sources, cron jobs, heuristic filters, LLM classification |
+| **Investigation areas** | (1) Are scrapers still running? Check pg_cron logs. (2) Are source websites still accessible? Test each URL. (3) Did heuristic filters become too aggressive? Check how many events are being rejected. (4) Is the expire cron deactivating current events? Check query logic. (5) Seasonal factor -- March may genuinely have fewer sagre than summer. (6) Are new events being scraped but failing enrichment? |
+| **Notes** | This is the most critical issue in v1.4. An aggregator with 26 events is useless. Must be investigated first before building UI features. |
 
 ---
 
-## Track 2: UI/UX Redesign Features
+## Differentiators
 
-### Table Stakes (Modern Web App in 2026)
+Features that set Nemovia apart. Not expected in a basic aggregator, but create the "wow" factor.
 
-These are foundational for any redesign. Without them, new colors/effects feel like lipstick on a pig.
+### D-1: Netflix-Style Horizontal Scroll Rows
 
-| Feature | Why Expected | Complexity | Dependencies |
-|---------|--------------|------------|--------------|
-| **Color palette refresh** | Current amber-600/stone-50 reads as "food blog template 2020." Modern apps (Linear, Vercel, Raycast) use deeper, richer palettes with intentional contrast. A contemporary food discovery app should feel warm but sophisticated -- not generic. | LOW | Swap OKLCH CSS variables in `globals.css`. All components use CSS variables already, so the change propagates automatically. No component code changes needed. |
-| **Typography upgrade (Geist)** | Inter is fine but generic. Geist, Vercel's typeface, has slightly rounder curves and friendlier apertures that align with the reference apps (Linear, Vercel, Raycast). Available via `next/font/google` with zero additional installs. Geist Mono provides complementary monospace for data-dense elements (dates, distances, prices). | LOW | Replace Inter import in `layout.tsx` with Geist + Geist_Mono. Update CSS variable in globals.css `@theme inline`. 3-line change total. |
-| **Refined spacing and proportions** | Current spacing feels tight in some areas (card content `p-3`) and loose in others. A consistent 4px/8px grid with intentional density creates visual rhythm. | LOW | Audit component padding/margin values. Standardize on Tailwind spacing scale. |
-| **Card component redesign** | Current SagraCard is functional but generic: rectangular image, stacked text. Modern cards use rounded corners (radius-xl+), subtle borders, refined shadows, and better information hierarchy. The image-to-content ratio should feel balanced. | MEDIUM | Redesign SagraCard.tsx. New visual treatment while keeping same data props. Larger corner radius, refined shadow, better tag presentation. |
-| **Consistent icon style** | Lucide icons are good but used inconsistently. Some are 3.5, some 4, some 5. Standardize sizes by context (nav: 5, card meta: 4, inline: 3.5). | LOW | Audit icon sizes across components. Define size constants. |
+| Attribute | Detail |
+|-----------|--------|
+| **Value proposition** | Transforms the homepage from a static grid into a browsable, Netflix-like discovery experience. Each row = a smart category. Users can scan 4-5 categories without scrolling the page much. This is the signature UX pattern of modern content discovery apps. |
+| **Complexity** | MEDIUM |
+| **Dependencies** | SagraCard (reuse), new query functions for row data, scroll container component |
 
-### Differentiators (WOW Effect)
+**Implementation details:**
 
-These create the "questo non sembra un sito di sagre" reaction the user wants.
+**Scroll Container Architecture:**
+- Use native CSS `overflow-x: auto` with `scroll-snap-type: x mandatory` and `scroll-snap-align: start` on each card
+- Use `scroll-padding-inline` to account for page edge padding
+- Tailwind classes: `flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide` on container, `snap-start shrink-0` on each card item
+- Card width: `w-[280px]` fixed width, or `w-[75vw] sm:w-[45vw] lg:w-[280px]` responsive
+- **Peek effect**: Container must extend to screen edge but cards respect page padding. Use negative margin + padding trick: `mx-[-1rem] px-4` so the scroll extends full-width while first card aligns with content
 
-| Feature | Value Proposition | Complexity | Dependencies |
-|---------|-------------------|------------|--------------|
-| **Glassmorphism navigation bar** | Frosted glass effect on TopNav and BottomNav using `backdrop-blur-xl bg-white/70` (or dark variant). Navigation floats over content with blur, creating depth without heaviness. This is the signature effect of Linear/Arc/Raycast. Tailwind v4 supports `backdrop-blur` natively. | LOW | Update TopNav.tsx and BottomNav.tsx: add `backdrop-blur-xl bg-white/70 border-b border-white/20`. Position `sticky top-0 z-50`. Browser support is excellent (all modern browsers except legacy Firefox ESR). |
-| **Mesh gradient hero** | Replace the flat `bg-gradient-to-br from-amber-50 via-orange-50 to-green-50` with an animated mesh gradient using layered radial gradients. CSS-only, no JS. Creates a living, breathing hero section that feels premium. Reference: Apple product pages, Stripe landing page. | MEDIUM | Create mesh gradient with 4-5 positioned `radial-gradient()` layers in CSS. Animate positions with `@keyframes` for subtle movement. Respect `prefers-reduced-motion`. |
-| **Bento grid homepage layout** | Replace the current linear stack (hero, quick filters, weekend, provinces) with a bento grid layout on desktop. Cards of varying sizes create visual interest and information density. Weekend sagre get hero-sized tiles, provinces get compact tiles, filters get a dedicated tile. | MEDIUM | Desktop-only layout change. Use CSS Grid with `grid-template-areas` and `grid-template-rows` for named regions. Mobile stays linear stack. New `BentoGrid` component wrapping existing sections. |
-| **Subtle grain/noise texture overlay** | A barely-visible noise texture (CSS `url(data:image/svg+xml,...)` or tiny repeating PNG) over backgrounds adds organic warmth and depth. This is a hallmark of premium design (Raycast, Notion, Arc). Prevents backgrounds from looking "too digital." | LOW | Single CSS pseudo-element (`::after`) on the body or main container with `opacity: 0.03-0.05`, `pointer-events: none`. SVG noise pattern inlined as data URI (~200 bytes). |
-| **Animated gradient borders on focus/hover** | Cards and inputs get a subtle animated gradient border on hover/focus instead of a static color. Creates a premium interactive feel. Reference: Vercel's input focus states, GitHub Copilot cards. | LOW | CSS `background-image: linear-gradient()` on a pseudo-element with `background-size: 200%` animated. Or use `@property` for direct gradient animation. |
-| **LazyMotion migration** | Reduce Motion bundle from 34KB to 6KB initial load. Since every component is being touched for the redesign, this is the perfect time to migrate from `motion.div` to `m.div` + `LazyMotion` provider. | MEDIUM | Update Providers.tsx with LazyMotion. Replace all `motion` imports with `m` across 15+ components. Use `strict` mode to catch missed imports. |
-| **Premium loading states** | Replace shimmer skeletons with more refined versions: slightly colored tint matching section context (warm shimmer for food sections, neutral for navigation). Skeleton shapes more closely match final content with rounded pill shapes for text. | LOW | Update Skeleton component with contextual color variants. Refine existing shimmer animation timing. |
+**Mobile (touch) behavior:**
+- Native swipe scrolling via `overflow-x: auto` -- no JS library needed
+- `scroll-snap-type: x mandatory` ensures cards snap cleanly after swipe
+- `-webkit-overflow-scrolling: touch` for iOS momentum scrolling (Tailwind: included by default)
+- Use `scroll-snap-type: x proximity` instead of `mandatory` to be less aggressive -- allows natural overscroll
 
-### Anti-Features (UI/UX)
+**Desktop (mouse/trackpad) behavior:**
+- Add left/right arrow buttons that appear on hover (`group` + `group-hover:opacity-100`)
+- Arrows use `scrollBy({ left: cardWidth, behavior: 'smooth' })` via a ref to the scroll container
+- Hide arrows on mobile: `hidden lg:flex`
+- Arrows positioned absolute at vertical center of the row, left/right edges
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| **Full dark mode** | "Modern apps have dark mode" | Doubles the CSS variable surface area. Sagre are outdoor daytime events -- dark mode is semantically wrong for the brand. User specifically asked for "colori WOW" not dark theme. Adds testing burden for every visual change. | Rich, warm light theme with deep saturated colors. Optional: subtle tinted backgrounds (dark teal/navy header section) for contrast without full dark mode. |
-| **Neo-brutalism style** | "It's trendy in 2025-2026" | Deliberately ugly aesthetic (thick black borders, raw colors, exposed grid) conflicts with the "curato" (curated/polished) tone from PROJECT.md. Neo-brutalism works for creative portfolios, not food discovery. | Refined modern aesthetic: clean lines, subtle depth (glassmorphism), warm colors. |
-| **3D elements / Three.js** | "3D globe or interactive food models" | Massive bundle cost (Three.js ~150KB min), GPU-intensive, kills mobile performance, adds complexity far beyond the project scope. Zero value for finding a sagra this weekend. | CSS-only depth effects: layered gradients, subtle parallax, box-shadow depth. These create perceived 3D without the performance cost. |
-| **Full-page scroll hijacking** | "Smooth section-by-section scrolling" | Lenis already rejected in v1.2 for Leaflet conflicts. Full-page scroll hijack (fullPage.js style) destroys content scanning speed. Users want to quickly scroll through cards, not watch animations. | Native scroll with subtle scroll-linked animations (already built). Fast, interruptible, accessible. |
-| **Animated page backgrounds (particles, waves)** | "Marketing site wow effect" | Performance killer on mobile. Distracts from content. Battery drain. This is a utility app, not a landing page. | Static or subtly animated mesh gradient on hero only. Content sections get clean, quiet backgrounds. |
-| **Custom cursor** | "Trendy on portfolio sites" | Inaccessible, breaks on touch devices, conflicts with browser defaults, performance cost. No user expects this on an event discovery app. | Standard cursor. Focus on making interactive elements respond to hover/tap with micro-interactions. |
-| **Horizontal scroll carousels** | "Swipeable card sections" | Mobile scroll hijack frustration. Accessibility nightmare. Content hidden off-screen. Breaks "scan and compare" behavior users need for choosing a sagra. | Vertical grid with responsive columns. All content visible. Better for comparison. |
-| **CSS-in-JS (Emotion/Styled-Components)** | "Dynamic theming" | Tailwind v4 + CSS custom properties already handle theming. CSS-in-JS adds runtime overhead or build complexity. | Stay with Tailwind utilities + OKLCH custom properties. |
+**Row categories (smart mix):**
+
+| Row | Query Logic | Notes |
+|-----|-------------|-------|
+| "Questo weekend" | `start_date <= nextSunday AND (end_date >= today OR end_date IS NULL)` | Already exists as `getWeekendSagre()`, increase limit |
+| "Vicino a te" | PostGIS `find_nearby_sagre` with browser geolocation | Only show if user grants location. Fallback: hide row. |
+| "Gratis" | `is_free = true AND active AND not expired` | Always popular filter |
+| Per provincia (e.g., "A Padova", "A Verona") | `province = X` with highest count first | Dynamic -- only show provinces with 3+ events |
+| Per cucina (e.g., "Pesce", "Carne") | `food_tags @> ARRAY['Pesce']` | Dynamic -- only show tags with 3+ events |
+
+**Accessibility:**
+- `role="region"` + `aria-label="Sagre questo weekend"` on each row
+- Arrow buttons: `aria-label="Scorri a destra"` / `aria-label="Scorri a sinistra"`
+- `tabindex="0"` on scroll container for keyboard navigation
+- Respect `prefers-reduced-motion`: disable snap animation
+
+**No external carousel library needed.** CSS scroll snap + a 30-line React component is sufficient. Avoid SwiperJS, Embla, or similar -- they add bundle weight for no benefit when native CSS handles the core behavior.
+
+### D-2: Photo Hero Section with Unsplash
+
+| Attribute | Detail |
+|-----------|--------|
+| **Value proposition** | A beautiful full-width hero with a real food/festival photo immediately signals quality. The current mesh gradient hero is pleasant but generic -- it could be any app. A food photo says "sagre" instantly. |
+| **Complexity** | MEDIUM |
+| **Dependencies** | Unsplash API (or pre-fetched curated images), Next.js Image, ParallaxHero component (already exists) |
+
+**Implementation details:**
+
+**Image source strategy:**
+- Pre-select 10-15 high-quality landscape photos from Unsplash matching "Italian food festival", "sagra italiana", "outdoor food market Italy"
+- Store URLs + attribution in a constants file or Supabase table
+- Rotate image: pick randomly or cycle daily (use date-based seed for consistency across SSR)
+- Use Unsplash dynamic resize params: `?w=1600&q=80&fm=webp` for optimal quality/size
+
+**Layout structure:**
+```
+[Full-width hero container: relative, h-[400px] lg:h-[500px]]
+  [Background image: absolute inset-0, object-cover, Next.js Image with priority]
+  [Dark gradient overlay: absolute inset-0, bg-gradient-to-t from-black/60 via-black/25 to-black/10]
+  [Content container: absolute bottom-0 left-0 right-0, p-6 lg:p-12]
+    [H1: "SCOPRI LE SAGRE DEL VENETO" -- text-white, text-3xl lg:text-5xl, font-bold]
+    [Subtitle: "Trova sagre ed eventi gastronomici nella tua zona" -- text-white/80]
+    [Search bar: city autocomplete input -- see D-3]
+```
+
+**Full-width approach:**
+- Hero must break out of the `max-w-7xl` container
+- Use negative margins: `mx-[calc(-50vw+50%)]` or render hero outside the container in layout
+- Better approach: restructure homepage to render hero before the container `<main>` content
+
+**Parallax:**
+- Reuse existing `ParallaxHero` component which already handles mobile parallax + desktop static
+- The `y` transform from `useScroll` creates subtle depth when scrolling
+
+**Responsive:**
+- Mobile: `h-[350px]`, smaller text, search bar full-width below hero text
+- Desktop: `h-[500px]`, larger text, search bar inline or below text
+- Always: `object-cover` with `object-position: center` for smart cropping
+
+**Performance:**
+- Use `priority` prop on Next.js Image to preload LCP image
+- `sizes="100vw"` since hero is always full viewport width
+- Consider `placeholder="blur"` with a base64 blur data URL for instant loading feel
+
+### D-3: City Autocomplete Search with Radius
+
+| Attribute | Detail |
+|-----------|--------|
+| **Value proposition** | "Cerca per nome, citta..." is a passive link to /cerca. A real search bar with city autocomplete lets users start their journey from the homepage. Type "Pad..." and see "Padova (PD)" appear. Select it and get redirected to /cerca with city + radius pre-filled. |
+| **Complexity** | MEDIUM |
+| **Dependencies** | Local Veneto city database, Shadcn Combobox, nuqs URL params, SearchFilters |
+
+**CRITICAL: Nominatim forbids autocomplete.** The Nominatim usage policy explicitly states: "Auto-complete search is not yet supported by Nominatim and you must not implement such a service on the client side using the API." Using Nominatim for keystroke-by-keystroke autocomplete would violate their policy and risk IP bans.
+
+**Solution: Local city database for Veneto.**
+- Veneto has ~563 comuni (municipalities). This is a small enough dataset to ship client-side as a static JSON file (~30-50 KB gzipped).
+- Source: ISTAT official data or OpenDataSoft's `georef-italy-comune` dataset. Both include nome, provincia, and coordinates.
+- Structure: `Array<{ name: string; province: string; lat: number; lng: number }>` sorted alphabetically
+- Filter to Veneto only (563 rows vs 8,000+ for all of Italy)
+- No API calls needed. Instant autocomplete. Zero rate limit concerns.
+
+**Autocomplete UX:**
+
+| Aspect | Implementation |
+|--------|---------------|
+| **Component** | Shadcn Combobox (Popover + Command composition) -- already in the Shadcn ecosystem, accessible, keyboard-navigable |
+| **Filtering** | Client-side string matching. `city.name.toLowerCase().startsWith(query.toLowerCase())`. No fuzzy needed -- Italian city names are typed predictably. If fuzzy desired, simple `includes()` check suffices for 563 items. |
+| **Display format** | "Cittadella (PD)" -- name + province code in each dropdown item |
+| **Min chars** | Start filtering at 2 characters typed |
+| **Selection behavior** | On select: redirect to `/cerca?lat={lat}&lng={lng}&raggio=15` (or set nuqs params) |
+| **Debounce** | Not needed for client-side filtering of 563 items -- instant |
+| **Mobile** | Full-width input, dropdown below, touch-friendly item height (min 44px) |
+
+**Radius slider:**
+
+| Aspect | Implementation |
+|--------|---------------|
+| **Trigger** | Appears after city is selected (or always visible next to city input) |
+| **Range** | 5-50 km, step 5 km, default 15 km |
+| **Component** | HTML `<input type="range">` styled with Tailwind, or Shadcn Slider if available |
+| **Label** | Show current value: "Entro 15 km" |
+| **Map circle preview** | On /cerca page with map view, show a `<Circle>` component from react-leaflet centered on the selected city with radius matching the slider. Semi-transparent fill (primary/10), stroke (primary). Update circle reactively when slider changes. |
+| **Integration** | Slider value maps to `raggio` nuqs param. City lat/lng map to `lat`/`lng` params. |
+
+### D-4: Custom SVG Logo
+
+| Attribute | Detail |
+|-----------|--------|
+| **Value proposition** | The current logo is plain text "Nemovia" in the nav. A custom SVG logo with the coral/teal brand palette signals a finished product. |
+| **Complexity** | LOW |
+| **Dependencies** | Design decision (manual SVG creation or tool) |
+| **Notes** | Create a simple wordmark or icon+wordmark. Use coral primary for the main mark, teal accent for a detail element. Keep it simple -- a stylized fork/map-pin combo or just the wordmark in a distinctive treatment. SVG for crispness at all sizes. Two variants: full (nav desktop) and icon-only (favicon, small spaces). |
+
+### D-5: Full Footer with Credits
+
+| Attribute | Detail |
+|-----------|--------|
+| **Value proposition** | A footer signals completeness. Without one, the page just... ends. It anchors the brand, provides attribution, and houses secondary links. |
+| **Complexity** | LOW |
+| **Dependencies** | Layout component |
+
+**Content for a sagre aggregator footer:**
+
+| Section | Content |
+|---------|---------|
+| **Brand** | SVG logo + "Fatto con cuore in Veneto" tagline |
+| **Navigation** | Home, Cerca, Mappa (mirrors nav) |
+| **Data attribution** | "Dati aggregati da [source names]" -- credit scraping sources |
+| **Image attribution** | "Foto da Unsplash" with link (satisfies Unsplash attribution requirement for fallback images) |
+| **Tech credits** | Optional: "Powered by Next.js, Supabase, OpenStreetMap" |
+| **Legal** | "I dati sono forniti a scopo informativo" disclaimer |
+| **Copyright** | "2026 Nemovia. Tutti i diritti riservati." |
+
+**Layout:**
+- Mobile: single column, stacked sections
+- Desktop: 3-4 column grid
+- Background: darker shade (`bg-foreground/5` or subtle mesh gradient)
+- Text: `text-muted-foreground`, links hover to `text-foreground`
+- Generous padding: `py-12 lg:py-16`
+- Place before `<BottomNav>` on mobile (above the fixed bottom bar)
+
+### D-6: Filters on Dedicated Map Page
+
+| Attribute | Detail |
+|-----------|--------|
+| **Value proposition** | The /mappa page shows all sagre but offers no way to filter. Users exploring the map want to narrow by province, cuisine type, or date just like on /cerca. |
+| **Complexity** | LOW-MEDIUM |
+| **Dependencies** | MapFilterOverlay (already exists), SearchFilters component (reuse) |
+| **Notes** | MapFilterOverlay.tsx already exists in the codebase. May need to wire it to actual filtering logic. Render a collapsible filter bar at the top of the map page. Apply filters to the `getMapSagre()` query or filter markers client-side. |
+
+### D-7: Full-Width Responsive Desktop Layout
+
+| Attribute | Detail |
+|-----------|--------|
+| **Value proposition** | The current `max-w-7xl` container wastes screen space on wide monitors. Hero and scroll rows should be edge-to-edge. Content sections can remain contained. |
+| **Complexity** | LOW |
+| **Dependencies** | Layout component, HeroSection, scroll row component |
+
+**Implementation approach:**
+- Keep `max-w-7xl` as the default content container
+- Hero section renders outside the container (full viewport width)
+- Netflix scroll rows use the negative margin trick to extend to edges while keeping card alignment with content
+- Other sections (footer, detail pages) stay within container
+- Structural change: either use a "breakout" CSS class or restructure the page component to alternate between full-width and contained sections
+
+---
+
+## Anti-Features
+
+Features to explicitly NOT build in v1.4.
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| **SwiperJS / Embla carousel library** | Adds 20-40 KB bundle for scroll rows. CSS scroll-snap + a simple arrow component achieves the same result with zero dependencies. The project already has Motion for animations -- no need for another interaction library. | Build a `<ScrollRow>` component using native CSS scroll snap + `scrollBy()` for arrow buttons |
+| **Nominatim live autocomplete** | Explicitly forbidden by Nominatim usage policy. Risk of IP ban. 1 req/sec limit makes it unusable for autocomplete anyway. | Ship Veneto comuni as a static JSON (~30-50 KB). Client-side filtering is instant for 563 items. |
+| **Google Places / Mapbox geocoding** | Violates zero-cost constraint. Google Places charges per request. Mapbox free tier is limited. | Local city DB for autocomplete + existing Nominatim for one-time geocoding of scraper results (already works) |
+| **Runtime Unsplash API calls** | 50 req/hr in demo mode is too low for per-request image fetching. Even at 5,000/hr production, every page load costing an API call is fragile. | Pre-fetch curated food images once. Store URLs in DB. Assign at enrichment time. Zero runtime API calls. |
+| **Infinite scroll / lazy loading rows** | Homepage has at most 5-7 scroll rows. Loading them all upfront is fine. Infinite scroll adds complexity (intersection observers, loading states, pagination) for no benefit with this data volume. | Render all rows server-side. Client hydration for scroll behavior only. |
+| **User-uploaded photos** | Requires auth, moderation, storage. Massively increases scope. Not needed when Unsplash + scraper images cover the use case. | Unsplash fallbacks + scraped images from source sites |
+| **Custom map tiles / dark map theme** | OSM tiles are free and functional. Custom Mapbox tiles cost money. Dark map themes conflict with the light coral/teal design language. | Keep OSM default tiles. Focus on marker/popup styling instead. |
+| **Complex logo animation** | Animated logos add load time and distraction. The glassmorphism nav is already visually rich. | Static SVG logo. Maybe a subtle hover scale with Motion, nothing more. |
 
 ---
 
 ## Feature Dependencies
 
 ```
-TRACK 1: DATA QUALITY
-======================
+TS-7 (Fix event count drop)
+  |-> TS-5 (Fix events outside Veneto)
+  |-> TS-6 (Fix non-sagre events)
+  |-> All homepage UI features (no point building Netflix rows for 26 events)
 
-Expired 2025 Events Removal (standalone)
-  --> Fix expire cron SQL (immediate retroactive cleanup)
-  --> No dependencies
+TS-3 (Unsplash fallback images)
+  |-> TS-2 (Fix placeholder visibility) -- Unsplash fallback IS the fix
+  |-> D-2 (Photo hero) -- uses same Unsplash infrastructure
+  |-> D-5 (Footer) -- Unsplash attribution lives here
 
-Past-Year Date Rejection (standalone)
-  --> Add year check to scrape-sagre normalizeRawEvent()
-  --> No dependencies
+D-2 (Photo hero)
+  |-> D-3 (City autocomplete) -- search bar embedded in hero
+  |-> D-7 (Full-width layout) -- hero must be full-width
 
-Enhanced Junk Title Filter (standalone)
-  --> Extend isNoiseTitle() regex patterns
-  --> No dependencies
+D-1 (Netflix scroll rows)
+  |-> D-7 (Full-width layout) -- rows extend to screen edges
+  |-> TS-7 (Event count fix) -- need enough events to populate rows
 
-Calendar Date Duration Validation (standalone)
-  --> Add duration check after parseItalianDateRange()
-  --> Depends on: date parsing working correctly (already does)
+D-3 (City autocomplete)
+  |-> Local Veneto city database (must be created/sourced first)
+  |-> Radius slider integration with existing nuqs filter params
 
-Fuzzy Duplicate Detection
-  --> Requires: pg_trgm PostgreSQL extension enabled
-  --> Modify find_duplicate_sagra RPC to use similarity()
-  --> Should run AFTER title filter improvements (so fewer junk titles enter dedup)
+D-4 (SVG logo)
+  |-> D-5 (Footer) -- logo appears in footer too
 
-"Is it a sagra?" LLM Classifier
-  --> Requires: Gemini API (already configured)
-  --> Add classification step to enrich-sagre Edge Function
-  --> Should run AFTER geocoding, BEFORE tag enrichment
-  --> Depends on: Gemini structured output with enum schema
-
-Image Quality Gating
-  --> Add dimension/size check at scrape or enrich time
-  --> Independent of other features
-  --> Enhances: card visual quality (pairs with UI redesign)
-
-Higher-Resolution Image Extraction
-  --> Requires: detail page scraping pass (new feature)
-  --> Depends on: image quality gating (to know what needs upgrading)
-  --> HIGH effort -- consider deferring to v1.4
-
-
-TRACK 2: UI/UX REDESIGN
-========================
-
-Color Palette Refresh (FOUNDATION -- do first)
-  --> Swap OKLCH variables in globals.css
-  --> ALL visual features depend on this being settled first
-
-Typography Upgrade (Geist)
-  --> Replace Inter import in layout.tsx
-  --> Independent but should align with color palette timing
-
-Glassmorphism Navigation
-  --> Depends on: color palette (blur tints match new palette)
-  --> Update TopNav.tsx + BottomNav.tsx
-
-Card Component Redesign
-  --> Depends on: color palette + typography (card uses both)
-  --> Redesign SagraCard.tsx
-
-Mesh Gradient Hero
-  --> Depends on: color palette (gradient colors derive from palette)
-  --> Update HeroSection.tsx
-
-Bento Grid Homepage
-  --> Depends on: card redesign (bento tiles contain cards)
-  --> Desktop-only. Mobile stays linear.
-
-Grain Texture Overlay (standalone)
-  --> CSS pseudo-element on body
-  --> No dependencies, can be added anytime
-
-Animated Gradient Borders (standalone)
-  --> CSS pseudo-element technique
-  --> No dependencies
-
-LazyMotion Migration (standalone but time with redesign)
-  --> Update Providers.tsx + all motion imports
-  --> Best done while touching all components for redesign
-
-CROSS-TRACK:
-  Data quality BEFORE redesign
-    (Clean data makes redesigned UI look better)
-
-  Image quality gating FEEDS INTO card redesign
-    (Fix bad images before designing around them)
+D-6 (Map page filters)
+  |-> TS-1 (Fix search page map) -- same underlying map issues may affect both
 ```
 
----
-
-## Phase Recommendation
-
-### Phase 1: Data Quality Cleanup (do first)
-
-Fix the data before redesigning the UI. Users will judge the redesign harshly if junk data is still visible.
-
-- [ ] Fix expire cron to remove 2025 events and events with `end_date < NOW()`
-- [ ] Add past-year date rejection in scrape-sagre
-- [ ] Enhance `isNoiseTitle()` with new regex patterns
-- [ ] Add calendar date duration validation (>14 days = reject)
-- [ ] Enable `pg_trgm` and add fuzzy duplicate detection
-
-### Phase 2: LLM Classification + Image Quality
-
-Higher-effort data quality features that use the enrichment pipeline.
-
-- [ ] Add "is it a sagra?" LLM classifier to enrich-sagre
-- [ ] Add image quality gating (reject tiny thumbnails)
-- [ ] Retroactive cleanup run on existing 735 events
-
-### Phase 3: Visual Foundation (color + typography + structure)
-
-Establish the new design system before building effects on top.
-
-- [ ] New OKLCH color palette in globals.css
-- [ ] Geist font swap (layout.tsx + globals.css)
-- [ ] Grain texture overlay (globals.css)
-- [ ] Spacing audit and standardization
-
-### Phase 4: Component Redesign + Effects
-
-Apply the new design system to components and add visual effects.
-
-- [ ] SagraCard redesign with new palette and proportions
-- [ ] Glassmorphism navigation (TopNav + BottomNav)
-- [ ] Mesh gradient hero
-- [ ] Animated gradient borders on interactive elements
-- [ ] Bento grid homepage layout (desktop)
-- [ ] LazyMotion migration
-- [ ] Premium loading states
-
-**Rationale:** Data quality first because visible junk undermines any visual improvements. Visual foundation before effects because effects are built on top of the palette and typography decisions. Component redesign last because it depends on both the settled design system and clean data to look right.
+**Critical path:** TS-7 (event count) MUST be fixed before any homepage UI work. Building beautiful Netflix rows for 26 events is pointless.
 
 ---
 
-## Feature Prioritization Matrix
+## MVP Recommendation
 
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Expired 2025 event removal | HIGH | LOW | **P1** |
-| Past-year date rejection | HIGH | LOW | **P1** |
-| Enhanced junk title filter | HIGH | LOW | **P1** |
-| Calendar date duration validation | HIGH | LOW | **P1** |
-| Fuzzy duplicate detection | HIGH | MEDIUM | **P1** |
-| "Is it a sagra?" LLM classifier | HIGH | MEDIUM | **P1** |
-| Image quality gating | MEDIUM | LOW | **P2** |
-| Color palette refresh | HIGH | LOW | **P1** |
-| Geist font swap | MEDIUM | LOW | **P1** |
-| Glassmorphism navigation | HIGH | LOW | **P1** |
-| Card component redesign | HIGH | MEDIUM | **P1** |
-| LazyMotion migration | MEDIUM | MEDIUM | **P1** |
-| Mesh gradient hero | MEDIUM | MEDIUM | **P2** |
-| Bento grid homepage | MEDIUM | MEDIUM | **P2** |
-| Grain texture overlay | LOW | LOW | **P3** |
-| Animated gradient borders | LOW | LOW | **P3** |
-| Higher-res image extraction | MEDIUM | HIGH | **P3** (defer) |
-| Data quality dashboard | LOW | LOW | **P3** |
+### Phase 1: Data Foundation (fix first, build later)
 
-**Priority key:**
-- P1: Must have for v1.3 launch. Directly addresses user-reported problems or creates the WOW effect.
-- P2: Should have. Enhances the experience but not blocking.
-- P3: Nice to have. Can ship without or defer to v1.4.
+Prioritize in this order:
+1. **TS-7** -- Investigate and fix event count drop (CRITICAL BLOCKER)
+2. **TS-5** -- Fix events outside Veneto
+3. **TS-6** -- Fix non-sagre events still present
+4. **TS-4** -- Province always visible
+5. **TS-1** -- Fix broken map on search page
+
+### Phase 2: Image and Visual Foundation
+
+6. **TS-3** -- Unsplash fallback images (pre-fetch curated set, assign during enrichment)
+7. **TS-2** -- Fix placeholder visibility (resolved by TS-3)
+8. **D-4** -- SVG logo design
+
+### Phase 3: Homepage Transformation
+
+9. **D-7** -- Full-width layout restructure
+10. **D-2** -- Photo hero with Unsplash image
+11. **D-3** -- City autocomplete + radius slider in hero
+12. **D-1** -- Netflix scroll rows
+
+### Phase 4: Polish and Completion
+
+13. **D-5** -- Footer
+14. **D-6** -- Map page filters
+15. Scrape info complete (menu, orari, descrizioni) from sources
+
+### Defer to v1.5:
+
+- **New scraping sources**: Finding, testing, and building scrapers for new sites is a separate effort. If the event count drop is caused by source websites going offline, this becomes v1.4 scope. Otherwise, defer.
+- **Scrape complete info (menu, orari)**: Requires per-source scraper modifications. Medium complexity, low urgency relative to UX features. Defer unless trivially achievable.
+
+---
+
+## Complexity Budget
+
+| Feature | Estimated Effort | Risk |
+|---------|-----------------|------|
+| TS-1: Fix search map | 1-2 hours | LOW -- likely a data-passing bug |
+| TS-2: Fix placeholders | 0.5 hours | LOW -- CSS tweak or Unsplash fallback |
+| TS-3: Unsplash fallbacks | 3-4 hours | MEDIUM -- API setup, curation, attribution compliance |
+| TS-4: Province display | 0.5 hours | LOW -- conditional display already exists |
+| TS-5: Fix non-Veneto | 1-2 hours | LOW -- retroactive cleanup + gating audit |
+| TS-6: Fix non-sagre | 1-2 hours | LOW -- heuristic rules + retroactive cleanup |
+| TS-7: Event count drop | 2-4 hours | HIGH -- investigation, multiple possible causes |
+| D-1: Netflix scroll rows | 4-6 hours | LOW -- CSS scroll snap is well-understood |
+| D-2: Photo hero | 2-3 hours | LOW -- straightforward layout replacement |
+| D-3: City autocomplete + radius | 3-4 hours | MEDIUM -- city DB sourcing, Combobox integration |
+| D-4: SVG logo | 1-2 hours | LOW -- design task |
+| D-5: Footer | 1-2 hours | LOW -- standard component |
+| D-6: Map filters | 2-3 hours | LOW-MEDIUM -- reuse SearchFilters, wire to map |
+| D-7: Full-width layout | 1-2 hours | LOW -- CSS restructure |
+| **Total** | **~24-38 hours** | |
 
 ---
 
 ## Sources
 
-### Data Quality (HIGH confidence)
-- [PostgreSQL pg_trgm documentation](https://www.postgresql.org/docs/current/pgtrgm.html) -- trigram similarity for fuzzy dedup
-- [Gemini Structured Outputs](https://ai.google.dev/gemini-api/docs/structured-output) -- enum schemas for classification
-- [Supabase PostgreSQL Extensions](https://supabase.com/docs/guides/database/extensions) -- pg_trgm availability
+### Netflix Horizontal Scroll Rows
+- [CSS Scroll Snap Basics -- MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Scroll_snap/Basic_concepts) -- HIGH confidence
+- [Creating Horizontal Scrolling Containers with CSS Grid -- UX Collective](https://uxdesign.cc/creating-horizontal-scrolling-containers-the-right-way-css-grid-c256f64fc585) -- MEDIUM confidence
+- [Tailwind CSS Horizontal Card Carousel -- Antonio Ufano](https://antonioufano.com/articles/tailwind-horizontal-card-netflix/) -- MEDIUM confidence
+- [Beware Horizontal Scrolling on Desktop -- NNG](https://www.nngroup.com/articles/horizontal-scrolling/) -- HIGH confidence (accessibility/UX)
+- [CSS scroll-snap-type -- MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/scroll-snap-type) -- HIGH confidence
 
-### UI/UX Design (MEDIUM confidence)
-- [Figma: Web Design Trends 2026](https://www.figma.com/resource-library/web-design-trends/) -- bento grids, vibrant palettes
-- [Elementor: Web Design Trends 2026](https://elementor.com/blog/web-design-trends-2026/) -- aurora gradients, organic shapes
-- [TheeDigital: Web Design Trends 2026](https://www.theedigital.com/blog/web-design-trends) -- dopamine design, mesh gradients
-- [Epic Web Dev: Glassmorphism with Tailwind](https://www.epicweb.dev/tips/creating-glassmorphism-effects-with-tailwind-css) -- implementation patterns
-- [Shakuro: Best Fonts for Web 2025](https://shakuro.com/blog/best-fonts-for-web-design) -- Geist vs Inter comparison
-- [Vercel: Geist Font](https://vercel.com/font) -- font design rationale
+### City Autocomplete
+- [Nominatim Usage Policy](https://operations.osmfoundation.org/policies/nominatim/) -- HIGH confidence (autocomplete forbidden)
+- [Nominatim Search API](https://nominatim.org/release-docs/latest/api/Search/) -- HIGH confidence (featureType=city, viewbox, bounded)
+- [ISTAT Comuni Italiani](https://www.istat.it/en/classification/codes-of-italian-municipalities-provinces-and-regions/) -- HIGH confidence
+- [OpenDataSoft georef-italy-comune](https://public.opendatasoft.com/explore/dataset/georef-italy-comune/export/) -- HIGH confidence
+- [Shadcn Combobox](https://ui.shadcn.com/docs/components/radix/combobox) -- HIGH confidence
 
----
-*Feature research for: Nemovia v1.3 "Dati Puliti + Redesign"*
-*Researched: 2026-03-09*
+### Unsplash API
+- [Unsplash API Documentation](https://unsplash.com/documentation) -- HIGH confidence
+- [Unsplash API Guidelines](https://help.unsplash.com/en/articles/2511245-unsplash-api-guidelines) -- HIGH confidence
+- [Unsplash Rate Limits FAQ](https://help.unsplash.com/en/articles/3887917-when-should-i-apply-for-a-higher-rate-limit) -- HIGH confidence
+
+### Radius/Map Circle
+- [React Leaflet Circle Component](https://react-leaflet.js.org/docs/api-components/) -- HIGH confidence
+- [Leaflet Circle Class](https://leafletjs.com/examples/quick-start/) -- HIGH confidence
+
+### Hero Section Design
+- [Hero Section Design Best Practices 2026](https://www.perfectafternoon.com/2025/hero-section-design/) -- MEDIUM confidence
+- [Hero Section Design Ideas 2025 -- Detachless](https://detachless.com/blog/hero-section-web-design-ideas) -- MEDIUM confidence
+
+### Footer Design
+- [Website Footer Best Practices -- Orbit Media](https://www.orbitmedia.com/blog/website-footer-design-best-practices/) -- HIGH confidence
+- [Modern Footer Design Guide 2025 -- BeetleBeetle](https://beetlebeetle.com/post/modern-website-footer-design-examples-practices) -- MEDIUM confidence

@@ -1,7 +1,7 @@
 # Technology Stack
 
-**Project:** Nemovia v1.3 "Dati Puliti + Redesign"
-**Researched:** 2026-03-09
+**Project:** Nemovia v1.4 "Esperienza Completa"
+**Researched:** 2026-03-10
 **Overall Confidence:** HIGH
 
 ## Existing Stack (DO NOT change)
@@ -11,386 +11,586 @@
 | Next.js | 15.5.12 | App Router, SSR, routing |
 | React | 19.1.0 | UI framework |
 | Tailwind CSS | v4 | Utility-first styling |
-| Shadcn/UI | latest | Component library |
-| Motion | 12.35.0 | Animations (FadeIn, StaggerGrid, ScrollReveal, ParallaxHero) |
+| Shadcn/UI | latest (via `shadcn@3.8.5`) | Component library |
+| radix-ui | 1.4.3 | Primitive components (bundled package -- includes Popover, Dialog, etc.) |
+| Motion | 12.35.0 | Animations (LazyMotion + domMax + m.* components) |
 | Leaflet | 1.9.4 | Maps |
 | nuqs | 2.8.9 | URL search param state |
-| tw-animate-css | 1.4.0 | Tailwind animation utilities |
-| Supabase | 2.98.0 | PostgreSQL + PostGIS, Edge Functions |
+| Supabase | 2.98.0 | PostgreSQL + PostGIS + pg_trgm, Edge Functions |
 | Cheerio | 1.x (npm:) | HTML scraping in Deno Edge Functions |
 | @google/genai | 1.x (npm:) | Gemini 2.5 Flash LLM in Deno Edge Functions |
 | Vitest | 4.0.18 | Unit testing |
 
-## Track 1: Data Quality -- No New Dependencies
+---
 
-The entire data quality track requires **zero npm additions**. All improvements are logic changes in the existing Edge Functions (`scrape-sagre` and `enrich-sagre`) plus PostgreSQL extensions.
+## 1. Unsplash API Integration (Hero + Fallback Images)
 
-### PostgreSQL Extension: pg_trgm (enable in Supabase)
-
-| Property | Value |
-|----------|-------|
-| **What** | Trigram-based fuzzy string matching for deduplication |
-| **Install** | `CREATE EXTENSION IF NOT EXISTS pg_trgm;` in Supabase SQL Editor |
-| **Cost** | Free -- pg_trgm is a built-in PostgreSQL extension, available on all Supabase tiers |
-| **Confidence** | HIGH -- pg_trgm is listed in official Supabase extensions docs |
-
-**Why pg_trgm for deduplication instead of client-side fuzzy matching:**
-
-1. **Server-side is correct for batch pipelines.** Dedup runs inside Edge Functions during scraping -- comparing against 700+ existing rows. Fetching all rows to do client-side Levenshtein is wasteful. pg_trgm's `similarity()` function runs inside PostgreSQL where the data already lives.
-
-2. **GIN index support.** `CREATE INDEX idx_sagre_trgm ON sagre USING gin (title gin_trgm_ops);` enables fast fuzzy lookups without sequential scans. The existing `find_duplicate_sagra` RPC does exact normalized-title comparison; adding a `similarity(normalized_title, $1) > 0.6` threshold catches near-duplicates that slip through exact matching.
-
-3. **No JS dependency to maintain.** Libraries like `string-similarity` (Dice coefficient) or `fastest-levenshtein` would need to be vendored into the Deno Edge Function. pg_trgm is built into PostgreSQL -- zero maintenance.
-
-**Implementation: Enhanced dedup RPC**
-
-```sql
--- Upgrade find_duplicate_sagra to use fuzzy matching
-CREATE OR REPLACE FUNCTION find_duplicate_sagra(
-  p_normalized_title text,
-  p_city text,
-  p_start_date date DEFAULT NULL,
-  p_end_date date DEFAULT NULL
-) RETURNS TABLE(id uuid, image_url text, price_info text, is_free boolean, sources text[]) AS $$
-BEGIN
-  RETURN QUERY
-  SELECT s.id, s.image_url, s.price_info, s.is_free, s.sources
-  FROM sagre s
-  WHERE s.is_active = true
-    AND (
-      -- Exact match (existing behavior)
-      lower(s.location_text) = p_city
-      OR similarity(lower(s.location_text), p_city) > 0.5
-    )
-    AND (
-      -- Exact normalized title match
-      normalize_text(s.title) = p_normalized_title
-      -- OR fuzzy title match (catches "Sagra del Pesce" vs "Sagra Del Pesce di Mare")
-      OR similarity(normalize_text(s.title), p_normalized_title) > 0.6
-    )
-  ORDER BY similarity(normalize_text(s.title), p_normalized_title) DESC
-  LIMIT 1;
-END;
-$$ LANGUAGE plpgsql;
-```
-
-### Data Quality Filters (pure TypeScript in Edge Functions)
-
-All 7 data quality problems map to filter functions added to the existing `scrape-sagre/index.ts` and `enrich-sagre/index.ts`. No new libraries needed.
-
-| Problem | Solution | Where | Library |
-|---------|----------|-------|---------|
-| Titoli spazzatura | Expand `isNoiseTitle()` with more patterns | scrape-sagre | None (regex) |
-| Date calendario | New `isCalendarDateRange()` -- reject if span > 14 days | scrape-sagre | None (date math) |
-| Duplicati | Upgrade `find_duplicate_sagra` RPC with pg_trgm | PostgreSQL | pg_trgm extension |
-| Durata assurda | New `isAbsurdDuration()` -- reject events > 14 days | scrape-sagre | None (date math) |
-| Eventi passati | Fix expire cron -- filter `end_date < NOW()` more aggressively | PostgreSQL cron | None (SQL) |
-| Non-sagre | Add LLM classification step in enrichment | enrich-sagre | Gemini 2.5 Flash (already used) |
-| Foto bassa risoluzione | Image URL resolution upgrade logic | scrape-sagre | None (URL manipulation) |
-
-### LLM-Based Non-Sagra Detection (Gemini 2.5 Flash structured output)
-
-The enrichment pipeline already uses Gemini 2.5 Flash with structured output (JSON schema). Adding a `is_sagra: boolean` classification field to the existing enrichment prompt costs zero additional API calls -- it rides the same batch request.
-
-```typescript
-// Add to existing enrichment prompt in enrich-sagre/index.ts
-config: {
-  responseMimeType: "application/json",
-  responseSchema: {
-    type: "ARRAY",
-    items: {
-      type: "OBJECT",
-      properties: {
-        id: { type: "STRING" },
-        is_sagra: { type: "BOOLEAN" },  // NEW: classify event type
-        food_tags: { type: "ARRAY", items: { type: "STRING" } },
-        feature_tags: { type: "ARRAY", items: { type: "STRING" } },
-        enhanced_description: { type: "STRING" },
-      },
-      required: ["id", "is_sagra", "food_tags", "feature_tags", "enhanced_description"],
-    },
-  },
-},
-```
-
-**Why this works:** Gemini 2.5 Flash has strong Italian text comprehension and can reliably distinguish "Sagra del Baccalà" (sagra) from "Mostra Antiquariato Padova" (not a sagra). The free tier (15 req/min) is sufficient since this runs in the existing enrichment batches.
-
-### Image Quality Upgrade Strategy
-
-No new image processing library needed. The approach is **URL manipulation at scrape time**, not image resizing:
-
-1. **Source-specific thumbnail-to-full URL patterns.** Most sagre sites serve thumbnails in listings with predictable URL patterns (e.g., `-150x150.jpg` suffix, `/thumbs/` path segment). Replace these patterns with full-resolution URLs during extraction.
-
-2. **Next.js Image Optimization handles the rest.** The project already uses `next/image` with `hostname: "**"` in remotePatterns. Next.js automatically resizes, compresses (Sharp), and serves WebP/AVIF to capable browsers. No custom image proxy needed.
-
-3. **Fallback placeholder for truly tiny images.** Add a `MIN_IMAGE_WIDTH` check via `<img>` natural dimensions in the client component -- if the loaded image is < 200px wide, show the gradient placeholder instead.
-
-**Why NOT add Sharp as a direct dependency:**
-- Next.js already uses Sharp internally for its Image Optimization API
-- Adding Sharp as a build dependency increases bundle/deploy complexity on Vercel
-- The constraint is "zero costi fissi" -- Supabase Storage image transforms require Pro plan ($25/mo)
-- URL manipulation at scrape time is free and catches 90% of low-res issues
-
-## Track 2: UI/UX Redesign -- Minimal New Dependencies
-
-### Font: Geist (replaces Inter)
+### Approach: Direct `fetch()` on Next.js server -- NO npm package needed
 
 | Property | Value |
 |----------|-------|
-| **What** | Vercel's modern variable font, designed for UI clarity |
-| **Install** | Already available via `next/font/google` -- no npm install needed |
-| **Bundle impact** | ~0 KB delta -- replaces Inter (both are variable fonts loaded the same way) |
-| **Confidence** | HIGH -- Geist is the default font for Next.js 15 projects |
+| **What** | Unsplash photo search API for hero image + fallback images for sagre without photos |
+| **Install** | None -- use native `fetch()` in server components/route handlers |
+| **API Key** | Free -- register app at unsplash.com/developers, get Access Key |
+| **Rate Limit** | 50 req/hour (demo mode), 5,000 req/hour (production approval) |
+| **Cost** | Free forever (Unsplash's business model is attribution, not API fees) |
+| **Confidence** | HIGH -- Unsplash API docs verified directly |
 
-**Why Geist instead of Inter:**
+**Why NOT use `unsplash-js` (v7.0.20):**
 
-1. **Modern aesthetic.** Geist was designed by Vercel in collaboration with Basement Studio specifically for modern UI. It has slightly rounder curves, friendlier apertures, and more character spacing than Inter -- exactly the "non-anonimo" feel the user wants.
+The `unsplash-js` package is a thin wrapper around `fetch()` calls. It adds ~30KB to `node_modules` and introduces a TypeScript `dom` lib dependency issue (GitHub issue #166) that requires workarounds in Next.js server components. Since we only need 2 endpoints (`GET /search/photos` and `GET /photos/random`), plain `fetch()` with typed response interfaces is simpler, lighter, and avoids the dependency.
 
-2. **Reference app alignment.** The user cited Linear, Vercel, Raycast, and Arc Browser as inspiration. Vercel uses Geist. Linear and Raycast use similar geometric sans-serifs. Switching to Geist immediately aligns the typographic feel with these references.
-
-3. **Zero migration cost.** Geist is available in `next/font/google`. The change is a 3-line edit in `layout.tsx` and 1 line in `globals.css`.
-
-4. **Geist Mono for accents.** Geist Mono provides a complementary monospace variant useful for dates, prices, and distance numbers -- adding subtle typographic hierarchy without a separate font load.
-
-**Implementation:**
+**API Endpoints needed:**
 
 ```typescript
-// layout.tsx -- replace Inter with Geist
-import { Geist, Geist_Mono } from "next/font/google";
+// Hero image -- fetch a random Veneto food/festival photo
+// Server component or API route, called at build time or with ISR
+const heroRes = await fetch(
+  `https://api.unsplash.com/photos/random?query=italian+food+festival+veneto&orientation=landscape`,
+  { headers: { Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}` } }
+);
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// In <body>:
-<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+// Fallback images -- search for food-themed photos by sagra title/tags
+const fallbackRes = await fetch(
+  `https://api.unsplash.com/search/photos?query=sagra+${foodTag}&per_page=1&orientation=landscape`,
+  { headers: { Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}` } }
+);
 ```
 
-```css
-/* globals.css -- update @theme inline */
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+**Unsplash API Requirements (mandatory):**
+
+1. **Hotlinking required** -- Must use `photo.urls.regular` (1080px) or `photo.urls.small` (400px) directly. Do NOT download and self-host images.
+2. **Attribution required** -- Display photographer name + link to their Unsplash profile with UTM params: `?utm_source=nemovia&utm_medium=referral`
+3. **Trigger download** -- When a photo is displayed, hit `photo.links.download_location` to track usage. This is a fire-and-forget GET request, not user-visible.
+
+**Rate limit strategy for 50 req/hour demo tier:**
+
+- Hero image: Cache with ISR `revalidate: 3600` (1 request/hour max)
+- Fallback images: Pre-fetch during `enrich-sagre` Edge Function (batch, not per-page-load)
+- Store Unsplash URLs in `sagre.fallback_image_url` column -- one API call per sagra at enrichment time, not per user visit
+- Total: ~15-20 enrichment calls per cron run (well within 50/hour)
+- Apply for production (5,000/hour) after launch -- trivial approval process
+
+**Image URL format (response shape):**
+
+```typescript
+interface UnsplashPhoto {
+  id: string;
+  urls: {
+    raw: string;    // Base URL, add ?w=1200&q=80 for custom size
+    full: string;   // Max resolution
+    regular: string; // 1080px wide -- USE THIS for hero
+    small: string;   // 400px wide -- USE THIS for card fallbacks
+    thumb: string;   // 200px wide
+  };
+  user: {
+    name: string;
+    links: { html: string }; // Profile URL for attribution
+  };
+  links: {
+    download_location: string; // Trigger download endpoint
+  };
 }
 ```
 
-### Color System: New OKLCH Palette (CSS only, no library)
+**Environment variable:**
+
+```bash
+# .env
+UNSPLASH_ACCESS_KEY=your_access_key_here
+```
+
+### Alternatives Considered
+
+| Option | Why Not |
+|--------|---------|
+| `unsplash-js` npm package (v7.0.20) | Unnecessary wrapper over fetch; TypeScript dom lib issues; we need only 2 endpoints |
+| Pexels API | Similar quality but stricter rate limits (200 req/month free); Unsplash has better Italian food content |
+| Pixabay API | Lower image quality; less curated; aggressive watermarks in free tier |
+| Self-hosted image CDN | Violates zero-cost constraint; Supabase Storage transforms require Pro plan |
+| Static curated images | Limited variety; doesn't scale; stale feeling |
+
+---
+
+## 2. City Autocomplete Search with Radius Slider
+
+### Approach: Static Veneto comuni JSON + client-side fuzzy filter + Shadcn Combobox
 
 | Property | Value |
 |----------|-------|
-| **What** | Complete color refresh from amber-600/stone-50 to a vibrant modern palette |
-| **Install** | Nothing -- pure CSS custom properties (already using OKLCH in globals.css) |
-| **Tooling** | oklch.fyi or oklch.org for palette generation |
-| **Confidence** | HIGH -- project already uses OKLCH values in CSS custom properties |
+| **What** | Autocomplete city search with ~580 Veneto municipalities |
+| **Install** | `cmdk` (v1.1.1) + Shadcn Popover + Command components |
+| **Data source** | Static JSON file with ISTAT comuni data, bundled at build time |
+| **Cost** | Free -- static data, no API calls |
+| **Confidence** | HIGH |
 
-**Why OKLCH palette refresh needs no library:**
+**Why static JSON instead of Nominatim API autocomplete:**
 
-The project already uses OKLCH color values in `globals.css` (e.g., `--primary: oklch(0.666 0.179 58.318)`). The redesign is a CSS-only change -- swapping the color values in `:root`, not adding dependencies.
+1. **Nominatim explicitly forbids autocomplete.** Their usage policy states: "Auto-complete search is not yet supported. You must not implement such a service on the client side using the API." Violating this risks IP bans, breaking geocoding for the entire app.
 
-**Recommended palette direction (warm-vibrant, not cold-corporate):**
+2. **Fixed domain -- only Veneto.** There are ~580 comuni in Veneto across 7 provinces. This is a small, bounded dataset that fits in a ~25KB JSON file. No need for a remote API.
 
-The user wants "WOW, modernissimo" -- this suggests moving from the muted amber/stone/green toward a more vibrant palette. Given the food/festival domain:
+3. **Zero latency.** Client-side string matching against 580 items is instant (<1ms). No network round-trip, no debouncing, no loading states.
 
-- **Primary:** Warm coral/terracotta (OKLCH hue ~25-30) -- replaces amber-600. More distinctive, works with food photography.
-- **Accent:** Deep teal or emerald (OKLCH hue ~165-175) -- replaces green-700. Higher chroma for more visual punch.
-- **Background:** Warm off-white with slight warmth (OKLCH lightness ~0.97, low chroma) -- replaces stone-50.
-- **Surface:** Pure white with subtle warm tint for cards.
+4. **Enriched data.** The static file includes coordinates (lat/lng) per city, so selecting a city immediately provides coordinates for the `find_nearby_sagre` RPC -- no additional geocoding call needed.
 
-**Specific values to be determined during implementation** with oklch.fyi, testing against actual sagra card images for contrast and harmony. The point is: this is a CSS variable swap, not a dependency change.
+**Data source:** ISTAT (Italian National Statistics Institute) comuni dataset. Available in JSON from multiple GitHub repositories:
+- `github.com/Samurai016/Comuni-ITA` -- REST API + JSON dump, updated regularly
+- `github.com/adrianocalvitto/istat-cities` -- all Italian cities in JSON
 
-### Glassmorphism, Mesh Gradients, Bento Grids (CSS only)
+We filter to Veneto (region code "05") and extract: `{ name, province_code, lat, lng }`.
 
-| Effect | Implementation | Library Needed |
-|--------|----------------|----------------|
-| Glassmorphism cards/nav | `backdrop-blur-md bg-white/30 border border-white/20` | None -- Tailwind utilities |
-| Mesh gradients (hero/backgrounds) | CSS `radial-gradient` layering or generated via csshero.org/mesher | None -- pure CSS |
-| Bento grid layout | CSS Grid with `grid-template-rows` + `row-span` utilities | None -- Tailwind Grid |
-| Aurora gradient animation | `@property` + `@keyframes` hue rotation on OKLCH values | None -- pure CSS |
-| Animated gradient borders | `conic-gradient` + `@property` for hue animation | None -- pure CSS |
+**Static file structure (`src/data/veneto-comuni.json`):**
 
-**Why pure CSS for all visual effects:**
+```json
+[
+  { "name": "Abano Terme", "province": "PD", "lat": 45.3586, "lng": 11.7897 },
+  { "name": "Agna", "province": "PD", "lat": 45.1742, "lng": 11.9614 },
+  ...
+]
+```
 
-1. **Browser support is sufficient.** `backdrop-filter` has 95% global support. CSS `@property` works in Chrome, Edge, Safari (Firefox lacks support but degrades gracefully -- the gradient just doesn't animate).
+### Shadcn Components to Add
 
-2. **Zero bundle cost.** CSS effects ship in the stylesheet, not JavaScript. The user wants visual wow without compromising the "utility app should feel snappy" principle established in v1.2.
+**Combobox** is a composition pattern using Popover + Command. Since the project already has `radix-ui@1.4.3` (bundled), Popover primitives are available. The only new dependency is `cmdk` for the Command search component.
 
-3. **Tailwind v4 integration.** All these effects compose naturally with Tailwind utility classes. No wrapper components or CSS-in-JS needed.
+```bash
+# Install cmdk for the Command component
+pnpm add cmdk@1.1.1
 
-**Glassmorphism best practices for this project:**
+# Add Shadcn components (generates .tsx files, no npm deps beyond cmdk)
+npx shadcn@latest add popover command
+```
 
-- Keep blur values 8-12px (not higher -- performance cost scales exponentially)
-- Use glassmorphism sparingly: nav bars, filter panels, card overlays -- NOT every surface
-- Always add `border border-white/20` for edge definition
-- Test on lower-end mobile devices (the primary audience is Italian users on mid-range phones)
-- Provide solid-color fallback for `@supports not (backdrop-filter: blur())` edge cases
+| Component | Purpose | Dependencies |
+|-----------|---------|-------------|
+| `Popover` | Dropdown container for suggestions | `radix-ui` (already installed) |
+| `Command` | Searchable list with keyboard navigation | `cmdk@1.1.1` (NEW) |
+| Combobox pattern | Composition of Popover + Command | No additional deps |
 
-### LazyMotion Migration (bundle optimization)
+**Why cmdk instead of a custom filter dropdown:**
+
+1. **Keyboard navigation.** cmdk provides arrow-key navigation, Enter selection, Escape dismissal, and type-ahead filtering out of the box. Building this from scratch is 200+ lines of accessible focus management.
+2. **Shadcn integration.** The Command component is a first-class Shadcn component. It uses the project's existing design tokens and styling patterns.
+3. **Tiny footprint.** cmdk is ~4KB gzipped. It has zero dependencies beyond React.
+4. **Filtered list performance.** cmdk uses an optimized scoring algorithm for filtering -- better than naive `includes()` for Italian city names with accents.
+
+### Radius Slider
+
+**Shadcn Slider** component, built on `radix-ui` Slider primitive (already available in the bundled package).
+
+```bash
+# Add Shadcn Slider component (no new npm deps -- uses radix-ui already installed)
+npx shadcn@latest add slider
+```
+
+| Component | Purpose | Dependencies |
+|-----------|---------|-------------|
+| `Slider` | Radius km selector (5-100km range) | `radix-ui` (already installed) |
+
+**UX flow:**
+
+1. User types city name in Combobox on homepage hero
+2. Suggestions appear filtered from static JSON
+3. User selects city -- lat/lng stored in state
+4. Slider appears for radius (default 30km)
+5. User taps "Cerca" -- navigates to `/cerca?lat=X&lng=Y&raggio=Z` (existing nuqs URL state)
+
+### Alternatives Considered
+
+| Option | Why Not |
+|--------|---------|
+| Nominatim API autocomplete | Explicitly forbidden by usage policy; risks IP ban |
+| Google Places Autocomplete | Pay-per-request ($2.83/1000 requests); violates zero-cost constraint |
+| Mapbox Geocoding API | Free tier limited to 100K req/month; adds API key dependency |
+| OSMNames API | External dependency for a fixed 580-item dataset; overkill |
+| Custom `<datalist>` HTML | No keyboard navigation, no styling control, no fuzzy matching |
+| react-select | Heavy (28KB gzipped); Shadcn Combobox is lighter and matches design system |
+
+---
+
+## 3. Netflix-Style Horizontal Scroll Rows
+
+### Approach: Pure CSS + existing Motion animations -- NO carousel library
 
 | Property | Value |
 |----------|-------|
-| **What** | Replace `motion` component with `m` + `LazyMotion` for smaller bundle |
-| **Install** | Nothing -- already part of motion@12.35.0 |
-| **Bundle savings** | ~34KB to ~6KB initial load (async load remaining features) |
-| **Confidence** | HIGH -- verified in Motion docs, this was already flagged in PROJECT.md Active items |
+| **What** | Horizontal scroll rows grouped by category (weekend, nearby, cuisine, province) |
+| **Install** | Nothing -- CSS flexbox + overflow-x + scroll-snap |
+| **Bundle impact** | 0 KB -- pure CSS |
+| **Confidence** | HIGH |
 
-**Why do this now:** The v1.3 redesign touches every component anyway. Perfect time to migrate from `import { motion } from "motion/react"` to `import { m } from "motion/react"` + wrapping the app in `<LazyMotion>`.
+**Why pure CSS instead of a carousel library:**
 
-**Implementation:**
+1. **CSS scroll-snap is native and performant.** `scroll-snap-type: x mandatory` with `scroll-snap-align: start` on children gives smooth, predictable snapping without JavaScript scroll position calculations.
 
-```typescript
-// src/components/Providers.tsx
-"use client";
+2. **No swipe library needed.** Mobile browsers handle touch-to-scroll natively on `overflow-x: auto` elements. Libraries like Swiper.js or react-slick add 30-80KB for functionality the browser provides for free.
 
-import { LazyMotion, MotionConfig } from "motion/react";
-import { NuqsAdapter } from "nuqs/adapters/next/app";
+3. **Existing Motion animations integrate directly.** The `m.div` + `whileInView` pattern from the current `ScrollReveal` component works on horizontal scroll children. No need for a carousel library's animation system.
 
-// Async load animation features
-const loadFeatures = () =>
-  import("motion/react").then((mod) => mod.domAnimation);
+4. **Simpler is better for this use case.** Netflix rows are a solved CSS pattern. The cards are fixed-width, horizontally scrollable, with optional prev/next buttons. This is `flex flex-nowrap overflow-x-auto scroll-snap-x-mandatory` in Tailwind.
 
-export function Providers({ children }: { children: React.ReactNode }) {
+**Implementation pattern:**
+
+```tsx
+// ScrollRow.tsx -- reusable Netflix-style row
+function ScrollRow({ title, icon, children }: ScrollRowProps) {
   return (
-    <LazyMotion features={loadFeatures} strict>
-      <MotionConfig reducedMotion="user">
-        <NuqsAdapter>{children}</NuqsAdapter>
-      </MotionConfig>
-    </LazyMotion>
+    <section className="space-y-3">
+      <h2 className="flex items-center gap-2 text-lg font-semibold px-4">
+        {icon}
+        {title}
+      </h2>
+      <div className="flex gap-3 overflow-x-auto scroll-snap-x-mandatory
+                      px-4 pb-2 scrollbar-hide">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+// Card inside scroll row -- fixed width + snap alignment
+function ScrollRowCard({ sagra }: { sagra: SagraCardData }) {
+  return (
+    <div className="w-[260px] flex-shrink-0 snap-start">
+      <SagraCard sagra={sagra} />
+    </div>
   );
 }
 ```
 
-Then in all components, replace `motion.div` with `m.div`, `motion.span` with `m.span`, etc. The `strict` prop will warn if any component accidentally imports the full `motion` component.
+**CSS already in globals.css:**
+
+```css
+/* Already exists in globals.css -- scrollbar-hide utility */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+```
+
+**Tailwind v4 scroll-snap utilities** (`scroll-snap-x-mandatory`, `snap-start`) are built-in. No plugins needed.
+
+**Row categories (smart mix from PROJECT.md requirements):**
+
+| Row | Data Source | Query |
+|-----|------------|-------|
+| "Questo weekend" | `getWeekendSagre()` (existing) | Active sagre through next Sunday |
+| "Vicino a te" | `searchSagre({ lat, lng, raggio: 50 })` | Requires geolocation; hide row if no permission |
+| "Sagre di pesce" / cuisine type | `searchSagre({ cucina: 'Pesce' })` | One row per popular food tag |
+| "In provincia di Padova" etc. | `searchSagre({ provincia: 'Padova' })` | One row per province with events |
+
+### Alternatives Considered
+
+| Option | Why Not |
+|--------|---------|
+| Swiper.js | 44KB gzipped; pagination/autoplay features not needed; CSS scroll-snap is sufficient |
+| react-slick | 28KB; jQuery heritage; poor React 19 compatibility; touch scrolling is native |
+| Embla Carousel | Best React carousel (8KB), but still unnecessary when CSS scroll-snap works |
+| Keen Slider | Good but adds dependency for zero benefit over native CSS |
+| Custom JS scroll with `requestAnimationFrame` | Over-engineering; CSS handles momentum scrolling natively |
+
+---
+
+## 4. Custom SVG Logo
+
+### Approach: Hand-code SVG inline -- NO design tool dependency in codebase
+
+| Property | Value |
+|----------|-------|
+| **What** | SVG logo mark + wordmark using Geist font + coral/teal palette |
+| **Install** | Nothing -- SVG is inline JSX in a React component |
+| **Design tool** | Figma (free tier) for initial design, export as optimized SVG |
+| **Confidence** | HIGH |
+
+**Why inline SVG component, not an image file:**
+
+1. **Color theme integration.** The logo uses `currentColor` or CSS custom properties (`var(--primary)`, `var(--accent)`) so it automatically matches the palette. An image file would need multiple versions for different contexts.
+
+2. **Crisp at every size.** SVG scales perfectly from 24px favicon to 200px footer. No need for multiple PNG exports.
+
+3. **Zero network requests.** Inline SVG renders instantly, no `<img>` load or layout shift.
+
+4. **Tiny footprint.** A simple logo SVG is 500-2000 bytes inline -- smaller than any optimized PNG.
+
+**Design approach:**
+
+```tsx
+// src/components/brand/Logo.tsx
+export function Logo({ size = 32 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      {/* Stylized fork/location pin hybrid in coral */}
+      <path d="..." fill="var(--primary)" />
+      {/* Teal accent element */}
+      <circle cx="..." cy="..." r="..." fill="var(--accent)" />
+    </svg>
+  );
+}
+
+// Wordmark version for nav/footer
+export function LogoFull({ height = 28 }: { height?: number }) {
+  return (
+    <div className="flex items-center gap-2">
+      <Logo size={height} />
+      <span className="font-bold text-foreground" style={{ fontSize: height * 0.7 }}>
+        Nemovia
+      </span>
+    </div>
+  );
+}
+```
+
+**Design recommendations:**
+
+- **Icon concept:** Fork + map pin hybrid (food discovery = eating + location). Simple geometric shapes matching Geist's aesthetic.
+- **Colors:** Coral primary fill + teal accent dot/ring. Works on both light backgrounds and dark overlays (using `currentColor` variant for dark contexts).
+- **Create in Figma** (free tier), run through SVGO/SVGOMG for optimization, then convert to JSX component.
+
+---
+
+## 5. Full-Width Responsive Layout Changes
+
+### Approach: CSS container width adjustment -- NO new dependencies
+
+| Property | Value |
+|----------|-------|
+| **What** | Remove `max-w-7xl` constraint for full-width sections (hero, scroll rows) |
+| **Install** | Nothing -- Tailwind utility class changes |
+| **Confidence** | HIGH |
+
+**Current layout structure (from `src/app/(main)/layout.tsx`):**
+
+```tsx
+<main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+  {children}
+</main>
+```
+
+Everything is constrained to `max-w-7xl` (1280px). For Netflix-style scroll rows and a full-width hero, this needs a mixed approach:
+
+**Recommended layout pattern:**
+
+```tsx
+// Layout: full-width wrapper, content sections control their own width
+<main className="py-4">
+  {children}
+</main>
+
+// In page.tsx, sections that need full-width:
+<HeroSection />  {/* Full viewport width, no padding */}
+<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+  <QuickFilters />  {/* Constrained width */}
+</div>
+<ScrollRow />  {/* Full viewport width for horizontal scroll */}
+<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+  <ProvinceSection />  {/* Constrained width */}
+</div>
+```
+
+**Key principle:** Move width constraints from layout to individual page sections. Full-width sections (hero, scroll rows) break out. Content sections (filters, province chips, footer) stay constrained.
+
+The TopNav already has its own `max-w-7xl` constraint internally, so it won't be affected by this change.
+
+---
+
+## 6. Footer Component
+
+### Approach: Pure JSX + Tailwind -- NO new dependencies
+
+| Property | Value |
+|----------|-------|
+| **What** | Full footer with credits, navigation links, Unsplash attribution |
+| **Install** | Nothing |
+| **Confidence** | HIGH |
+
+**Key content from PROJECT.md requirements:**
+
+- "Fatto con cuore in Veneto" tagline
+- Logo (from section 4 above)
+- Navigation links (Home, Cerca, Mappa)
+- Unsplash attribution (required by API guidelines): "Photos by Unsplash"
+- Source credits: "Dati da SagreItaliane, EventieSagre, SoloSagre, TuttoFesta, Sagritaly"
+
+No external library needed. This is a standard React component with Tailwind styling, reusing the existing `Logo` component and color palette.
+
+---
+
+## 7. New Scraper Sources for Veneto Sagre
+
+### Approach: Add new source configurations to existing `scraper_sources` table -- NO new dependencies
+
+| Property | Value |
+|----------|-------|
+| **What** | Additional scraper sources to increase event coverage |
+| **Install** | Nothing -- existing Cheerio + config-driven generic scraper |
+| **Confidence** | MEDIUM (source HTML structures need verification during implementation) |
+
+**Current 5 sources (from PROJECT.md and Edge Function):**
+
+1. SagreItaliane (sagreitaliane.it)
+2. EventieSagre (eventiesagre.it)
+3. SoloSagre (solosagre.com)
+4. TuttoFesta (tuttofesta.it -- assumed)
+5. Sagritaly (sagritaly.com)
+
+**New sources to investigate:**
+
+| Source | URL | Coverage | Scraping Approach | Confidence |
+|--------|-----|----------|-------------------|------------|
+| itinerarinelgusto.it | `/sagre-e-feste/veneto` | Veneto sagre + feste, monthly pages | Generic scraper config -- needs CSS selector discovery | MEDIUM |
+| paesiinfesta.com | `/sagre/` | Friuli + Veneto orientale (VE, TV, BL) | WordPress structure -- likely similar to sagritaly | MEDIUM |
+| ilturista.info | `/ch/eventi/veneto/` | Veneto events broadly (includes non-sagre) | Needs LLM is_sagra filter; likely structured listings | LOW |
+| cibotoday.it | `/storie/` | National weekend event roundups | Article format, not structured listings; harder to scrape | LOW |
+
+**Recommendation:** Start with `itinerarinelgusto.it` and `paesiinfesta.com` -- both are dedicated sagre/feste sites with structured event listings similar to existing sources. The other two have lower signal-to-noise ratios.
+
+**Implementation:** Add rows to `scraper_sources` table with CSS selectors. May need source-specific extraction branches in `extractRawEvent()` if HTML structure differs significantly from generic pattern.
+
+**Source HTML verification required at implementation time.** Cannot confirm exact CSS selectors from research alone -- need to inspect live pages with browser devtools or `cheerio.load()` in a test script.
+
+---
+
+## 8. Data Quality Fixes (No New Dependencies)
+
+All data quality fixes listed in v1.4 requirements use existing infrastructure:
+
+| Fix | Approach | New Deps |
+|-----|----------|----------|
+| Fix eventi fuori Veneto | Tighten province gating in `upsertEvent()` -- reject if geocoded province not in `VENETO_PROVINCES` | None |
+| Fix non-sagre still present | Retroactive `UPDATE sagre SET is_active = false WHERE is_sagra = false` + tighten enrichment | None |
+| Investigate event count drop (26 vs 735) | Check `scrape_logs` for errors; verify source URLs haven't changed; re-enable disabled sources | None |
+| Always show province in parentheses | Format `location_text` display as `"{city} ({province})"` in components | None |
+| Scrape complete info (menus, hours) | Add `selector_description` to source configs; store in `description` or new column | None |
+| Fix broken placeholder images | Debug `FadeImage` fallback logic; verify branded placeholder CSS renders correctly | None |
+
+---
 
 ## Recommended Stack (Summary Table)
 
-### New Additions
+### New npm Dependencies
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| pg_trgm (PostgreSQL extension) | Built-in | Fuzzy dedup matching | Server-side similarity in SQL, GIN-indexed, zero JS dependency |
-| Geist (via next/font/google) | Variable | Modern sans-serif font | Aligns with reference apps (Vercel, Linear), zero bundle delta |
-| Geist Mono (via next/font/google) | Variable | Monospace for dates/numbers | Typographic hierarchy for data-dense UI elements |
+| Package | Version | Purpose | Size (gzipped) | Why This One |
+|---------|---------|---------|----------------|-------------|
+| `cmdk` | 1.1.1 | Command/search component for city autocomplete Combobox | ~4KB | Shadcn-native; zero deps; keyboard-accessible; optimized scoring |
+
+### New Shadcn Components (generated .tsx files, no additional npm deps)
+
+| Component | Source | Purpose |
+|-----------|--------|---------|
+| `Popover` | `npx shadcn@latest add popover` | Dropdown container for Combobox suggestions |
+| `Command` | `npx shadcn@latest add command` | Searchable list inside Popover (requires `cmdk`) |
+| `Slider` | `npx shadcn@latest add slider` | Radius km selector (5-100km) |
+
+### New Environment Variables
+
+| Variable | Purpose | Where to Get |
+|----------|---------|-------------|
+| `UNSPLASH_ACCESS_KEY` | Unsplash API authentication | unsplash.com/developers (free registration) |
+
+### New Static Assets
+
+| File | Purpose | Size |
+|------|---------|------|
+| `src/data/veneto-comuni.json` | City autocomplete data (name, province, lat, lng) | ~25KB |
+
+### New Database Changes
+
+| Change | Purpose |
+|--------|---------|
+| `ALTER TABLE sagre ADD COLUMN fallback_image_url TEXT` | Unsplash fallback URL for sagre without images |
+| New rows in `scraper_sources` table | itinerarinelgusto.it, paesiinfesta.com configs |
 
 ### Infrastructure Changes (no new packages)
 
 | Change | Purpose | What Changes |
 |--------|---------|--------------|
-| OKLCH color palette swap | Modern, vibrant look | CSS custom properties in globals.css |
-| LazyMotion migration | 28KB bundle reduction | Providers.tsx + all motion imports |
-| Glassmorphism/mesh CSS | Visual wow effects | globals.css + component classes |
-| Enhanced data quality filters | Clean scraped data | scrape-sagre/index.ts logic |
-| LLM is_sagra classification | Filter non-sagre events | enrich-sagre/index.ts prompt |
-| pg_trgm fuzzy dedup | Better duplicate detection | PostgreSQL RPC + extension |
+| Full-width layout | Hero + scroll rows break out of `max-w-7xl` | Layout wrapper in `(main)/layout.tsx` |
+| Unsplash server-side fetch | Hero + fallback images | New `lib/unsplash.ts` utility |
+| SVG logo component | Brand identity | New `components/brand/Logo.tsx` |
+| Footer component | Complete page layout | New `components/layout/Footer.tsx` |
+| Netflix scroll rows | Homepage content discovery | New `components/home/ScrollRow.tsx` |
+| City Combobox | Homepage search UX | New `components/search/CitySearch.tsx` |
+| Source-specific scraper branches | New scraping sources | `scrape-sagre/index.ts` additions |
 
-## Alternatives Considered
-
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Fuzzy matching | pg_trgm (PostgreSQL) | string-similarity (npm) | Client-side matching against 700+ rows is wasteful; pg_trgm runs where data lives |
-| Fuzzy matching | pg_trgm (PostgreSQL) | fastest-levenshtein (npm) | Same reason; also needs vendoring into Deno Edge Function |
-| Font | Geist | Inter (current) | Inter is ubiquitous/generic; user explicitly wants distinctive modern feel |
-| Font | Geist | Satoshi/Manrope | Not available in next/font/google; would require self-hosting |
-| Image quality | URL manipulation at scrape time | Sharp as direct dep | Next.js already uses Sharp internally; adding it directly increases deploy complexity |
-| Image quality | URL manipulation at scrape time | Supabase Storage transforms | Requires Pro plan ($25/mo); violates zero-cost constraint |
-| Image quality | URL manipulation at scrape time | imgproxy self-hosted | Requires Docker infrastructure; overkill for this use case |
-| Non-sagra detection | Gemini 2.5 Flash (existing) | Separate classifier model | Already paying 0 for Gemini free tier; adding field to existing prompt is free |
-| Gradient effects | Pure CSS mesh/aurora | Three.js / react-three-fiber | Massive bundle for simple visual effects; CSS achieves 95% of the wow factor |
-| Glassmorphism | Tailwind utilities | glassmorphism npm package | Package is just a CSS generator; Tailwind utilities are more flexible and integrated |
-| Animation bundle | LazyMotion | Full motion bundle (status quo) | 28KB savings for free; v1.3 redesign touches all components anyway |
-| Design tokens | CSS custom properties | Style Dictionary / Stitches | Overkill for single-theme app; CSS vars already established pattern in the project |
+---
 
 ## Libraries Explicitly NOT Adding
 
-### Three.js / react-three-fiber -- REJECT
+### Swiper.js / react-slick / Embla Carousel -- REJECT
 
-**Why considered:** User mentioned "3D elements" as a design trend.
+**Why considered:** Netflix-style horizontal scroll rows.
 
-**Why not:**
-- Bundle size: react-three-fiber adds 150KB+ to the client bundle
-- The app is a mobile-first utility for finding sagre -- 3D elements add visual complexity without functional value
-- The "wow" factor is better achieved with CSS effects (glassmorphism, mesh gradients, animated borders) that cost zero JavaScript
-- 3D rendering on mid-range mobile devices (Italian market) causes battery drain and jank
+**Why not:** CSS `scroll-snap-type` + `overflow-x: auto` provides native touch scrolling, momentum, and snap-to-card behavior with zero JavaScript. The carousel libraries add 8-44KB gzipped for pagination dots and autoplay features that Netflix rows don't need. The existing `scrollbar-hide` CSS utility in `globals.css` already hides the scrollbar.
 
-### Framer / Rive -- REJECT
+### unsplash-js -- REJECT
 
-**Why considered:** Advanced animation tools for "design all'avanguardia."
+**Why considered:** Official Unsplash API wrapper.
 
-**Why not:**
-- Framer Site Builder is a separate product from the Motion library already in use
-- Rive adds a runtime player (~50KB) and requires creating animations in a separate tool
-- Motion's existing capabilities (whileHover, whileInView, layout, spring physics) cover all needed animation patterns
-- LazyMotion migration reduces Motion's footprint from 34KB to 6KB -- going in the right direction
+**Why not:** We need exactly 2 API endpoints (`photos/random` and `search/photos`). The library is a thin fetch wrapper that adds 30KB to node_modules, introduces TypeScript `dom` lib dependency issues, and provides no value beyond what a 20-line typed `fetch()` utility provides. Server-side API calls should use native fetch.
 
-### Tailwind UI / DaisyUI / FlyonUI -- REJECT
+### react-select / downshift -- REJECT
 
-**Why considered:** Pre-built component libraries with modern aesthetics.
+**Why considered:** Autocomplete/combobox components.
 
-**Why not:**
-- Shadcn/UI is already deeply integrated (Card, Badge, Button, Input, Select, Skeleton, Separator)
-- Adding another component library creates style conflicts and inconsistent patterns
-- The redesign is about color/typography/effects, not replacing the component system
-- Shadcn/UI components are unstyled by default -- the visual refresh comes from changing CSS variables, not swapping components
+**Why not:** The project already uses `radix-ui@1.4.3` (bundled Popover primitive) and Shadcn design system. The standard Shadcn Combobox pattern (Popover + Command via `cmdk`) integrates with existing styling, uses the same Radix foundation, and is ~4KB vs react-select's 28KB.
 
-### CSS-in-JS (Emotion / Styled-Components / Vanilla Extract) -- REJECT
+### Mapbox/Google Places Autocomplete -- REJECT
 
-**Why considered:** Some modern design systems use CSS-in-JS for dynamic theming.
+**Why considered:** City search with autocomplete.
 
-**Why not:**
-- Tailwind v4 + CSS custom properties already handle theming through `globals.css`
-- CSS-in-JS adds runtime overhead (Emotion) or build complexity (Vanilla Extract)
-- The project has a clean CSS architecture: Tailwind utilities + OKLCH custom properties. No reason to add another styling paradigm.
+**Why not:** The domain is fixed (580 Veneto municipalities). A ~25KB static JSON with client-side filtering is instantaneous, free, offline-capable, and doesn't depend on external APIs with rate limits or costs. Google Places costs $2.83/1000 requests.
 
-### next-themes -- DEFER
+### next-themes -- DEFER (same as v1.3)
 
-**Why considered:** Dark mode is a 2025-2026 design trend.
+**Why considered:** Dark mode support.
 
-**Why not now:**
-- v1.3 scope is already large (data quality + full redesign)
-- Dark mode requires designing and testing a complete second color palette
-- The user's request is for "modern WOW" not specifically dark mode
-- Can be added in a future milestone with a simple `next-themes` + OKLCH dark palette addition
+**Why not now:** v1.4 scope is already large. Can be added in a future milestone.
+
+---
 
 ## Installation
 
 ```bash
-# No npm packages to install for v1.3
+# Single new npm dependency
+pnpm add cmdk@1.1.1
 
-# PostgreSQL extension (run in Supabase SQL Editor)
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
+# Shadcn components (generates .tsx files into src/components/ui/)
+npx shadcn@latest add popover command slider
 
-# Font change is a code edit, not an install:
-# layout.tsx: import { Geist, Geist_Mono } from "next/font/google";
+# No PostgreSQL extensions to add (pg_trgm already enabled from v1.3)
+
+# Environment variable (add to .env)
+# UNSPLASH_ACCESS_KEY=your_key_here
 ```
+
+---
 
 ## Sources
 
-### HIGH Confidence (official docs or verified)
+### HIGH Confidence (official docs or verified directly)
 
-- [Supabase PostgreSQL Extensions](https://supabase.com/docs/guides/database/extensions) -- pg_trgm availability confirmed
-- [PostgreSQL pg_trgm docs](https://www.postgresql.org/docs/current/pgtrgm.html) -- similarity(), GIN index, trigram matching
-- [Next.js Font Optimization](https://nextjs.org/docs/app/getting-started/fonts) -- Geist via next/font/google
-- [Geist Font](https://vercel.com/font) -- variable font, Vercel's official typeface
-- [Motion LazyMotion docs](https://motion.dev/docs/react-lazy-motion) -- m component, domAnimation, code splitting
-- [Motion Bundle Size Reduction](https://motion.dev/docs/react-reduce-bundle-size) -- 34KB to 6KB with LazyMotion
-- [Gemini Structured Output](https://ai.google.dev/gemini-api/docs/structured-output) -- JSON schema with BOOLEAN type for classification
-- [Tailwind CSS backdrop-filter](https://tailwindcss.com/docs/backdrop-filter-blur) -- glassmorphism utilities
-- [Next.js Image Component](https://nextjs.org/docs/app/api-reference/components/image) -- remotePatterns, Sharp integration
-- [@google/genai npm](https://www.npmjs.com/package/@google/genai) -- v1.44.0 latest, GA status confirmed
+- [Unsplash API Documentation](https://unsplash.com/documentation) -- rate limits (50/hr demo, 5000/hr production), endpoints, attribution requirements
+- [Unsplash API Guidelines](https://help.unsplash.com/en/articles/2511245-unsplash-api-guidelines) -- hotlinking requirement, trigger download requirement
+- [Unsplash Hotlinking Guideline](https://help.unsplash.com/en/articles/2511271-guideline-hotlinking-images) -- must use API-returned URLs directly
+- [Unsplash Trigger Download Guideline](https://help.unsplash.com/en/articles/2511258-guideline-triggering-a-download) -- fire download_location on display
+- [Nominatim Usage Policy](https://operations.osmfoundation.org/policies/nominatim/) -- autocomplete explicitly forbidden
+- [Nominatim Search API](https://nominatim.org/release-docs/latest/api/Search/) -- search endpoint docs, no autocomplete support
+- [cmdk npm](https://www.npmjs.com/package/cmdk) -- v1.1.1, last published, 2778 dependents
+- [Shadcn Combobox](https://ui.shadcn.com/docs/components/radix/combobox) -- Popover + Command composition pattern
+- [Shadcn Slider](https://ui.shadcn.com/docs/components/radix/slider) -- Radix UI Slider primitive
+- [Radix UI Slider Primitive](https://www.radix-ui.com/primitives/docs/components/slider) -- single/multi thumb, accessible
+- [unsplash-js GitHub](https://github.com/unsplash/unsplash-js) -- v7.0.20, TypeScript dom lib issue (#166)
 
 ### MEDIUM Confidence (multiple sources agree)
 
-- [Glassmorphism with Tailwind CSS (Epic Web Dev)](https://www.epicweb.dev/tips/creating-glassmorphism-effects-with-tailwind-css) -- implementation patterns
-- [Glassmorphism Implementation Guide 2025](https://playground.halfaccessible.com/blog/glassmorphism-design-trend-implementation-guide) -- performance best practices
-- [Web Design Trends 2026 (Figma)](https://www.figma.com/resource-library/web-design-trends/) -- bento grids, vibrant colors
-- [Web Design Trends 2026 (Elementor)](https://elementor.com/blog/web-design-trends-2026/) -- aurora gradients, organic shapes
-- [OKLCH ecosystem tools (Evil Martians)](https://evilmartians.com/chronicles/exploring-the-oklch-ecosystem-and-its-tools) -- oklch.fyi, palette generation
-- [Mesher CSS Mesh Gradient Tool](https://csshero.org/mesher/) -- pure CSS mesh gradient generation
-- [CSS Gradient Animation (Frontend Hero)](https://frontend-hero.com/how-to-animate-gradients-css) -- @property + @keyframes for gradient animation
-- [Geist + Tailwind v4 setup](https://www.buildwithmatija.com/blog/how-to-use-custom-google-fonts-in-next-js-15-and-tailwind-v4) -- CSS variable integration pattern
-- [Best Fonts for Web 2025 (Shakuro)](https://shakuro.com/blog/best-fonts-for-web-design) -- Geist vs Inter comparison
+- [ISTAT Cities JSON (GitHub)](https://github.com/adrianocalvitto/istat-cities) -- Italian municipalities with coordinates
+- [Comuni-ITA API (GitHub)](https://github.com/Samurai016/Comuni-ITA) -- Updated ISTAT data with province codes
+- [Netflix Carousel Pure CSS (Raddy)](https://raddy.dev/blog/netflix-carousel-using-css/) -- CSS-only implementation pattern
+- [3 Ways to Implement Carousel in Next.js (Cloudinary)](https://cloudinary.com/blog/3-ways-to-implement-a-carousel-in-nextjs) -- CSS scroll-snap approach
+- [itinerarinelgusto.it](https://www.itinerarinelgusto.it/sagre-e-feste/veneto) -- potential new scraper source, structured event listings
+- [paesiinfesta.com](https://paesiinfesta.com/sagre/) -- potential new scraper source, Friuli + Eastern Veneto
+- [Database Comuni Italiani](https://www.databasecomuni.it/download-italian-database-of-cities-provincies-cap-coordinates-and-email-in-excel-mysql-and-json-format/) -- alternative ISTAT data source
+
+### LOW Confidence (needs validation during implementation)
+
+- itinerarinelgusto.it and paesiinfesta.com HTML structures -- CSS selectors need browser devtools inspection
+- ilturista.info and cibotoday.it scraping feasibility -- lower signal-to-noise, article-format pages
