@@ -102,7 +102,7 @@ Plans:
 
 Plans:
 - [x] 16-01-PLAN.md — Geist font swap + OKLCH coral/teal palette replacement in globals.css
-- [ ] 16-02-PLAN.md — Hardcoded color class sweep across components + visual verification
+- [x] 16-02-PLAN.md — Hardcoded color class sweep across components + visual verification
 
 ### Phase 17: Visual Effects, Layout & Performance
 **Goal**: The app delivers a WOW-factor visual experience -- glassmorphism nav, mesh gradient backgrounds, bento grid homepage, and a dramatically smaller animation bundle
@@ -143,5 +143,5 @@ Phases execute in numeric order: 14 → 15 → 16 → 17
 | 13. Transitions + Micro-Interactions | v1.2 | 3/3 | Complete | 2026-03-09 |
 | 14. Data Quality Heuristic Filters | v1.3 | Complete    | 2026-03-09 | 2026-03-09 |
 | 15. Deduplication & Classification | v1.3 | Complete    | 2026-03-10 | 2026-03-10 |
-| 16. Design System Foundation | v1.3 | 1/2 | In progress | - |
+| 16. Design System Foundation | v1.3 | 2/2 | Complete | 2026-03-10 |
 | 17. Visual Effects, Layout & Performance | v1.3 | 0/? | Not started | - |
