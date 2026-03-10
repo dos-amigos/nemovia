@@ -51,6 +51,44 @@ export function isNoiseTitle(title: string): boolean {
 }
 
 /**
+ * Attempt to upgrade a scraped image URL to a higher-resolution version.
+ * Returns the upgraded URL, the original URL if no upgrade applies,
+ * or null if the input is null/empty.
+ *
+ * Source-specific rules:
+ * - sagritaly: WordPress thumbnails have `-WxH` suffix before extension; strip it
+ * - solosagre: size-constraining query params (w, h, resize); remove them
+ * - other sources: pass through unchanged
+ */
+export function tryUpgradeImageUrl(
+  imageUrl: string | null,
+  sourceName: string
+): string | null {
+  if (!imageUrl || imageUrl === "") return null;
+
+  switch (sourceName) {
+    case "sagritaly":
+      // Strip WordPress thumbnail suffix: image-150x150.jpg -> image.jpg
+      return imageUrl.replace(/-\d+x\d+(\.\w+)$/, "$1");
+
+    case "solosagre":
+      // Remove w, h, resize query params
+      try {
+        const url = new URL(imageUrl);
+        url.searchParams.delete("w");
+        url.searchParams.delete("h");
+        url.searchParams.delete("resize");
+        return url.toString();
+      } catch {
+        return imageUrl;
+      }
+
+    default:
+      return imageUrl;
+  }
+}
+
+/**
  * Detect calendar-spam date ranges (whole month or near-whole month).
  * A range starting on day 1 and ending on day 28+ of any month = calendar spam.
  * Returns `true` if the date range should be REJECTED.
