@@ -48,11 +48,22 @@ Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, 
 
 ### Active
 
-- [ ] Netflix-style horizontal scroll rows by provincia/tipologia
-- [ ] User authentication (Google OAuth, Magic Link)
-- [ ] Preferiti / salva sagra
-- [ ] Espandere a mercatini, mostre, fiere e altri eventi (richiede categorie UI)
-- [ ] Expand to new scraper sources beyond the initial 5
+<!-- v1.4 Esperienza Completa -->
+- [ ] Netflix-style horizontal scroll rows (mix smart: weekend, vicino a te, tipo cucina, provincia)
+- [ ] Hero con foto sagra Unsplash API + testo bianco "SCOPRI LE SAGRE DEL VENETO"
+- [ ] Search bar home → autocomplete città → redirect Cerca con città + slider raggio km
+- [ ] Layout full-width responsive desktop
+- [ ] Footer completo con credits "Fatto con cuore in Veneto"
+- [ ] Logo SVG custom (Geist + icona stilizzata coral/teal)
+- [ ] Fix mappa pagina Cerca non funzionante
+- [ ] Filtri in cima alla pagina Mappa dedicata
+- [ ] Fix placeholder immagini brandizzato non visibile
+- [ ] Immagini low-res → fallback Unsplash a tema (NO bassa risoluzione mai)
+- [ ] Sempre provincia tra parentesi dopo nome città (es. "Zugliano (VI)")
+- [ ] Scrape info complete dalle fonti (menu, orari, descrizioni)
+- [ ] Fix eventi fuori Veneto (San Miniato Toscana)
+- [ ] Fix non-sagre ancora presenti (Passeggiata, Carnevale)
+- [ ] Investigare calo drastico eventi (26 vs 735) e cercare nuove fonti scraping
 
 ### Out of Scope
 
@@ -68,6 +79,18 @@ Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, 
 - Neo-brutalism -- non coerente con estetica premium
 - 3D elements (Three.js) -- overhead bundle eccessivo per zero-cost constraint
 - Recensioni e foto utenti -- premature, prima validare con utenti reali
+
+## Current Milestone: v1.4 "Esperienza Completa"
+
+**Goal:** Trasformare Nemovia da prototipo a prodotto completo — Netflix scroll rows, hero fotografico, city search con raggio, full-width layout, logo, footer, e fix critici su dati e UX.
+
+**Target features:**
+- Netflix-style scroll rows (mix smart) in homepage
+- Hero fotografico Unsplash + city search autocomplete con slider raggio
+- Logo SVG custom + footer completo
+- Full-width responsive desktop
+- Data quality: fix Veneto gating, non-sagre, calo eventi, nuove fonti, scraping completo
+- UX fixes: mappa Cerca, filtri Mappa, placeholder immagini, provincia sempre visibile
 
 ## Previous Milestone: v1.3 "Dati Puliti + Redesign" (Shipped 2026-03-10)
 
@@ -135,4 +158,4 @@ Italiano, informale ma competente. L'app deve sembrare curata, non un template.
 | Bento grid with featured card | First weekend sagra as featured, no DB change needed | ✓ Good -- editorial feel without complexity |
 
 ---
-*Last updated: 2026-03-10 after v1.3 milestone completion*
+*Last updated: 2026-03-10 after v1.4 milestone started*

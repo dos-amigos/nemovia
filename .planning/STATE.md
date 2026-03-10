@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.3
-milestone_name: Dati Puliti + Redesign
-status: shipped
-stopped_at: "Milestone v1.3 archived and tagged"
-last_updated: "2026-03-10T15:00:00Z"
-last_activity: 2026-03-10 -- Milestone v1.3 complete, archived, tagged
+milestone: v1.4
+milestone_name: Esperienza Completa
+status: defining_requirements
+stopped_at: "Milestone v1.4 started — defining requirements"
+last_updated: "2026-03-10T16:00:00Z"
+last_activity: 2026-03-10 -- Milestone v1.4 started
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 9
-  completed_plans: 9
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,12 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** Planning next milestone
+**Current focus:** Defining requirements for v1.4 Esperienza Completa
 
 ## Current Position
 
-Milestone v1.3 shipped and archived.
-Next step: `/gsd:new-milestone` to start v1.4+
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-10 — Milestone v1.4 started
 
 ## Accumulated Context
 
@@ -39,8 +41,6 @@ All v1.0-v1.3 decisions archived to PROJECT.md Key Decisions table.
 - Italian date format parsing may need refinement as real data volume grows
 - Gemini free tier limits may change (last checked Dec 2025)
 - Edge Function inline copies need a better solution (growing maintenance burden -- 4 milestones)
-- Futuro: mercatini, mostre, fiere e altri eventi non-sagre -- richiede categorie UI
-- Netflix-style horizontal scroll rows by provincia/tipologia (user idea for post-v1.3)
 
 ### Blockers/Concerns
 
@@ -49,5 +49,5 @@ None active.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Milestone v1.3 archived and tagged
-Resume: Start `/gsd:new-milestone` for next milestone
+Stopped at: Milestone v1.4 started — defining requirements
+Resume: Continue with requirements definition and roadmap creation
