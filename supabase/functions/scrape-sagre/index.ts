@@ -373,6 +373,10 @@ function parseCityFromText(text: string): string {
 function buildPageUrl(source: ScraperSource, page: number): string {
   if (page === 1) return source.base_url;
   if (source.url_pattern) {
+    // Offset-based pagination for itinerarinelgusto (pages_size=15, offset=0,15,30...)
+    if (source.name === "itinerarinelgusto" && source.url_pattern.includes("{n}")) {
+      return source.base_url + source.url_pattern.replace("{n}", String((page - 1) * 15));
+    }
     return source.base_url + source.url_pattern.replace("{n}", String(page));
   }
   return source.base_url;
@@ -467,6 +471,45 @@ function extractRawEvent($: any, el: any, source: ScraperSource): RawEventData {
 
     // Image: WordPress post thumbnail
     let image = $el.find("img.wp-post-image").first().attr("src") ?? null;
+    if (image && !image.startsWith("http")) {
+      try { image = new URL(image, source.base_url).href; } catch { /* */ }
+    }
+
+    return { title, dateText, city, price: null, url, image };
+  }
+
+  // --- itinerarinelgusto-specific extraction ---
+  // Server-rendered cards with Schema.org microdata (schema.org/Event)
+  // Selectors verified from live HTML: .row.tile.post.pad containers,
+  // h2.events a for title/URL, meta[itemprop] for dates/image, h3.event-header a for city
+  if (source.name === "itinerarinelgusto") {
+    const title = $el.find("h2.events a").first().text().trim();
+
+    // Dates: Schema.org meta tags provide clean ISO datetimes (e.g. "2026-03-08T17:00:00")
+    const startIso = $el.find('meta[itemprop="startDate"]').first().attr("content") ?? "";
+    const endIso = $el.find('meta[itemprop="endDate"]').first().attr("content") ?? "";
+    // Extract YYYY-MM-DD from ISO datetime for parseItalianDateRange compatibility
+    const dateText = startIso && endIso
+      ? `${startIso.slice(0, 10).split("-").reverse().join("/")} al ${endIso.slice(0, 10).split("-").reverse().join("/")}`
+      : startIso ? startIso.slice(0, 10).split("-").reverse().join("/")
+      : $el.find("span.eventi-data").first().text().trim();
+
+    // City: from h3.event-header a (e.g. "Roncade", "Provincia di Treviso")
+    const cityRaw = $el.find("h3.event-header a").first().text().trim();
+    // Strip "Provincia di " prefix if present
+    const city = cityRaw.replace(/^Provincia di\s+/i, "").trim();
+
+    // URL: from the title link
+    let url = $el.find("h2.events a").first().attr("href") ?? null;
+    if (url && !url.startsWith("http")) {
+      try { url = new URL(url, source.base_url).href; } catch { /* */ }
+    }
+
+    // Image: prefer full-size from Schema.org meta, fallback to figure img
+    let image = $el.find('meta[itemprop="image"]').first().attr("content") ?? null;
+    if (!image) {
+      image = $el.find("figure.box-pic img").first().attr("src") ?? null;
+    }
     if (image && !image.startsWith("http")) {
       try { image = new URL(image, source.base_url).href; } catch { /* */ }
     }
