@@ -12,6 +12,7 @@ import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
 const GEOCODE_LIMIT = 30;   // max rows to geocode per invocation (fits 50s timeout: 30s geocoding + 15s LLM + 5s overhead)
 const LLM_LIMIT = 200;      // max sagre to enrich per invocation (25 batches of 8)
 const SLEEP_MS = 1100;      // 1.1s between Nominatim calls (policy: 1 req/sec)
+const VENETO_VIEWBOX = "10.62,44.79,13.10,46.68"; // Nominatim viewbox: lon_min,lat_min,lon_max,lat_max
 
 // =============================================================================
 // Geocoding helpers (copied verbatim from src/lib/enrichment/geocode.ts)
@@ -34,6 +35,22 @@ const VENETO_PROVINCES = [
 function isVenetoProvince(province: string | null): boolean {
   if (!province) return false;
   return VENETO_PROVINCES.includes(province.toLowerCase().trim());
+}
+
+// Province code normalization -- inline copy from src/lib/enrichment/geocode.ts
+const PROVINCE_CODE_MAP: Record<string, string> = {
+  "belluno": "BL", "provincia di belluno": "BL",
+  "padova": "PD", "provincia di padova": "PD",
+  "rovigo": "RO", "provincia di rovigo": "RO",
+  "treviso": "TV", "provincia di treviso": "TV",
+  "venezia": "VE", "provincia di venezia": "VE",
+  "verona": "VR", "provincia di verona": "VR",
+  "vicenza": "VI", "provincia di vicenza": "VI",
+};
+
+function normalizeProvinceCode(province: string | null): string | null {
+  if (!province) return null;
+  return PROVINCE_CODE_MAP[province.toLowerCase().trim()] ?? null;
 }
 
 /**
@@ -197,6 +214,8 @@ async function runGeocodePass(
       format: "json",
       limit: "1",
       addressdetails: "1",
+      viewbox: VENETO_VIEWBOX,
+      bounded: "1",
     });
 
     try {
@@ -219,7 +238,7 @@ async function runGeocodePass(
           if (isValidItalyCoord(lat, lon)) {
             // Extract province from addressdetails if available
             const addr = results[0].address ?? {};
-            const province = addr.county ?? addr.province ?? addr.state_district ?? null;
+            const province = normalizeProvinceCode(addr.county ?? addr.province ?? addr.state_district ?? null);
 
             if (isVenetoProvince(province)) {
               // Veneto sagra — geocode and continue to LLM enrichment
