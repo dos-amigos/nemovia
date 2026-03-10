@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cleanCityName, normalizeLocationText, isValidItalyCoord, isVenetoProvince, VENETO_PROVINCES } from "../geocode";
+import { cleanCityName, normalizeLocationText, isValidItalyCoord, isVenetoProvince, VENETO_PROVINCES, normalizeProvinceCode, VENETO_VIEWBOX } from "../geocode";
 
 describe("normalizeLocationText", () => {
   it("removes parenthetical province codes and adds Veneto suffix", () => {
@@ -67,6 +67,54 @@ describe("VENETO_PROVINCES", () => {
     for (const p of baseProvinces) {
       expect(VENETO_PROVINCES).toContain(p);
     }
+  });
+});
+
+describe("normalizeProvinceCode", () => {
+  it("maps Padova to PD", () => {
+    expect(normalizeProvinceCode("Padova")).toBe("PD");
+  });
+  it("maps padova to PD (case insensitive)", () => {
+    expect(normalizeProvinceCode("padova")).toBe("PD");
+  });
+  it("maps Provincia di Padova to PD", () => {
+    expect(normalizeProvinceCode("Provincia di Padova")).toBe("PD");
+  });
+  it("maps provincia di padova to PD (case insensitive)", () => {
+    expect(normalizeProvinceCode("provincia di padova")).toBe("PD");
+  });
+  it("maps Belluno to BL", () => {
+    expect(normalizeProvinceCode("Belluno")).toBe("BL");
+  });
+  it("maps Rovigo to RO", () => {
+    expect(normalizeProvinceCode("Rovigo")).toBe("RO");
+  });
+  it("maps Treviso to TV", () => {
+    expect(normalizeProvinceCode("Treviso")).toBe("TV");
+  });
+  it("maps Venezia to VE", () => {
+    expect(normalizeProvinceCode("Venezia")).toBe("VE");
+  });
+  it("maps Verona to VR", () => {
+    expect(normalizeProvinceCode("Verona")).toBe("VR");
+  });
+  it("maps Vicenza to VI", () => {
+    expect(normalizeProvinceCode("Vicenza")).toBe("VI");
+  });
+  it("returns null for non-Veneto province", () => {
+    expect(normalizeProvinceCode("Firenze")).toBeNull();
+  });
+  it("returns null for null input", () => {
+    expect(normalizeProvinceCode(null)).toBeNull();
+  });
+  it("trims whitespace", () => {
+    expect(normalizeProvinceCode("  Padova  ")).toBe("PD");
+  });
+});
+
+describe("VENETO_VIEWBOX", () => {
+  it("equals the correct bounding box string", () => {
+    expect(VENETO_VIEWBOX).toBe("10.62,44.79,13.10,46.68");
   });
 });
 
