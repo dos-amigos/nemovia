@@ -257,6 +257,37 @@ function isPastYearEvent(
   return false;
 }
 
+// --- Section 2d: Image URL upgrade ---
+// Inline copy from src/lib/scraper/filters.ts (Deno cannot import from src/).
+// Keep in sync with the canonical source. Tests live at src/lib/scraper/__tests__/filters.test.ts
+function tryUpgradeImageUrl(
+  imageUrl: string | null,
+  sourceName: string
+): string | null {
+  if (!imageUrl || imageUrl === "") return null;
+
+  switch (sourceName) {
+    case "sagritaly":
+      // Strip WordPress thumbnail suffix: image-150x150.jpg -> image.jpg
+      return imageUrl.replace(/-\d+x\d+(\.\w+)$/, "$1");
+
+    case "solosagre":
+      // Remove w, h, resize query params
+      try {
+        const url = new URL(imageUrl);
+        url.searchParams.delete("w");
+        url.searchParams.delete("h");
+        url.searchParams.delete("resize");
+        return url.toString();
+      } catch {
+        return imageUrl;
+      }
+
+    default:
+      return imageUrl;
+  }
+}
+
 // --- Section 3: HTTP fetch helper ---
 async function fetchWithTimeout(url: string, timeoutMs = 10_000): Promise<string | null> {
   const controller = new AbortController();
@@ -454,7 +485,7 @@ function extractRawEvent($: any, el: any, source: ScraperSource): RawEventData {
   return { title, dateText, city, price, url, image };
 }
 
-function normalizeRawEvent(raw: RawEventData, _sourceName: string): NormalizedEvent {
+function normalizeRawEvent(raw: RawEventData, sourceName: string): NormalizedEvent {
   const parsedDates = parseItalianDateRange(raw.dateText);
   const title = raw.title.slice(0, 200);
   const isFree = raw.price
@@ -472,7 +503,7 @@ function normalizeRawEvent(raw: RawEventData, _sourceName: string): NormalizedEv
     endDate: parsedDates.end,
     priceInfo: raw.price,
     isFree,
-    imageUrl: raw.image,
+    imageUrl: tryUpgradeImageUrl(raw.image, sourceName),
     url: raw.url,
     contentHash: generateContentHash(raw.title, raw.city, parsedDates.start),
   };
