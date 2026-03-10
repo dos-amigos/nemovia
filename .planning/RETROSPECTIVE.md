@@ -145,28 +145,82 @@
 
 ---
 
+## Milestone: v1.3 -- Dati Puliti + Redesign
+
+**Shipped:** 2026-03-10
+**Phases:** 4 | **Plans:** 9 | **Commits:** 60
+
+### What Was Built
+- TDD-built heuristic filters (noise titles, calendar spam, >7-day events, past-year events) with production retroactive cleanup
+- LLM is_sagra classification piggybacking on existing Gemini enrichment (zero additional API calls)
+- pg_trgm fuzzy dedup with GIN trigram index (title similarity + date overlap requirement)
+- Source-specific image URL upgrade (WordPress thumbnails, size params) + branded placeholder
+- Geist font + coral/teal OKLCH palette replacing amber/stone across all 25+ Shadcn tokens
+- Glassmorphism nav bars and floating overlays with GPU-composited backdrop-blur
+- Mesh gradient hero, image-overlay SagraCard, FeaturedSagraCard, bento grid homepage
+- LazyMotion migration (12 files, motion.* to m.*, ~28KB initial JS reduction)
+
+### What Worked
+- **Two-track milestone (data + UI) worked cleanly**: data quality phases (14-15) cleaned the pipeline before UI phases (16-17) made it shine -- clean data + modern design amplified each other
+- **TDD for filter functions**: RED-GREEN-REFACTOR produced 63+ tests catching edge cases before pipeline integration
+- **Piggybacking LLM classification**: adding is_sagra to existing Gemini batch call avoided cost/latency increase entirely
+- **CSS custom properties for placeholders**: from-primary/via-accent gradient auto-updated when Phase 16 changed the palette
+- **Semantic token migration before visual effects**: Phase 16 token work made Phase 17 glassmorphism/mesh naturally use correct colors
+- **LazyMotion strict mode**: catches motion.* leaks at runtime, preventing regression after migration
+
+### What Was Inefficient
+- **Edge Function inline copies still unresolved**: now 4 milestones with this pattern -- growing maintenance burden (filters.ts + llm.ts both have inline copies)
+- **Nyquist compliance partial (1/4 phases)**: Phases 14-16 have VALIDATION.md stubs but no test runs -- formal test coverage gaps
+- **No ESLint rule for m.* enforcement**: strict mode catches at runtime, but a build-time check would be more reliable
+
+### Patterns Established
+- **Heuristic filter pipeline integration**: filters run between normalizeRawEvent() and upsertEvent() in Edge Function
+- **LLM classification piggyback**: add field to responseSchema + branch in result loop -- zero cost increase
+- **Fuzzy dedup via pg_trgm**: GIN index + plpgsql RPC with configurable similarity thresholds
+- **OKLCH palette with semantic tokens**: primary=coral(25.5), accent=teal(185), neutral=cool(260)
+- **Glass utilities**: glass-nav for sticky nav bars, glass-overlay for floating elements, literal OKLCH values
+- **Image overlay card**: full-bleed image + from-black/70 gradient + white text at bottom
+- **LazyMotion pattern**: m.* from motion/react-m for elements, motion/react for hooks/providers only
+
+### Key Lessons
+1. **Data quality before design refresh** -- cleaning noise/dupes/non-sagre first meant the redesigned UI only showed quality content from day one
+2. **Piggyback on existing LLM calls** -- adding is_sagra to the enrichment prompt was zero-cost, zero-latency vs. a separate classification pipeline
+3. **Use CSS custom properties for palette-dependent components** -- Phase 15 placeholders auto-updated when Phase 16 changed colors
+4. **Literal OKLCH in backdrop-filter contexts** -- CSS custom properties don't compose well inside backdrop-filter; use literal values
+5. **domMax not domAnimation for LazyMotion** -- if any component uses layoutId, you need the full feature set
+
+### Cost Observations
+- Model mix: primarily Opus for planning and execution
+- Sessions: ~3 across 2 days
+- Notable: 9 plans across 4 phases in 2 days -- dual-track (data + UI) execution was efficient due to clear phase ordering
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Commits | Phases | Plans | Key Change |
 |-----------|---------|--------|-------|------------|
-| v1.0 | 85 | 6 | 18 | First milestone — established all patterns |
-| v1.1 | 29 | 4 | 7 | Data pipeline focus — no frontend, all scraper/quality work |
-| v1.2 | 37 | 3 | 7 | UX polish — responsive layout, transitions, micro-interactions |
+| v1.0 | 85 | 6 | 18 | First milestone -- established all patterns |
+| v1.1 | 29 | 4 | 7 | Data pipeline focus -- no frontend, all scraper/quality work |
+| v1.2 | 37 | 3 | 7 | UX polish -- responsive layout, transitions, micro-interactions |
+| v1.3 | 60 | 4 | 9 | Dual-track -- data quality overhaul + UI/UX redesign |
 
 ### Cumulative Quality
 
-| Milestone | LOC | Files | Scraper Sources Active | Active Sagre |
-|-----------|-----|-------|----------------------|-------------|
-| v1.0 | 3,514 | 159 | 1/5 | ~140 |
-| v1.1 | ~3,900 | 159 | 5/5 | 735 |
-| v1.2 | ~4,200 | 170+ | 5/5 | 735 |
+| Milestone | LOC | Files | Scraper Sources Active | Active Sagre | Data Quality |
+|-----------|-----|-------|----------------------|-------------|-------------|
+| v1.0 | 3,514 | 159 | 1/5 | ~140 | Basic |
+| v1.1 | ~3,900 | 159 | 5/5 | 735 | Noise filter + location gating |
+| v1.2 | ~4,200 | 170+ | 5/5 | 735 | Same as v1.1 |
+| v1.3 | ~5,100 | 180+ | 5/5 | Clean | Heuristic + LLM + fuzzy dedup |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. **Validate assumptions about external sites before planning** — v1.0 assumed JS rendering for sagritaly, v1.1 proved it was SSR (validated across phases 2 and 9)
-2. **Phase-by-phase incremental delivery works** — all 3 milestones shipped incrementally with verification at each phase (validated v1.0 + v1.1 + v1.2)
-3. **Edge Function inline copies are a growing burden** — noted in all 3 milestones, still unresolved
-4. **Put accessibility/foundation work first in a polish milestone** — v1.2 Phase 11 (A11Y) enabled all Phase 13 animations to automatically respect user preferences (validated v1.2)
-5. **Research third-party libraries before planning** — v1.2 research phase eliminated 3 incompatible libraries (barba.js, Lenis, reactbits) before any code was written (validated v1.2)
+1. **Validate assumptions about external sites before planning** -- v1.0 assumed JS rendering for sagritaly, v1.1 proved it was SSR (validated v1.0 + v1.1)
+2. **Phase-by-phase incremental delivery works** -- all 4 milestones shipped incrementally with verification at each phase (validated v1.0-v1.3)
+3. **Edge Function inline copies are a growing burden** -- noted in all 4 milestones, still unresolved (validated v1.0-v1.3)
+4. **Foundation work before polish** -- v1.2 A11Y before animations, v1.3 data quality before design refresh (validated v1.2 + v1.3)
+5. **Research third-party libraries before planning** -- v1.2 eliminated 3 incompatible libraries; v1.3 research identified OKLCH backdrop-filter pitfall (validated v1.2 + v1.3)
+6. **Piggyback on existing infrastructure** -- v1.3 is_sagra piggybacked on Gemini enrichment; CSS custom props bridged Phase 15-16 palette transition (validated v1.3)

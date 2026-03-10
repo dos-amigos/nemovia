@@ -46,85 +46,19 @@ Full details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 
 </details>
 
-### v1.3 Dati Puliti + Redesign (Shipped 2026-03-10)
+<details>
+<summary>✅ v1.3 Dati Puliti + Redesign (Phases 14-17) — SHIPPED 2026-03-10</summary>
 
-**Milestone Goal:** Eliminare i dati spazzatura dalla pipeline e ridisegnare l'interfaccia con un'estetica moderna e d'impatto.
+- [x] Phase 14: Data Quality Heuristic Filters (2/2 plans) — completed 2026-03-09
+- [x] Phase 15: Deduplication & Classification (2/2 plans) — completed 2026-03-10
+- [x] Phase 16: Design System Foundation (2/2 plans) — completed 2026-03-10
+- [x] Phase 17: Visual Effects, Layout & Performance (3/3 plans) — completed 2026-03-10
 
-- [x] **Phase 14: Data Quality Heuristic Filters** - Deterministic validation filters in scrape pipeline reject garbage data before it reaches users (completed 2026-03-09)
-- [x] **Phase 15: Deduplication & Classification** - Fuzzy dedup via pg_trgm and LLM-based sagra/non-sagra classification eliminate duplicates and off-topic events (completed 2026-03-10)
-- [x] **Phase 16: Design System Foundation** - New Geist typography and vibrant OKLCH color palette replace the dated amber/stone aesthetic (completed 2026-03-10)
-- [x] **Phase 17: Visual Effects, Layout & Performance** - Glassmorphism, mesh gradients, bento grid, and LazyMotion deliver the WOW factor with optimized bundle (completed 2026-03-10)
+Full details: [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
 
-## Phase Details
-
-### Phase 14: Data Quality Heuristic Filters
-**Goal**: Users see only real, current sagre with valid dates and reasonable durations -- no calendar spam, no expired 2025 events, no absurd multi-month "sagre"
-**Depends on**: Phase 13 (v1.2 complete)
-**Requirements**: DQ-01, DQ-02, DQ-03, DQ-04, DQ-05
-**Success Criteria** (what must be TRUE):
-  1. Browsing the app shows zero generic calendar-spam titles (e.g., "Calendario mensile eventi sagre...")
-  2. No event displayed has a date range spanning an entire month or longer
-  3. No event displayed has a duration exceeding 7 days
-  4. No event from 2025 or earlier appears anywhere in the app
-  5. Existing production data that violates these rules has been cleaned up (deactivated)
-**Plans**: 2 plans
-
-Plans:
-- [x] 14-01-PLAN.md — TDD: Heuristic filter functions (isNoiseTitle, isCalendarDateRange, isExcessiveDuration, isPastYearEvent)
-- [x] 14-02-PLAN.md — Pipeline integration, SQL retroactive cleanup, and expire cron fix
-
-### Phase 15: Deduplication & Classification
-**Goal**: Users see each sagra only once and never see non-sagra events (antique markets, exhibitions, generic markets) mixed in with real food festivals
-**Depends on**: Phase 14
-**Requirements**: DQ-06, DQ-07, DQ-08, DQ-09, DQ-10
-**Success Criteria** (what must be TRUE):
-  1. No two events with near-identical titles in the same location appear in search results or on the map
-  2. Events that are clearly not sagre (antiquariato, mostre, mercati) do not appear in the app
-  3. LLM classification runs within the existing enrichment pipeline with no additional API calls
-  4. Sagra cards display higher-resolution images where the source provides them (no more tiny thumbnails when a larger version exists)
-  5. Cards without a usable image show a visually pleasant branded placeholder instead of a broken image or generic grey box
-**Plans**: 2 plans
-
-Plans:
-- [x] 15-01-PLAN.md — Image quality: tryUpgradeImageUrl TDD + branded placeholder in SagraCard/SagraDetail
-- [x] 15-02-PLAN.md — LLM is_sagra classification in enrichment + pg_trgm fuzzy dedup SQL migration
-
-### Phase 16: Design System Foundation
-**Goal**: The app's visual identity is transformed -- modern Geist typography and a vibrant new color palette make every screen feel fresh and intentional
-**Depends on**: Phase 15 (clean data makes the new design shine)
-**Requirements**: UI-01, UI-02, UI-03, UI-04
-**Success Criteria** (what must be TRUE):
-  1. All text across the app renders in Geist font (loaded via next/font/google, no layout shift)
-  2. The amber-600/stone-50 palette is completely gone -- replaced by a vibrant, modern OKLCH palette visible on every page
-  3. All Shadcn/UI component tokens (primary, secondary, accent, destructive, and their foreground pairs) use the new palette consistently
-  4. No hardcoded old-palette colors remain in any component (gradients, badges, tags, backgrounds all use new palette)
-**Plans**: 2 plans
-
-Plans:
-- [x] 16-01-PLAN.md — Geist font swap + OKLCH coral/teal palette replacement in globals.css
-- [x] 16-02-PLAN.md — Hardcoded color class sweep across components + visual verification
-
-### Phase 17: Visual Effects, Layout & Performance
-**Goal**: The app delivers a WOW-factor visual experience -- glassmorphism nav, mesh gradient backgrounds, bento grid homepage, and a dramatically smaller animation bundle
-**Depends on**: Phase 16 (visual effects must layer on finalized color palette)
-**Requirements**: UI-05, UI-06, UI-07, UI-08, UI-09, UI-10, UI-11
-**Success Criteria** (what must be TRUE):
-  1. TopNav and BottomNav have a glass-like translucent appearance (backdrop-blur, semi-transparent background) that reveals content scrolling behind them
-  2. Hero section and page backgrounds use mesh gradients that create visual depth and movement
-  3. Homepage uses a responsive bento grid layout that feels editorial and modern (not a uniform card list)
-  4. SagraCard, Hero, and key page components have been visually redesigned to match the modern aesthetic (not just recolored)
-  5. Motion bundle initial load is reduced from ~34KB to ~5KB via LazyMotion migration, with no regression in existing animations, and glassmorphism scrolls smoothly on mobile (no jank)
-**Plans**: 3 plans
-
-Plans:
-- [x] 17-01-PLAN.md — Glassmorphism on nav bars and floating overlays + CSS glass/mesh gradient utilities
-- [x] 17-02-PLAN.md — SagraCard image overlay redesign + mesh gradient hero + bento grid homepage layout
-- [x] 17-03-PLAN.md — LazyMotion migration (motion.* to m.* across 12 files, async domMax loading)
+</details>
 
 ## Progress
-
-**Execution Order:**
-Phases execute in numeric order: 14 → 15 → 16 → 17
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|---------------|--------|-----------|
@@ -141,7 +75,7 @@ Phases execute in numeric order: 14 → 15 → 16 → 17
 | 11. Bug Fixes + Foundation | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 12. Responsive Desktop Layout | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 13. Transitions + Micro-Interactions | v1.2 | 3/3 | Complete | 2026-03-09 |
-| 14. Data Quality Heuristic Filters | v1.3 | Complete    | 2026-03-09 | 2026-03-09 |
-| 15. Deduplication & Classification | v1.3 | Complete    | 2026-03-10 | 2026-03-10 |
-| 16. Design System Foundation | v1.3 | Complete    | 2026-03-10 | 2026-03-10 |
-| 17. Visual Effects, Layout & Performance | v1.3 | Complete    | 2026-03-10 | 2026-03-10 |
+| 14. Data Quality Heuristic Filters | v1.3 | 2/2 | Complete | 2026-03-09 |
+| 15. Deduplication & Classification | v1.3 | 2/2 | Complete | 2026-03-10 |
+| 16. Design System Foundation | v1.3 | 2/2 | Complete | 2026-03-10 |
+| 17. Visual Effects, Layout & Performance | v1.3 | 3/3 | Complete | 2026-03-10 |

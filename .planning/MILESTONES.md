@@ -1,5 +1,24 @@
 # Milestones
 
+## v1.3 Dati Puliti + Redesign (Shipped: 2026-03-10)
+
+**Delivered:** Data quality overhaul + UI/UX redesign — heuristic filters, LLM classification, fuzzy dedup, Geist/OKLCH palette, glassmorphism, mesh gradients, bento grid, and LazyMotion performance optimization.
+
+**Phases completed:** 4 phases, 9 plans
+**Commits:** 60 | **Source files changed:** 34 | **LOC delta:** +1173/-259 TypeScript/CSS
+**Timeline:** 2 days (2026-03-09 → 2026-03-10)
+**Git range:** `a32b302` → `01b7aaf`
+
+**Key accomplishments:**
+1. TDD-built heuristic filters reject noise titles, calendar spam, >7-day events, and past-year events from scrape pipeline with retroactive production cleanup
+2. LLM is_sagra classification in existing Gemini enrichment (zero additional API calls) deactivates non-sagre (antiquariato, mostre, mercati)
+3. pg_trgm fuzzy dedup with GIN trigram index eliminates near-duplicate events (title + city similarity + date overlap)
+4. Geist font + vibrant coral/teal OKLCH palette replace dated amber/stone aesthetic across all 25+ Shadcn tokens
+5. Glassmorphism nav bars, mesh gradient hero, image-overlay SagraCard, and bento grid homepage deliver WOW factor
+6. LazyMotion migration (~28KB initial JS reduction) with async domMax loading and strict mode leak detection
+
+---
+
 ## v1.2 Polish (Shipped: 2026-03-09)
 
 **Delivered:** UX polish — bug fixes, responsive desktop layout, page transitions, micro-interactions, and scroll animations for a premium feel on every device.
