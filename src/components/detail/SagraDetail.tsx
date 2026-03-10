@@ -50,8 +50,11 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
                 priority
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-100 to-green-100">
-                <UtensilsCrossed className="h-12 w-12 text-muted-foreground/30" />
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10">
+                <div className="flex flex-col items-center gap-2 text-muted-foreground/40">
+                  <UtensilsCrossed className="h-10 w-10" />
+                  <span className="text-sm font-medium tracking-wide uppercase">Sagra</span>
+                </div>
               </div>
             )}
             <BackButton />

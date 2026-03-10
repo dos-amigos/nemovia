@@ -37,8 +37,11 @@ export function SagraCard({ sagra, distanceKm }: SagraCardProps) {
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-100 to-green-100">
-                <UtensilsCrossed className="h-10 w-10 text-muted-foreground/50" />
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10">
+                <div className="flex flex-col items-center gap-1.5 text-muted-foreground/40">
+                  <UtensilsCrossed className="h-8 w-8" />
+                  <span className="text-xs font-medium tracking-wide uppercase">Sagra</span>
+                </div>
               </div>
             )}
 
