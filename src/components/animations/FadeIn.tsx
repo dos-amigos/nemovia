@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 
 interface FadeInProps {
   children: React.ReactNode;
@@ -10,7 +10,7 @@ interface FadeInProps {
 
 export function FadeIn({ children, delay = 0, className }: FadeInProps) {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
@@ -18,6 +18,6 @@ export function FadeIn({ children, delay = 0, className }: FadeInProps) {
       className={className}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }

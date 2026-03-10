@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { Badge } from "@/components/ui/badge";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { QUICK_FILTER_CHIPS } from "@/lib/constants/veneto";
@@ -30,7 +30,7 @@ export function QuickFilters() {
 
         <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-2">
           {QUICK_FILTER_CHIPS.map((chip) => (
-            <motion.button
+            <m.button
               key={chip.label}
               type="button"
               className="rounded-full focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -44,7 +44,7 @@ export function QuickFilters() {
               >
                 {chip.emoji} {chip.label}
               </Badge>
-            </motion.button>
+            </m.button>
           ))}
         </div>
       </section>

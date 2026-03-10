@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 
 type Direction = "up" | "left" | "right";
 
@@ -20,7 +20,7 @@ interface ScrollRevealProps {
 export function ScrollReveal({ children, direction = "up", delay = 0, className }: ScrollRevealProps) {
   const offset = offsets[direction];
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, x: offset.x, y: offset.y }}
       whileInView={{ opacity: 1, x: 0, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
@@ -28,6 +28,6 @@ export function ScrollReveal({ children, direction = "up", delay = 0, className 
       className={className}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }

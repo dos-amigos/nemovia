@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 
 const container = {
   hidden: {},
@@ -27,7 +27,7 @@ export function StaggerGrid({
   className = "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
 }: StaggerGridProps) {
   return (
-    <motion.div
+    <m.div
       variants={container}
       initial="hidden"
       whileInView="show"
@@ -35,8 +35,8 @@ export function StaggerGrid({
       className={className}
     >
       {React.Children.map(children, (child) => (
-        <motion.div variants={item}>{child}</motion.div>
+        <m.div variants={item}>{child}</m.div>
       ))}
-    </motion.div>
+    </m.div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "motion/react";
+import { useScroll, useTransform } from "motion/react";
+import * as m from "motion/react-m";
 import { useRef } from "react";
 
 interface ParallaxHeroProps {
@@ -20,9 +21,9 @@ export function ParallaxHero({ children, className }: ParallaxHeroProps) {
     <div ref={ref} className={className}>
       {/* Hide on lg+ where sticky layout conflicts with parallax (Pitfall 5) */}
       {/* On mobile: parallax effect. On desktop: static (no transform). */}
-      <motion.div className="lg:!transform-none" style={{ y }}>
+      <m.div className="lg:!transform-none" style={{ y }}>
         {children}
-      </motion.div>
+      </m.div>
     </div>
   );
 }

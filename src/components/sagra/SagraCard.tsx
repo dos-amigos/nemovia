@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { MapPin, Calendar, UtensilsCrossed } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FadeImage } from "@/components/animations/FadeImage";
@@ -19,7 +19,7 @@ export function SagraCard({ sagra }: SagraCardProps) {
       href={`/sagra/${sagra.slug}`}
       className="block rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
-      <motion.div
+      <m.div
         whileHover={{ scale: 1.02, boxShadow: "0 8px 30px rgba(0,0,0,0.12)" }}
         whileTap={{ scale: 0.97 }}
         exit={{ scale: 1.05, opacity: 0, transition: { duration: 0.15 } }}
@@ -68,7 +68,7 @@ export function SagraCard({ sagra }: SagraCardProps) {
             Gratis
           </Badge>
         )}
-      </motion.div>
+      </m.div>
     </Link>
   );
 }

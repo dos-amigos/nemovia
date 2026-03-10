@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { MapPin, Calendar, UtensilsCrossed } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FadeImage } from "@/components/animations/FadeImage";
@@ -18,7 +18,7 @@ export function FeaturedSagraCard({ sagra }: FeaturedSagraCardProps) {
       href={`/sagra/${sagra.slug}`}
       className="block h-full rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
-      <motion.div
+      <m.div
         whileHover={{
           scale: 1.01,
           boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
@@ -78,7 +78,7 @@ export function FeaturedSagraCard({ sagra }: FeaturedSagraCardProps) {
             </div>
           </div>
         </div>
-      </motion.div>
+      </m.div>
     </Link>
   );
 }

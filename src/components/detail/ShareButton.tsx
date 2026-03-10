@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { Share2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -22,7 +22,7 @@ export default function ShareButton() {
   }
 
   return (
-    <motion.div
+    <m.div
       whileTap={{ scale: 0.95 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
     >
@@ -39,6 +39,6 @@ export default function ShareButton() {
           </>
         )}
       </Button>
-    </motion.div>
+    </m.div>
   );
 }

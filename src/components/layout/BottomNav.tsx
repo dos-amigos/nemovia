@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, Map } from "lucide-react";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { cn } from "@/lib/utils";
 
 const tabs = [
@@ -36,7 +36,7 @@ export function BottomNav() {
                 <Icon className="h-5 w-5" />
                 <span>{label}</span>
                 {isActive && (
-                  <motion.div
+                  <m.div
                     layoutId="bottomnav-active"
                     className="absolute -bottom-1 h-0.5 w-8 rounded-full bg-primary"
                     transition={{ type: "spring", stiffness: 500, damping: 35 }}

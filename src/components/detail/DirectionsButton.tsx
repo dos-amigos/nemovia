@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { Navigation } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,7 @@ interface DirectionsButtonProps {
 
 export default function DirectionsButton({ lat, lng }: DirectionsButtonProps) {
   return (
-    <motion.a
+    <m.a
       href={getDirectionsUrl(lat, lng)}
       target="_blank"
       rel="noopener noreferrer"
@@ -26,6 +26,6 @@ export default function DirectionsButton({ lat, lng }: DirectionsButtonProps) {
     >
       <Navigation className="size-4" />
       Indicazioni
-    </motion.a>
+    </m.a>
   );
 }

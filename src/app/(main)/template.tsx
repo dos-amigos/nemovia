@@ -1,6 +1,7 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { LayoutRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useContext, useRef } from "react";
@@ -42,7 +43,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
 
   return (
     <AnimatePresence mode="wait" initial={false}>
-      <motion.div
+      <m.div
         key={segment}
         initial={{ opacity: 0 }}
         animate={{
@@ -52,7 +53,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
         exit={{ opacity: 0, transition: { duration: 0.1 } }}
       >
         <FrozenRouter>{children}</FrozenRouter>
-      </motion.div>
+      </m.div>
     </AnimatePresence>
   );
 }
