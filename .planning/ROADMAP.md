@@ -51,7 +51,7 @@ Full details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 **Milestone Goal:** Eliminare i dati spazzatura dalla pipeline e ridisegnare l'interfaccia con un'estetica moderna e d'impatto.
 
 - [x] **Phase 14: Data Quality Heuristic Filters** - Deterministic validation filters in scrape pipeline reject garbage data before it reaches users (completed 2026-03-09)
-- [x] **Phase 15: Deduplication & Classification** - Fuzzy dedup via pg_trgm and LLM-based sagra/non-sagra classification eliminate duplicates and off-topic events (completed 2026-03-10)
+- [x] **Phase 15: Deduplication & Classification** - Fuzzy dedup via pg_trgm and LLM-based sagra/non-sagra classification eliminate duplicates and off-topic events (completed 2026-03-10)
 - [ ] **Phase 16: Design System Foundation** - New Geist typography and vibrant OKLCH color palette replace the dated amber/stone aesthetic
 - [ ] **Phase 17: Visual Effects, Layout & Performance** - Glassmorphism, mesh gradients, bento grid, and LazyMotion deliver the WOW factor with optimized bundle
 
@@ -98,11 +98,11 @@ Plans:
   2. The amber-600/stone-50 palette is completely gone -- replaced by a vibrant, modern OKLCH palette visible on every page
   3. All Shadcn/UI component tokens (primary, secondary, accent, destructive, and their foreground pairs) use the new palette consistently
   4. No hardcoded old-palette colors remain in any component (gradients, badges, tags, backgrounds all use new palette)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 16-01: TBD
-- [ ] 16-02: TBD
+- [ ] 16-01-PLAN.md — Geist font swap + OKLCH coral/teal palette replacement in globals.css
+- [ ] 16-02-PLAN.md — Hardcoded color class sweep across components + visual verification
 
 ### Phase 17: Visual Effects, Layout & Performance
 **Goal**: The app delivers a WOW-factor visual experience -- glassmorphism nav, mesh gradient backgrounds, bento grid homepage, and a dramatically smaller animation bundle
@@ -143,5 +143,5 @@ Phases execute in numeric order: 14 → 15 → 16 → 17
 | 13. Transitions + Micro-Interactions | v1.2 | 3/3 | Complete | 2026-03-09 |
 | 14. Data Quality Heuristic Filters | v1.3 | Complete    | 2026-03-09 | 2026-03-09 |
 | 15. Deduplication & Classification | v1.3 | Complete    | 2026-03-10 | 2026-03-10 |
-| 16. Design System Foundation | v1.3 | 0/? | Not started | - |
+| 16. Design System Foundation | v1.3 | 0/2 | Not started | - |
 | 17. Visual Effects, Layout & Performance | v1.3 | 0/? | Not started | - |
