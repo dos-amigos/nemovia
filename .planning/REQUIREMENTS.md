@@ -9,9 +9,9 @@ Requirements for v1.4 "Esperienza Completa". Each maps to roadmap phases.
 
 ### Data Quality
 
-- [ ] **DATA-01**: Event count restored to 100+ active sagre (investigate scraper failures, filter aggressiveness, add sources if needed)
+- [x] **DATA-01**: Event count restored to 100+ active sagre (investigate scraper failures, filter aggressiveness, add sources if needed)
 - [x] **DATA-02**: No events outside Veneto appear in results (tighten Nominatim bounding box + Veneto province gating)
-- [ ] **DATA-03**: Non-sagre events filtered out (Passeggiata, Carnevale, Concerto, Mostra, Antiquariato)
+- [x] **DATA-03**: Non-sagre events filtered out (Passeggiata, Carnevale, Concerto, Mostra, Antiquariato)
 - [x] **DATA-04**: City names always display with provincia in parentheses (e.g. "Zugliano (VI)")
 
 ### Images
@@ -76,9 +76,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 18 | Pending |
+| DATA-01 | Phase 18 | Complete |
 | DATA-02 | Phase 18 | Complete |
-| DATA-03 | Phase 18 | Pending |
+| DATA-03 | Phase 18 | Complete |
 | DATA-04 | Phase 18 | Complete |
 | SCRAPE-02 | Phase 18 | Pending |
 | IMG-01 | Phase 19 | Pending |
