@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Esperienza Completa
 status: executing
-stopped_at: "Completed 18-02-PLAN.md"
-last_updated: "2026-03-10T17:10:43Z"
-last_activity: 2026-03-10 -- Completed 18-02 Province Normalization
+stopped_at: "Completed 18-03-PLAN.md"
+last_updated: "2026-03-10T17:17:57Z"
+last_activity: 2026-03-10 -- Completed 18-03 itinerarinelgusto Source Investigation
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
-  percent: 11
+  completed_plans: 3
+  percent: 17
 ---
 
 # Project State: Nemovia v1.4
@@ -27,14 +27,14 @@ progress:
 
 ## Current Position
 
-**Phase**: 18 - Data Pipeline Restoration
-**Plan**: 2/3 complete, next: 18-03
-**Status**: Executing Phase 18 plans
-**Progress**: 0/6 phases complete (11%)
+**Phase**: 18 - Data Pipeline Restoration (COMPLETE)
+**Plan**: 3/3 complete
+**Status**: Phase 18 complete, ready for Phase 19
+**Progress**: 1/6 phases complete (17%)
 
 ```
-v1.4 Progress: [=====                                             ] 11%
-Phase 18:      [=================================                 ] 67%
+v1.4 Progress: [========                                          ] 17%
+Phase 18:      [==================================================] 100%
 ```
 
 ## Performance Metrics
@@ -42,14 +42,14 @@ Phase 18:      [=================================                 ] 67%
 ### Milestone v1.4 (In Progress)
 
 **Timeline**: Started 2026-03-10
-**Phases complete**: 0/6
-**Plans complete**: 2/3 (Phase 18)
-**Commits**: 8
-**LOC delta**: +200/-3
+**Phases complete**: 1/6
+**Plans complete**: 3/3 (Phase 18)
+**Commits**: 9
+**LOC delta**: +280/-3
 
 ### Previous Milestone: v1.3 (Shipped 2026-03-10)
 
-**Duration**: 2 days (2026-03-09 → 2026-03-10)
+**Duration**: 2 days (2026-03-09 to 2026-03-10)
 **Phases**: 4/4 complete
 **Plans**: 9/9 complete
 **Commits**: 60
@@ -60,6 +60,12 @@ Phase 18:      [=================================                 ] 67%
 ## Accumulated Context
 
 ### Recent Decisions
+
+**18-03 itinerarinelgusto Source (2026-03-10)**
+- **Decision**: Selector .row.tile.post.pad verified from live HTML (research suggested .row.post.pad)
+- **Decision**: Schema.org meta tags used for dates instead of text parsing -- ISO format provides reliable data
+- **Decision**: max_pages set to 3 (conservative) to avoid Edge Function timeout
+- **Decision**: Full-size CDN image preferred over midsize thumbnail
 
 **18-01 Filter Recalibration (2026-03-10)**
 - **Decision**: Whitelist-first approach for isNonSagraTitle() -- check sagra/festa/food keywords before non-sagra rejection
@@ -93,13 +99,21 @@ Phase 18:      [=================================                 ] 67%
 
 ### Active TODOs
 
-**Phase 18 Execution (Next: 18-03)**
+**Phase 18 Complete**
 - [x] Investigate scraper_logs and scraper_sources for event count drop root cause (18-01)
 - [x] Plan diagnostic queries for filter rejection rates (18-01)
 - [x] Design Veneto bounding box parameters for Nominatim (18-02)
 - [x] Plan heuristic filters for non-sagre detection (18-01)
 - [x] Plan province code normalization SQL migration (18-02)
-- [ ] Execute 18-03 plan (next)
+- [x] Investigate itinerarinelgusto.it and add scraper source (18-03)
+
+**User Action Required (Phase 18 Deployment)**
+- [ ] Run SQL migration 009 (filter recalibration) in Supabase SQL Editor
+- [ ] Run SQL migration 010 (province normalization) in Supabase SQL Editor
+- [ ] Run SQL migration 011 (itinerarinelgusto source) in Supabase SQL Editor
+- [ ] Deploy scrape-sagre Edge Function via Supabase Dashboard
+- [ ] Deploy enrich-sagre Edge Function via Supabase Dashboard
+- [ ] Verify: `SELECT count(*) FROM sagre WHERE is_active = true;` should approach 100+
 
 **Research Integration**
 - [ ] Review research/SUMMARY.md pitfalls section during phase planning
@@ -108,7 +122,7 @@ Phase 18:      [=================================                 ] 67%
 
 ### Blockers
 
-**None** — Roadmap complete, ready to begin Phase 18 planning.
+**None** -- Phase 18 complete, ready for Phase 19 planning.
 
 ### Technical Notes
 
@@ -129,14 +143,15 @@ Phase 18:      [=================================                 ] 67%
 - Route Handlers for city autocomplete (hide Supabase anon key)
 - Edge Function inline copy pattern for filter additions (established pattern since v1.0)
 - Negative margin breakout already in MappaClientPage.tsx (line 26)
+- Schema.org microdata extraction for itinerarinelgusto (established in 18-03)
 
 ## Session Continuity
 
 ### How to Resume Work
 
-**If starting Phase 18 planning:**
+**If starting Phase 19 planning:**
 ```bash
-/gsd:plan-phase 18
+/gsd:plan-phase 19
 ```
 
 **If checking project status:**
@@ -154,15 +169,11 @@ cat .planning/REQUIREMENTS.md
 ### Context for Next Session
 
 **Current milestone**: v1.4 "Esperienza Completa"
-**Milestone goal**: Transform Nemovia from prototype to complete product — Netflix scroll rows, hero photographico, city search con raggio, full-width layout, logo, footer, e fix critici su dati e UX.
+**Milestone goal**: Transform Nemovia from prototype to complete product -- Netflix scroll rows, hero photographico, city search con raggio, full-width layout, logo, footer, e fix critici su dati e UX.
 
-**Phase 18 goal**: Restore application to healthy data state with 100+ active sagre, accurate Veneto gating, and effective non-sagre filtering.
+**Phase 18 status**: COMPLETE (3/3 plans). Filter recalibration, province normalization, and itinerarinelgusto source all implemented. SQL migrations 009-011 and Edge Function deployments pending user action.
 
-**Why Phase 18 is first**: Event count collapse (26 vs 735 events) makes every UI feature appear broken. Research identified this as the critical blocker — building Netflix rows, hero images, or city search against an empty dataset produces misleading results and broken-looking features. Data health must be restored before any UI work begins.
-
-**Phase 18 requirements**: DATA-01 (restore 100+ events), DATA-02 (Veneto gating), DATA-03 (non-sagre filter), DATA-04 (province display), SCRAPE-02 (investigate new sources)
-
-**Next action**: Run `/gsd:execute-phase 18` to execute plan 18-03 (remaining phase 18 plan).
+**Next action**: Deploy Phase 18 artifacts (SQL migrations + Edge Functions), then begin Phase 19 (Images).
 
 ---
 
