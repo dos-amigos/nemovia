@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Dati Puliti + Redesign
-status: executing
-stopped_at: Completed 17-02-PLAN.md
-last_updated: "2026-03-10T11:55:30Z"
-last_activity: 2026-03-10 -- Completed Plan 17-02 (Card Overlay + Bento Grid)
+status: complete
+stopped_at: Completed 17-03-PLAN.md (all v1.3 plans complete)
+last_updated: "2026-03-10T12:01:28Z"
+last_activity: 2026-03-10 -- Completed Plan 17-03 (LazyMotion Performance)
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 9
-  completed_plans: 8
-  percent: 89
+  completed_plans: 9
+  percent: 100
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
-**Current focus:** v1.3 Dati Puliti + Redesign -- Phase 17 in progress
+**Current focus:** v1.3 Dati Puliti + Redesign -- All phases complete
 
 ## Current Position
 
 Phase: 17 of 17 (Visual Effects, Layout, Performance)
-Plan: 2 of 3 complete
-Status: Executing
-Last activity: 2026-03-10 -- Completed Plan 17-02 (Card Overlay + Bento Grid)
+Plan: 3 of 3 complete
+Status: Complete
+Last activity: 2026-03-10 -- Completed Plan 17-03 (LazyMotion Performance)
 
-Progress: [████████░░] 89% (8/9 plans complete in v1.3 so far)
+Progress: [██████████] 100% (9/9 plans complete in v1.3)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8 (v1.3)
+- Total plans completed: 9 (v1.3)
 - Average duration: ~7min
-- Total execution time: ~57min
+- Total execution time: ~60min
 
 **By Phase:**
 
@@ -46,7 +46,7 @@ Progress: [████████░░] 89% (8/9 plans complete in v1.3 so fa
 | 14 | 2/2 | ~7min | ~3.5min |
 | 15 | 2/2 | ~38min | ~19min |
 | 16 | 2/2 | ~8min | ~4min |
-| 17 | 2/3 | ~8min | ~4min |
+| 17 | 3/3 | ~11min | ~4min |
 
 *Updated after each plan completion*
 
@@ -81,6 +81,9 @@ All v1.0/v1.1/v1.2 decisions archived to PROJECT.md Key Decisions table.
 - [17-02] First weekendSagra as featured card (no DB change needed)
 - [17-02] Removed Card/CardContent wrappers from SagraCard (motion.div IS the card)
 - [17-02] Bento grid 4-col on lg with featured spanning 2x2
+- [17-03] domMax (not domAnimation) for LazyMotion because BottomNav uses layoutId
+- [17-03] strict prop on LazyMotion to catch motion.* component leaks at runtime
+- [17-03] Hooks and providers stay imported from motion/react; only animated elements use m.* from motion/react-m
 
 ### Pending Todos
 
@@ -88,7 +91,7 @@ All v1.0/v1.1/v1.2 decisions archived to PROJECT.md Key Decisions table.
 - Gemini free tier limits may change (last checked Dec 2025)
 - Edge Function inline copies need a better solution (growing maintenance burden)
 - Futuro: includere mercatini, mostre, fiere e altri eventi non-sagre — servirebbero categorie nell'UI e filtro per tipo evento. Per ora filtrati via is_sagra=false e keyword heuristic (008 migration)
-- LazyMotion migration scheduled for Phase 17 (UI-10)
+- LazyMotion migration completed in Phase 17-03 (UI-10) -- ~28KB initial JS reduction
 
 ### Blockers/Concerns
 
@@ -96,6 +99,6 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-03-10T11:55:30Z
-Stopped at: Completed 17-02-PLAN.md
-Resume file: .planning/phases/17-visual-effects-layout-performance/17-02-SUMMARY.md
+Last session: 2026-03-10T12:01:28Z
+Stopped at: Completed 17-03-PLAN.md (v1.3 milestone complete)
+Resume file: .planning/phases/17-visual-effects-layout-performance/17-03-SUMMARY.md

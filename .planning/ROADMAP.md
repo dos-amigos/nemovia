@@ -5,7 +5,7 @@
 - ✅ **v1.0 MVP** — Phases 1-6 (shipped 2026-03-05)
 - ✅ **v1.1 Dati Reali** — Phases 7-10 (shipped 2026-03-07)
 - ✅ **v1.2 Polish** — Phases 11-13 (shipped 2026-03-09)
-- 🚧 **v1.3 Dati Puliti + Redesign** — Phases 14-17 (in progress)
+- ✅ **v1.3 Dati Puliti + Redesign** — Phases 14-17 (shipped 2026-03-10)
 
 ## Phases
 
@@ -46,14 +46,14 @@ Full details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 
 </details>
 
-### 🚧 v1.3 Dati Puliti + Redesign (In Progress)
+### v1.3 Dati Puliti + Redesign (Shipped 2026-03-10)
 
 **Milestone Goal:** Eliminare i dati spazzatura dalla pipeline e ridisegnare l'interfaccia con un'estetica moderna e d'impatto.
 
 - [x] **Phase 14: Data Quality Heuristic Filters** - Deterministic validation filters in scrape pipeline reject garbage data before it reaches users (completed 2026-03-09)
 - [x] **Phase 15: Deduplication & Classification** - Fuzzy dedup via pg_trgm and LLM-based sagra/non-sagra classification eliminate duplicates and off-topic events (completed 2026-03-10)
 - [x] **Phase 16: Design System Foundation** - New Geist typography and vibrant OKLCH color palette replace the dated amber/stone aesthetic (completed 2026-03-10)
-- [ ] **Phase 17: Visual Effects, Layout & Performance** - Glassmorphism, mesh gradients, bento grid, and LazyMotion deliver the WOW factor with optimized bundle
+- [x] **Phase 17: Visual Effects, Layout & Performance** - Glassmorphism, mesh gradients, bento grid, and LazyMotion deliver the WOW factor with optimized bundle (completed 2026-03-10)
 
 ## Phase Details
 
@@ -117,9 +117,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 17-01-PLAN.md — Glassmorphism on nav bars and floating overlays + CSS glass/mesh gradient utilities
-- [ ] 17-02-PLAN.md — SagraCard image overlay redesign + mesh gradient hero + bento grid homepage layout
-- [ ] 17-03-PLAN.md — LazyMotion migration (motion.* to m.* across 12 files, async domMax loading)
+- [x] 17-01-PLAN.md — Glassmorphism on nav bars and floating overlays + CSS glass/mesh gradient utilities
+- [x] 17-02-PLAN.md — SagraCard image overlay redesign + mesh gradient hero + bento grid homepage layout
+- [x] 17-03-PLAN.md — LazyMotion migration (motion.* to m.* across 12 files, async domMax loading)
 
 ## Progress
 
@@ -144,4 +144,4 @@ Phases execute in numeric order: 14 → 15 → 16 → 17
 | 14. Data Quality Heuristic Filters | v1.3 | Complete    | 2026-03-09 | 2026-03-09 |
 | 15. Deduplication & Classification | v1.3 | Complete    | 2026-03-10 | 2026-03-10 |
 | 16. Design System Foundation | v1.3 | Complete    | 2026-03-10 | 2026-03-10 |
-| 17. Visual Effects, Layout & Performance | 2/3 | In Progress|  | - |
+| 17. Visual Effects, Layout & Performance | v1.3 | 3/3 | Complete | 2026-03-10 |

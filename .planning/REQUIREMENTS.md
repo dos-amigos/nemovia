@@ -43,7 +43,7 @@ Requirements for v1.3 "Dati Puliti + Redesign". Each maps to roadmap phases.
 ### UI/UX — Layout & Performance
 
 - [x] **UI-09**: Homepage ridisegnata con bento grid layout (CSS Grid responsivo)
-- [ ] **UI-10**: LazyMotion migration completata (da 34kb a ~5kb bundle iniziale)
+- [x] **UI-10**: LazyMotion migration completata (da 34kb a ~5kb bundle iniziale)
 - [x] **UI-11**: Performance glassmorphism verificata su mobile (blur ≤12px, nessun jank su scroll)
 
 ## Future Requirements
@@ -95,7 +95,7 @@ Deferred to v1.4+. Tracked but not in current roadmap.
 | UI-07 | Phase 17 | Complete |
 | UI-08 | Phase 17 | Complete |
 | UI-09 | Phase 17 | Complete |
-| UI-10 | Phase 17 | Pending |
+| UI-10 | Phase 17 | Complete |
 | UI-11 | Phase 17 | Complete |
 
 **Coverage:**
