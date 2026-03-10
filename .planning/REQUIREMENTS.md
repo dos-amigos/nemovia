@@ -28,9 +28,9 @@ Requirements for v1.3 "Dati Puliti + Redesign". Each maps to roadmap phases.
 
 ### UI/UX — Design System Foundation
 
-- [ ] **UI-01**: Font sostituito da Geist (Vercel) tramite next/font/google per un'estetica moderna e coerente con le reference app
-- [ ] **UI-02**: Palette OKLCH completamente rinnovata — colori vibranti e sofisticati al posto di amber-600/stone-50
-- [ ] **UI-03**: Variabili CSS Shadcn aggiornate coerentemente (primary + primary-foreground, tutti i pairs)
+- [x] **UI-01**: Font sostituito da Geist (Vercel) tramite next/font/google per un'estetica moderna e coerente con le reference app
+- [x] **UI-02**: Palette OKLCH completamente rinnovata — colori vibranti e sofisticati al posto di amber-600/stone-50
+- [x] **UI-03**: Variabili CSS Shadcn aggiornate coerentemente (primary + primary-foreground, tutti i pairs)
 - [ ] **UI-04**: Tutti i colori hardcoded nei componenti (gradienti, badge, tag) allineati alla nuova palette
 
 ### UI/UX — Effetti Visivi
@@ -86,9 +86,9 @@ Deferred to v1.4+. Tracked but not in current roadmap.
 | DQ-08 | Phase 15 | Complete |
 | DQ-09 | Phase 15 | Complete |
 | DQ-10 | Phase 15 | Complete |
-| UI-01 | Phase 16 | Pending |
-| UI-02 | Phase 16 | Pending |
-| UI-03 | Phase 16 | Pending |
+| UI-01 | Phase 16 | Complete |
+| UI-02 | Phase 16 | Complete |
+| UI-03 | Phase 16 | Complete |
 | UI-04 | Phase 16 | Pending |
 | UI-05 | Phase 17 | Pending |
 | UI-06 | Phase 17 | Pending |
