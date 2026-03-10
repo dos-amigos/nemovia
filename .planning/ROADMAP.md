@@ -52,7 +52,7 @@ Full details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 
 - [x] **Phase 14: Data Quality Heuristic Filters** - Deterministic validation filters in scrape pipeline reject garbage data before it reaches users (completed 2026-03-09)
 - [x] **Phase 15: Deduplication & Classification** - Fuzzy dedup via pg_trgm and LLM-based sagra/non-sagra classification eliminate duplicates and off-topic events (completed 2026-03-10)
-- [ ] **Phase 16: Design System Foundation** - New Geist typography and vibrant OKLCH color palette replace the dated amber/stone aesthetic
+- [x] **Phase 16: Design System Foundation** - New Geist typography and vibrant OKLCH color palette replace the dated amber/stone aesthetic (completed 2026-03-10)
 - [ ] **Phase 17: Visual Effects, Layout & Performance** - Glassmorphism, mesh gradients, bento grid, and LazyMotion deliver the WOW factor with optimized bundle
 
 ## Phase Details
@@ -143,5 +143,5 @@ Phases execute in numeric order: 14 → 15 → 16 → 17
 | 13. Transitions + Micro-Interactions | v1.2 | 3/3 | Complete | 2026-03-09 |
 | 14. Data Quality Heuristic Filters | v1.3 | Complete    | 2026-03-09 | 2026-03-09 |
 | 15. Deduplication & Classification | v1.3 | Complete    | 2026-03-10 | 2026-03-10 |
-| 16. Design System Foundation | v1.3 | 2/2 | Complete | 2026-03-10 |
+| 16. Design System Foundation | v1.3 | Complete    | 2026-03-10 | 2026-03-10 |
 | 17. Visual Effects, Layout & Performance | v1.3 | 0/? | Not started | - |
