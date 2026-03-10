@@ -76,27 +76,27 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | — | Pending |
-| DATA-02 | — | Pending |
-| DATA-03 | — | Pending |
-| DATA-04 | — | Pending |
-| IMG-01 | — | Pending |
-| IMG-02 | — | Pending |
-| HOME-01 | — | Pending |
-| HOME-02 | — | Pending |
-| BRAND-01 | — | Pending |
-| BRAND-02 | — | Pending |
-| BRAND-03 | — | Pending |
-| MAP-01 | — | Pending |
-| MAP-02 | — | Pending |
-| SCRAPE-01 | — | Pending |
-| SCRAPE-02 | — | Pending |
+| DATA-01 | Phase 18 | Pending |
+| DATA-02 | Phase 18 | Pending |
+| DATA-03 | Phase 18 | Pending |
+| DATA-04 | Phase 18 | Pending |
+| SCRAPE-02 | Phase 18 | Pending |
+| IMG-01 | Phase 19 | Pending |
+| IMG-02 | Phase 19 | Pending |
+| BRAND-01 | Phase 20 | Pending |
+| BRAND-02 | Phase 20 | Pending |
+| BRAND-03 | Phase 20 | Pending |
+| HOME-01 | Phase 21 | Pending |
+| HOME-02 | Phase 22 | Pending |
+| MAP-01 | Phase 22 | Pending |
+| MAP-02 | Phase 22 | Pending |
+| SCRAPE-01 | Phase 23 | Pending |
 
 **Coverage:**
 - v1 requirements: 15 total
-- Mapped to phases: 0
-- Unmapped: 15 (will be mapped during roadmap creation)
+- Mapped to phases: 15/15 (100%)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-10*
-*Last updated: 2026-03-10 after initial definition*
+*Last updated: 2026-03-10 after roadmap creation*
