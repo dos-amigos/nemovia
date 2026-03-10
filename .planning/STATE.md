@@ -2,6 +2,21 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Dati Puliti + Redesign
+status: completed
+stopped_at: Completed 17-03-PLAN.md (v1.3 milestone complete)
+last_updated: "2026-03-10T12:08:47.973Z"
+last_activity: 2026-03-10 -- Completed Plan 17-03 (LazyMotion Performance)
+progress:
+  total_phases: 4
+  completed_phases: 4
+  total_plans: 9
+  completed_plans: 9
+---
+
+---
+gsd_state_version: 1.0
+milestone: v1.3
+milestone_name: Dati Puliti + Redesign
 status: complete
 stopped_at: Completed 17-03-PLAN.md (all v1.3 plans complete)
 last_updated: "2026-03-10T12:01:28Z"
