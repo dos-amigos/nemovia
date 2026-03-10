@@ -75,7 +75,7 @@ export function SearchFilters() {
           <Button
             variant="outline"
             size="sm"
-            className="text-green-700 border-green-300 bg-green-50 dark:text-green-400 dark:border-green-800 dark:bg-green-950"
+            className="text-accent border-accent/30 bg-accent/10"
             onClick={() => setFilters({ lat: null, lng: null, raggio: null })}
           >
             <MapPinCheck className="h-4 w-4" />

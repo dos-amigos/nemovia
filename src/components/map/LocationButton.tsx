@@ -27,7 +27,7 @@ export default function LocationButton({ onLocate }: LocationButtonProps) {
         <Button
           variant="outline"
           size="sm"
-          className="bg-green-50 border-green-300 text-green-700 dark:bg-green-950 dark:border-green-800 dark:text-green-400 shadow-md"
+          className="bg-accent/10 border-accent/30 text-accent shadow-md"
           onClick={requestLocation}
         >
           <MapPinCheck className="h-4 w-4" />
