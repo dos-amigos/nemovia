@@ -52,7 +52,7 @@ Full details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 
 - [x] **Phase 14: Data Quality Heuristic Filters** - Deterministic validation filters in scrape pipeline reject garbage data before it reaches users (completed 2026-03-09)
 - [x] **Phase 15: Deduplication & Classification** - Fuzzy dedup via pg_trgm and LLM-based sagra/non-sagra classification eliminate duplicates and off-topic events (completed 2026-03-10)
-- [x] **Phase 16: Design System Foundation** - New Geist typography and vibrant OKLCH color palette replace the dated amber/stone aesthetic (completed 2026-03-10)
+- [x] **Phase 16: Design System Foundation** - New Geist typography and vibrant OKLCH color palette replace the dated amber/stone aesthetic (completed 2026-03-10)
 - [ ] **Phase 17: Visual Effects, Layout & Performance** - Glassmorphism, mesh gradients, bento grid, and LazyMotion deliver the WOW factor with optimized bundle
 
 ## Phase Details
@@ -114,12 +114,12 @@ Plans:
   3. Homepage uses a responsive bento grid layout that feels editorial and modern (not a uniform card list)
   4. SagraCard, Hero, and key page components have been visually redesigned to match the modern aesthetic (not just recolored)
   5. Motion bundle initial load is reduced from ~34KB to ~5KB via LazyMotion migration, with no regression in existing animations, and glassmorphism scrolls smoothly on mobile (no jank)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 17-01: TBD
-- [ ] 17-02: TBD
-- [ ] 17-03: TBD
+- [ ] 17-01-PLAN.md — Glassmorphism on nav bars and floating overlays + CSS glass/mesh gradient utilities
+- [ ] 17-02-PLAN.md — SagraCard image overlay redesign + mesh gradient hero + bento grid homepage layout
+- [ ] 17-03-PLAN.md — LazyMotion migration (motion.* to m.* across 12 files, async domMax loading)
 
 ## Progress
 
@@ -144,4 +144,4 @@ Phases execute in numeric order: 14 → 15 → 16 → 17
 | 14. Data Quality Heuristic Filters | v1.3 | Complete    | 2026-03-09 | 2026-03-09 |
 | 15. Deduplication & Classification | v1.3 | Complete    | 2026-03-10 | 2026-03-10 |
 | 16. Design System Foundation | v1.3 | Complete    | 2026-03-10 | 2026-03-10 |
-| 17. Visual Effects, Layout & Performance | v1.3 | 0/? | Not started | - |
+| 17. Visual Effects, Layout & Performance | v1.3 | 0/3 | Not started | - |
