@@ -5,6 +5,12 @@
  * because Deno Edge Functions cannot import from the Next.js src/ directory.
  */
 
+import { PROVINCE_CODE_MAP } from "@/lib/constants/veneto";
+
+// Veneto bounding box for Nominatim viewbox parameter (lon_min,lat_min,lon_max,lat_max)
+// Restricts geocoding results to the Veneto region
+export const VENETO_VIEWBOX = "10.62,44.79,13.10,46.68";
+
 // Italy bounding box — coordinates outside this range are invalid geocode results
 export const ITALY_BOUNDS = {
   lat: { min: 36.0, max: 47.5 },
@@ -68,4 +74,20 @@ export function isValidItalyCoord(lat: number, lon: number): boolean {
     lon >= ITALY_BOUNDS.lon.min &&
     lon <= ITALY_BOUNDS.lon.max
   );
+}
+
+/**
+ * Normalize a Nominatim province string to a 2-letter Veneto province code.
+ * Returns null for non-Veneto provinces or null input.
+ *
+ * Examples:
+ *   "Padova"              → "PD"
+ *   "Provincia di Padova" → "PD"
+ *   "padova"              → "PD" (case insensitive)
+ *   "Firenze"             → null (non-Veneto)
+ *   null                  → null
+ */
+export function normalizeProvinceCode(province: string | null): string | null {
+  if (!province) return null;
+  return PROVINCE_CODE_MAP[province.toLowerCase().trim()] ?? null;
 }

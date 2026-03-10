@@ -68,7 +68,10 @@ export function FeaturedSagraCard({ sagra }: FeaturedSagraCardProps) {
           <div className="flex items-center gap-3 mt-2">
             <div className="flex items-center gap-1 text-white/80 text-sm">
               <MapPin className="h-4 w-4 shrink-0" />
-              <span className="line-clamp-1">{sagra.location_text}</span>
+              <span className="line-clamp-1">
+                {sagra.location_text}
+                {sagra.province && ` (${sagra.province})`}
+              </span>
             </div>
             <div className="flex items-center gap-1 text-white/70 text-sm">
               <Calendar className="h-4 w-4 shrink-0" />

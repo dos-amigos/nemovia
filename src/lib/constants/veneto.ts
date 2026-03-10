@@ -42,6 +42,20 @@ export const SAGRA_CARD_FIELDS =
 export const MAP_MARKER_FIELDS =
   "id, slug, title, location_text, province, start_date, end_date, food_tags, location, is_free";
 
+/**
+ * Map from Nominatim province text (lowercase) to 2-letter province code.
+ * Covers both bare names ("padova") and full forms ("provincia di padova").
+ */
+export const PROVINCE_CODE_MAP: Record<string, string> = {
+  "belluno": "BL", "provincia di belluno": "BL",
+  "padova": "PD", "provincia di padova": "PD",
+  "rovigo": "RO", "provincia di rovigo": "RO",
+  "treviso": "TV", "provincia di treviso": "TV",
+  "venezia": "VE", "provincia di venezia": "VE",
+  "verona": "VR", "provincia di verona": "VR",
+  "vicenza": "VI", "provincia di vicenza": "VI",
+};
+
 /** Approximate geographic center of the Veneto region. */
 export const VENETO_CENTER: [number, number] = [45.44, 12.32];
 
