@@ -135,6 +135,32 @@
     background-size: 200% 100%;
     animation: shimmer 1.5s ease-in-out infinite;
   }
+  .glass-nav {
+    background: oklch(0.985 0.005 260 / 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-color: oklch(1 0 0 / 0.15);
+    will-change: backdrop-filter;
+  }
+  .glass-overlay {
+    background: oklch(0.985 0.005 260 / 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid oklch(1 0 0 / 0.12);
+    will-change: backdrop-filter;
+  }
+  .mesh-gradient-hero {
+    background:
+      radial-gradient(ellipse 80% 60% at 10% 15%, oklch(0.637 0.237 25.5 / 0.20), transparent 70%),
+      radial-gradient(ellipse 60% 80% at 90% 80%, oklch(0.600 0.155 185 / 0.18), transparent 65%),
+      radial-gradient(ellipse 40% 40% at 50% 40%, oklch(0.637 0.237 25.5 / 0.10), transparent 55%),
+      oklch(0.985 0.005 260);
+  }
+  .mesh-gradient-page {
+    background:
+      radial-gradient(ellipse 70% 50% at 5% 10%, oklch(0.637 0.237 25.5 / 0.10), transparent 60%),
+      radial-gradient(ellipse 50% 70% at 95% 90%, oklch(0.600 0.155 185 / 0.08), transparent 55%);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
