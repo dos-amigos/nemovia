@@ -51,6 +51,52 @@ export function isNoiseTitle(title: string): boolean {
 }
 
 /**
+ * Non-sagra title detection with whitelist protection.
+ * Returns `true` if the title describes a non-sagra event (standalone concert,
+ * market, theatre show, sporting event, etc.) and should be REJECTED.
+ *
+ * Whitelist-aware: titles containing sagra/festa/food keywords are NEVER
+ * rejected, even if they also contain non-sagra keywords (e.g.
+ * "Sagra e Fiera del Radicchio" is allowed despite "fiera").
+ *
+ * Handles null/empty input safely (returns false).
+ */
+export function isNonSagraTitle(title: string): boolean {
+  if (!title || title.length === 0) return false;
+  const t = title.toLowerCase();
+
+  // Whitelist: if title contains sagra/festa/food keywords, NEVER reject
+  if (
+    /\b(sagra|sagre|festa|feste|gastronomic|enogastronomic|degustazion|polenta|baccal[aà]|pesce|gnocch|risott|tortel|formagg|asparag|radicchi|funghi|vino|birra|griglia)/i.test(
+      t
+    )
+  ) {
+    return false;
+  }
+
+  // Non-sagra patterns: reject if the primary subject is a non-sagra event
+  if (
+    /\b(passeggiata|camminata|marcia)\b/i.test(t) ||
+    /\bcarnevale\b/i.test(t) ||
+    /\b(concerto|concerti|recital)\b/i.test(t) ||
+    /\b(mostra|mostre|esposizione)\b/i.test(t) ||
+    /\b(antiquariato|collezionismo)\b/i.test(t) ||
+    /\b(teatro|teatrale|commedia|spettacolo)\b/i.test(t) ||
+    /\b(maratona|corsa|gara\s+ciclistica|gara\s+podistica)\b/i.test(t) ||
+    /\b(convegno|conferenza|seminario)\b/i.test(t) ||
+    /\b(cinema|cineforum|proiezione)\b/i.test(t) ||
+    /\b(yoga|fitness|pilates)\b/i.test(t) ||
+    /\b(mercato|mercatino|mercatini)\b/i.test(t) ||
+    /\bfiera\b/i.test(t) ||
+    /\brassegna\b/i.test(t)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Attempt to upgrade a scraped image URL to a higher-resolution version.
  * Returns the upgraded URL, the original URL if no upgrade applies,
  * or null if the input is null/empty.
