@@ -117,18 +117,20 @@ function chunkBatch<T>(items: T[], size: number): T[][] {
 }
 
 /**
- * Build the Italian-language Gemini prompt for a batch of sagre.
+ * Build the Italian-language Gemini prompt for a batch of events.
+ * Includes is_sagra classification instruction (DQ-07/DQ-08).
  */
 function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
-  return `Sei un esperto di sagre italiane. Per ogni sagra nella lista JSON, genera:
-1. food_tags: array con i tag alimentari pertinenti (max 3) scelti SOLO da: ${FOOD_TAGS.join(", ")}
-2. feature_tags: array con i tag caratteristici (max 2) scelti SOLO da: ${FEATURE_TAGS.join(", ")}
-3. enhanced_description: descrizione coinvolgente in italiano, max ${MAX_DESC_CHARS} caratteri, che menzioni il cibo principale e l'atmosfera
+  return `Sei un esperto di sagre italiane. Per ogni evento nella lista JSON, genera:
+1. is_sagra: true se l'evento e una sagra, festa del cibo, o fiera gastronomica. false se e antiquariato, mostra, mercato generico, concerto, evento sportivo, o altro evento non gastronomico. Se l'evento ha una componente gastronomica significativa (cibo, degustazione, prodotti tipici), classificalo come sagra anche se ha altri elementi (musica, artigianato).
+2. food_tags: array con i tag alimentari pertinenti (max 3) scelti SOLO da: ${FOOD_TAGS.join(", ")}
+3. feature_tags: array con i tag caratteristici (max 2) scelti SOLO da: ${FEATURE_TAGS.join(", ")}
+4. enhanced_description: descrizione coinvolgente in italiano, max ${MAX_DESC_CHARS} caratteri, che menzioni il cibo principale e l'atmosfera
 
-SAGRE:
+EVENTI:
 ${JSON.stringify(batch)}
 
-Rispondi con un array JSON, un oggetto per ogni sagra con: id, food_tags, feature_tags, enhanced_description.`;
+Rispondi con un array JSON, un oggetto per ogni evento con: id, is_sagra, food_tags, feature_tags, enhanced_description.`;
 }
 
 const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
@@ -151,6 +153,7 @@ interface SagraForLLM {
 
 interface EnrichmentResult {
   id: string;
+  is_sagra: boolean;
   food_tags: string[];
   feature_tags: string[];
   enhanced_description: string;
@@ -277,8 +280,9 @@ async function runGeocodePass(
 async function runLLMPass(
   supabase: SupabaseClient,
   ai: GoogleGenAI
-): Promise<{ enriched: number }> {
+): Promise<{ enriched: number; classified: number }> {
   let enriched = 0;
+  let classified = 0; // non-sagra events deactivated
 
   // Enrich both successfully geocoded sagre AND geocode-failed ones (tags/description are independent of GPS)
   const { data: rows } = await supabase
@@ -289,7 +293,7 @@ async function runLLMPass(
     .limit(LLM_LIMIT)
     .order("created_at", { ascending: true });
 
-  if (!rows?.length) return { enriched };
+  if (!rows?.length) return { enriched, classified };
 
   const batches = chunkBatch(rows as SagraForLLM[], BATCH_SIZE);
 
@@ -308,11 +312,12 @@ async function runLLMPass(
               type: "OBJECT",
               properties: {
                 id: { type: "STRING" },
+                is_sagra: { type: "BOOLEAN" },
                 food_tags: { type: "ARRAY", items: { type: "STRING" } },
                 feature_tags: { type: "ARRAY", items: { type: "STRING" } },
                 enhanced_description: { type: "STRING" },
               },
-              required: ["id", "food_tags", "feature_tags", "enhanced_description"],
+              required: ["id", "is_sagra", "food_tags", "feature_tags", "enhanced_description"],
             },
           },
         },
@@ -320,9 +325,21 @@ async function runLLMPass(
 
       const raw = JSON.parse(response.text) as EnrichmentResult[];
 
-      // Write each enriched sagra back to DB
+      // Write each enriched event back to DB
       for (const result of raw) {
-        // Validate and sanitize — Gemini enum enforcement is best-effort
+        // Check is_sagra classification FIRST — deactivate non-sagre
+        if (result.is_sagra === false) {
+          await supabase.from("sagre").update({
+            is_active: false,
+            status: "classified_non_sagra",
+            updated_at: new Date().toISOString(),
+          }).eq("id", result.id);
+          classified++;
+          console.log(`Non-sagra classified and deactivated: ${result.id}`);
+          continue;
+        }
+
+        // Sagra (is_sagra === true or undefined for safety) — enrich as usual
         const food_tags = validateTags(result.food_tags ?? [], FOOD_TAGS).slice(0, 3);
         const feature_tags = validateTags(result.feature_tags ?? [], FEATURE_TAGS).slice(0, 2);
         const enhanced_description = truncateDescription(result.enhanced_description ?? "");
@@ -343,7 +360,7 @@ async function runLLMPass(
     }
   }
 
-  return { enriched };
+  return { enriched, classified };
 }
 
 // =============================================================================
@@ -377,6 +394,7 @@ async function runEnrichmentPipeline(
   let geocoded = 0;
   let geocodeFailed = 0;
   let llmEnriched = 0;
+  let llmClassified = 0; // non-sagra events deactivated
   let errorMessage: string | null = null;
 
   try {
@@ -385,9 +403,10 @@ async function runEnrichmentPipeline(
     geocoded = geocodeResult.geocoded;
     geocodeFailed = geocodeResult.failed;
 
-    // Pass 2: LLM enrichment — status: pending_llm | geocode_failed → enriched
+    // Pass 2: LLM enrichment — status: pending_llm | geocode_failed → enriched (or classified_non_sagra)
     const llmResult = await runLLMPass(supabase, ai);
     llmEnriched = llmResult.enriched;
+    llmClassified = llmResult.classified;
   } catch (err) {
     errorMessage = err instanceof Error ? err.message : String(err);
     console.error("Enrichment pipeline error:", errorMessage);
@@ -398,11 +417,11 @@ async function runEnrichmentPipeline(
     geocoded_count: geocoded,
     geocode_failed: geocodeFailed,
     llm_count: llmEnriched,
-    skipped_count: 0,
+    skipped_count: llmClassified, // repurpose skipped_count for classified non-sagre
     error_message: errorMessage,
     duration_ms: Date.now() - startedAt,
     completed_at: new Date().toISOString(),
   });
 
-  console.log(`Enrichment complete: geocoded=${geocoded}, geocode_failed=${geocodeFailed}, llm=${llmEnriched}, error=${errorMessage}`);
+  console.log(`Enrichment complete: geocoded=${geocoded}, geocode_failed=${geocodeFailed}, llm_enriched=${llmEnriched}, classified_non_sagra=${llmClassified}, error=${errorMessage}`);
 }
