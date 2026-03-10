@@ -4,6 +4,7 @@ import {
   isCalendarDateRange,
   isExcessiveDuration,
   isPastYearEvent,
+  tryUpgradeImageUrl,
 } from "../filters";
 
 describe("isNoiseTitle", () => {
@@ -308,6 +309,66 @@ describe("isPastYearEvent", () => {
   describe("handles null dates", () => {
     it("returns false when both dates are null", () => {
       expect(isPastYearEvent(null, null)).toBe(false);
+    });
+  });
+});
+
+describe("tryUpgradeImageUrl", () => {
+  describe("sagritaly WordPress thumbnail stripping", () => {
+    it("removes WordPress -WxH suffix", () => {
+      expect(
+        tryUpgradeImageUrl(
+          "https://sagritaly.com/wp-content/uploads/2026/03/polenta-150x150.jpg",
+          "sagritaly"
+        )
+      ).toBe("https://sagritaly.com/wp-content/uploads/2026/03/polenta.jpg");
+    });
+
+    it("handles larger WordPress dimensions", () => {
+      expect(
+        tryUpgradeImageUrl(
+          "https://sagritaly.com/wp-content/uploads/2026/01/img-300x200.jpeg",
+          "sagritaly"
+        )
+      ).toBe("https://sagritaly.com/wp-content/uploads/2026/01/img.jpeg");
+    });
+
+    it("does not modify sagritaly URLs without WordPress suffix", () => {
+      const url = "https://sagritaly.com/wp-content/uploads/2026/03/polenta.jpg";
+      expect(tryUpgradeImageUrl(url, "sagritaly")).toBe(url);
+    });
+  });
+
+  describe("solosagre size param stripping", () => {
+    it("removes w/h/resize query params", () => {
+      expect(
+        tryUpgradeImageUrl(
+          "https://solosagre.it/images/photo.jpg?w=150&h=100&resize=150x100",
+          "solosagre"
+        )
+      ).toBe("https://solosagre.it/images/photo.jpg");
+    });
+
+    it("preserves solosagre URLs without size params", () => {
+      const url = "https://solosagre.it/images/photo.jpg";
+      expect(tryUpgradeImageUrl(url, "solosagre")).toBe(url);
+    });
+  });
+
+  describe("unknown sources", () => {
+    it("passes through unknown sources unchanged", () => {
+      const url = "https://example.com/image-150x150.jpg?w=100";
+      expect(tryUpgradeImageUrl(url, "venetoinfesta")).toBe(url);
+    });
+  });
+
+  describe("null and empty handling", () => {
+    it("returns null for null input", () => {
+      expect(tryUpgradeImageUrl(null, "sagritaly")).toBeNull();
+    });
+
+    it("returns null for empty string input", () => {
+      expect(tryUpgradeImageUrl("", "sagritaly")).toBeNull();
     });
   });
 });
