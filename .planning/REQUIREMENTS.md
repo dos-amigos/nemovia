@@ -1,0 +1,102 @@
+# Requirements: Nemovia v1.4
+
+**Defined:** 2026-03-10
+**Core Value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
+
+## v1 Requirements
+
+Requirements for v1.4 "Esperienza Completa". Each maps to roadmap phases.
+
+### Data Quality
+
+- [ ] **DATA-01**: Event count restored to 100+ active sagre (investigate scraper failures, filter aggressiveness, add sources if needed)
+- [ ] **DATA-02**: No events outside Veneto appear in results (tighten Nominatim bounding box + Veneto province gating)
+- [ ] **DATA-03**: Non-sagre events filtered out (Passeggiata, Carnevale, Concerto, Mostra, Antiquariato)
+- [ ] **DATA-04**: City names always display with provincia in parentheses (e.g. "Zugliano (VI)")
+
+### Images
+
+- [ ] **IMG-01**: Missing or low-res images replaced with themed Unsplash photos (pre-fetched at pipeline time, not runtime)
+- [ ] **IMG-02**: Hero section displays full-bleed Unsplash food photo with white text overlay "SCOPRI LE SAGRE DEL VENETO"
+
+### Homepage
+
+- [ ] **HOME-01**: Netflix-style horizontal scroll rows on homepage with smart mix (weekend, vicino a te, tipo cucina, provincia)
+- [ ] **HOME-02**: City autocomplete search bar in hero with radius km slider, redirects to Cerca page with city pre-selected
+
+### Layout & Branding
+
+- [ ] **BRAND-01**: Full-width responsive desktop layout (hero and scroll rows edge-to-edge, content sections max-w)
+- [ ] **BRAND-02**: Custom SVG logo in navigation bar (Geist typography + stylized icon, coral/teal palette)
+- [ ] **BRAND-03**: Modern footer with credits "Fatto con cuore in Veneto" and Unsplash attribution
+
+### Map & Search
+
+- [ ] **MAP-01**: Cerca page map view works correctly (fix nuqs/map state sync issue)
+- [ ] **MAP-02**: Dedicated Mappa page has filter controls at top (reuse SearchFilters)
+
+### Scraping
+
+- [ ] **SCRAPE-01**: Source sites scraped for complete info (menu, orari, descriptions) where available
+- [ ] **SCRAPE-02**: Investigate and add new scraper sources if needed to reach 100+ active events
+
+## v2 Requirements
+
+Deferred to future release. Tracked but not in current roadmap.
+
+### Scraping Expansion
+
+- **SCRAPE-03**: OCR locandine from social media (requires multi-LLM router)
+- **SCRAPE-04**: Real-time monitoring of new scraper source availability
+
+### User Features
+
+- **USER-01**: Google OAuth authentication
+- **USER-02**: Save favorite sagre
+- **USER-03**: Push notifications for nearby sagre
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Dark mode | Single sophisticated theme sufficient |
+| 3D elements (Three.js) | Bundle overhead excessive for zero-cost constraint |
+| User reviews and photos | Premature, first validate with real users |
+| Native mobile app | Web app mobile-first sufficient |
+| Real-time chat | Not core to discovery value |
+| Listing sponsorizzati | First validate with real users |
+| SwiperJS/Embla carousel | CSS scroll-snap handles Netflix rows natively |
+| Nominatim autocomplete | Explicitly forbidden by usage policy — use static data |
+| unsplash-js SDK | Unnecessary wrapper, native fetch sufficient |
+| Runtime Unsplash API calls | Rate limit risk — pre-fetch at pipeline time only |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| DATA-01 | — | Pending |
+| DATA-02 | — | Pending |
+| DATA-03 | — | Pending |
+| DATA-04 | — | Pending |
+| IMG-01 | — | Pending |
+| IMG-02 | — | Pending |
+| HOME-01 | — | Pending |
+| HOME-02 | — | Pending |
+| BRAND-01 | — | Pending |
+| BRAND-02 | — | Pending |
+| BRAND-03 | — | Pending |
+| MAP-01 | — | Pending |
+| MAP-02 | — | Pending |
+| SCRAPE-01 | — | Pending |
+| SCRAPE-02 | — | Pending |
+
+**Coverage:**
+- v1 requirements: 15 total
+- Mapped to phases: 0
+- Unmapped: 15 (will be mapped during roadmap creation)
+
+---
+*Requirements defined: 2026-03-10*
+*Last updated: 2026-03-10 after initial definition*
