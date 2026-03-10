@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   isNoiseTitle,
+  isNonSagraTitle,
   isCalendarDateRange,
   isExcessiveDuration,
   isPastYearEvent,
@@ -163,6 +164,78 @@ describe("isNoiseTitle", () => {
       expect(isNoiseTitle("Sagra della Polenta - Calendario 2026")).toBe(
         false
       );
+    });
+  });
+});
+
+describe("isNonSagraTitle", () => {
+  describe("rejects standalone non-sagra events", () => {
+    it("rejects 'Passeggiata ecologica'", () => {
+      expect(isNonSagraTitle("Passeggiata ecologica")).toBe(true);
+    });
+
+    it("rejects 'Carnevale di Venezia'", () => {
+      expect(isNonSagraTitle("Carnevale di Venezia")).toBe(true);
+    });
+
+    it("rejects 'Mostra di pittura'", () => {
+      expect(isNonSagraTitle("Mostra di pittura")).toBe(true);
+    });
+
+    it("rejects 'Concerto rock in piazza'", () => {
+      expect(isNonSagraTitle("Concerto rock in piazza")).toBe(true);
+    });
+
+    it("rejects 'Mercatino dell'antiquariato'", () => {
+      expect(isNonSagraTitle("Mercatino dell'antiquariato")).toBe(true);
+    });
+
+    it("rejects 'Teatro Goldoni presenta...'", () => {
+      expect(isNonSagraTitle("Teatro Goldoni presenta...")).toBe(true);
+    });
+
+    it("rejects 'Maratona della Citta'", () => {
+      expect(isNonSagraTitle("Maratona della Citta")).toBe(true);
+    });
+  });
+
+  describe("allows sagre with secondary activity keywords (whitelist)", () => {
+    it("allows 'Sagra e Fiera del Radicchio'", () => {
+      expect(isNonSagraTitle("Sagra e Fiera del Radicchio")).toBe(false);
+    });
+
+    it("allows 'Festa con Concerto dal Vivo'", () => {
+      expect(isNonSagraTitle("Festa con Concerto dal Vivo")).toBe(false);
+    });
+
+    it("allows 'Sagra del Mercato Antico'", () => {
+      expect(isNonSagraTitle("Sagra del Mercato Antico")).toBe(false);
+    });
+
+    it("allows 'Festa Gastronomica del Pesce'", () => {
+      expect(isNonSagraTitle("Festa Gastronomica del Pesce")).toBe(false);
+    });
+
+    it("allows 'Degustazione e Mostra dei Vini'", () => {
+      expect(isNonSagraTitle("Degustazione e Mostra dei Vini")).toBe(false);
+    });
+
+    it("allows 'Sagra del Baccala alla Vicentina'", () => {
+      expect(isNonSagraTitle("Sagra del Baccala alla Vicentina")).toBe(false);
+    });
+
+    it("allows 'Festa della Polenta'", () => {
+      expect(isNonSagraTitle("Festa della Polenta")).toBe(false);
+    });
+  });
+
+  describe("handles edge cases", () => {
+    it("returns false for empty string", () => {
+      expect(isNonSagraTitle("")).toBe(false);
+    });
+
+    it("returns false for null input", () => {
+      expect(isNonSagraTitle(null as any)).toBe(false);
     });
   });
 });
