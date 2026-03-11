@@ -53,7 +53,10 @@ export function SagraCard({ sagra }: SagraCardProps) {
             <MapPin className="h-3.5 w-3.5 shrink-0" />
             <span className="line-clamp-1">
               {sagra.location_text}
-              {sagra.province && ` (${sagra.province})`}
+              {sagra.province &&
+                !sagra.location_text?.includes(`(${sagra.province})`) &&
+                !sagra.location_text?.toLowerCase().includes(sagra.province.toLowerCase()) &&
+                ` (${sagra.province})`}
             </span>
           </div>
           <div className="flex items-center gap-1 text-white/70 text-xs mt-0.5">

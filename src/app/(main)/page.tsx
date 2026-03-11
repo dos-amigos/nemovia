@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     "Scopri le sagre ed eventi gastronomici del Veneto questo weekend",
 };
 
-/** Tags too generic to be a standalone row — skip these */
+/** Tags too generic to be a standalone row */
 const SKIP_TAGS = new Set([
   "Prodotti Tipici",
   "Cucina Tradizionale",
@@ -33,85 +33,57 @@ const MAX_FOOD_ROWS = 4;
 
 export default async function HomePage() {
   const [weekendSagre, allActive, provinceCounts] = await Promise.all([
-    getWeekendSagre(12),
+    getWeekendSagre(20),
     getActiveSagre(120),
     getProvinceCounts(),
   ]);
 
   const hasAnyData = weekendSagre.length > 0 || allActive.length > 0;
 
-  // --- Pre-dedup: remove title duplicates from allActive (DB has dupes with different IDs) ---
-  const seenTitles = new Set<string>();
-  const dedupedActive = allActive.filter((s) => {
-    const key = s.title.toLowerCase().trim();
-    if (seenTitles.has(key)) return false;
-    seenTitles.add(key);
-    return true;
-  });
+  // --- Row building ---
+  // Netflix approach: same sagra CAN appear in different category types
+  // (e.g. in "A Verona" AND "Sagre di Vino") but NOT twice within same type.
 
-  // Also dedup weekendSagre by title
-  const seenWeekendTitles = new Set<string>();
-  const dedupedWeekend = weekendSagre.filter((s) => {
-    const key = s.title.toLowerCase().trim();
-    if (seenWeekendTitles.has(key)) return false;
-    seenWeekendTitles.add(key);
-    return true;
-  });
+  // Row 1: Gratis
+  const gratisSagre = allActive.filter((s) => s.is_free === true).slice(0, 12);
 
-  // --- Deduplication: build rows sequentially, tracking shown IDs ---
-  const shown = new Set<string>();
-
-  function takeUnshown(
-    source: SagraCardData[],
-    predicate: (s: SagraCardData) => boolean,
-    limit = 12,
-  ): SagraCardData[] {
-    const result: SagraCardData[] = [];
-    for (const s of source) {
-      if (shown.has(s.id) || !predicate(s)) continue;
-      result.push(s);
-      if (result.length >= limit) break;
-    }
-    for (const s of result) shown.add(s.id);
-    return result;
-  }
-
-  // Row 1: Weekend
-  for (const s of dedupedWeekend) shown.add(s.id);
-
-  // Row 2: Gratis
-  const gratisSagre = takeUnshown(dedupedActive, (s) => s.is_free === true);
-
-  // Province rows: top 2-3 provinces with enough sagre
+  // Province rows: up to 3, dedup within province rows only
+  const provinceShown = new Set<string>();
   const provinceRows: { name: string; sagre: SagraCardData[] }[] = [];
   for (const pc of provinceCounts) {
     if (provinceRows.length >= MAX_PROVINCE_ROWS) break;
-    const sagre = takeUnshown(dedupedActive, (s) => s.province === pc.province);
+    const sagre = allActive
+      .filter((s) => s.province === pc.province && !provinceShown.has(s.id))
+      .slice(0, 12);
     if (sagre.length >= MIN_ROW) {
+      for (const s of sagre) provinceShown.add(s.id);
       provinceRows.push({ name: pc.province, sagre });
     }
   }
 
-  // Food tag rows: multiple specific tags (skip generic ones)
-  const tagCandidates = new Map<string, number>();
-  for (const s of dedupedActive) {
-    if (shown.has(s.id)) continue;
+  // Food tag rows: up to 4, dedup within food rows only
+  const tagCounts = new Map<string, number>();
+  for (const s of allActive) {
     for (const tag of s.food_tags ?? []) {
       if (SKIP_TAGS.has(tag)) continue;
-      tagCandidates.set(tag, (tagCandidates.get(tag) ?? 0) + 1);
+      tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
     }
   }
-  const sortedTags = [...tagCandidates.entries()]
+  const sortedTags = [...tagCounts.entries()]
     .filter(([, count]) => count >= MIN_ROW)
     .sort((a, b) => b[1] - a[1]);
 
+  const foodShown = new Set<string>();
   const foodRows: { tag: string; sagre: SagraCardData[] }[] = [];
   for (const [tag] of sortedTags) {
     if (foodRows.length >= MAX_FOOD_ROWS) break;
-    const sagre = takeUnshown(dedupedActive, (s) =>
-      (s.food_tags ?? []).includes(tag),
-    );
+    const sagre = allActive
+      .filter(
+        (s) => (s.food_tags ?? []).includes(tag) && !foodShown.has(s.id),
+      )
+      .slice(0, 12);
     if (sagre.length >= MIN_ROW) {
+      for (const s of sagre) foodShown.add(s.id);
       foodRows.push({ tag, sagre });
     }
   }
@@ -140,7 +112,7 @@ export default async function HomePage() {
           <ScrollRowSection
             title="Questo weekend"
             icon={<Calendar className="h-5 w-5 text-primary" />}
-            sagre={dedupedWeekend}
+            sagre={weekendSagre}
             viewAllHref="/cerca"
             delay={(delay += 0.05)}
           />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { SagraCard } from "@/components/sagra/SagraCard";
 import type { SagraCardData } from "@/lib/queries/types";
@@ -13,7 +13,13 @@ interface ScrollRowProps {
 export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const dragState = useRef({ isDown: false, startX: 0, scrollLeft: 0, moved: false });
+  const dragState = useRef({
+    isDown: false,
+    startX: 0,
+    scrollLeft: 0,
+    moved: false,
+    animId: 0,
+  });
 
   const scroll = (direction: "left" | "right") => {
     scrollRef.current?.scrollBy({
@@ -22,15 +28,18 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
     });
   };
 
-  // --- Mouse drag scrolling for desktop ---
+  // --- Mouse drag scrolling for desktop (smooth, no snap during drag) ---
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     const el = scrollRef.current;
     if (!el) return;
+    // Disable snap during drag for fluid motion
+    el.style.scrollSnapType = "none";
     dragState.current = {
       isDown: true,
-      startX: e.pageX - el.offsetLeft,
+      startX: e.clientX,
       scrollLeft: el.scrollLeft,
       moved: false,
+      animId: 0,
     };
     setIsDragging(true);
   }, []);
@@ -40,17 +49,28 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
     e.preventDefault();
     const el = scrollRef.current;
     if (!el) return;
-    const x = e.pageX - el.offsetLeft;
-    const walk = x - dragState.current.startX;
-    if (Math.abs(walk) > 5) dragState.current.moved = true;
-    el.scrollLeft = dragState.current.scrollLeft - walk;
+    const dx = e.clientX - dragState.current.startX;
+    if (Math.abs(dx) > 5) dragState.current.moved = true;
+    el.scrollLeft = dragState.current.scrollLeft - dx;
   }, []);
 
-  const onMouseUp = useCallback(() => {
+  const stopDrag = useCallback(() => {
+    if (!dragState.current.isDown) return;
     dragState.current.isDown = false;
-    // Delay clearing isDragging so click events on cards are suppressed during drag
+    const el = scrollRef.current;
+    if (el) {
+      // Re-enable snap after drag ends
+      el.style.scrollSnapType = "";
+    }
     setTimeout(() => setIsDragging(false), 50);
   }, []);
+
+  // Cleanup: if mouse leaves window mid-drag
+  useEffect(() => {
+    const handleUp = () => stopDrag();
+    window.addEventListener("mouseup", handleUp);
+    return () => window.removeEventListener("mouseup", handleUp);
+  }, [stopDrag]);
 
   return (
     <div className="group relative">
@@ -63,8 +83,8 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
         className={`scrollbar-hide flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 pl-4 sm:pl-6 lg:pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] scroll-pl-4 sm:scroll-pl-6 lg:scroll-pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] ${isDragging ? "cursor-grabbing select-none" : "cursor-grab"}`}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseUp}
+        onMouseUp={stopDrag}
+        onMouseLeave={stopDrag}
       >
         {sagre.map((sagra) => (
           <div
@@ -80,11 +100,11 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
             <SagraCard sagra={sagra} />
           </div>
         ))}
-        {/* Right padding spacer so last card doesn't stick to edge */}
+        {/* Right padding spacer */}
         <div className="w-4 flex-shrink-0 sm:w-6 lg:w-8" aria-hidden />
       </div>
 
-      {/* Desktop arrow buttons - always visible */}
+      {/* Desktop arrow buttons */}
       <div className="pointer-events-none absolute inset-y-0 left-0 right-0 hidden lg:block">
         <button
           type="button"

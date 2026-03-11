@@ -27,6 +27,17 @@ function parseWKBPoint(
   return { type: "Point", coordinates: [lng, lat] };
 }
 
+/** Remove duplicate sagre by title (keeps first occurrence). */
+function deduplicateByTitle<T extends { title: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = item.title.toLowerCase().trim();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 /**
  * Fetch active sagre happening soon (today through next Sunday).
  * Covers the current weekend even if today is early in the week.
@@ -61,7 +72,7 @@ export async function getWeekendSagre(limit = 12): Promise<SagraCardData[]> {
       return [];
     }
 
-    return (data as SagraCardData[]) ?? [];
+    return deduplicateByTitle((data as SagraCardData[]) ?? []);
   } catch (err) {
     console.error("getWeekendSagre unexpected error:", err);
     return [];
@@ -92,7 +103,7 @@ export async function getActiveSagre(limit = 80): Promise<SagraCardData[]> {
       return [];
     }
 
-    return (data as SagraCardData[]) ?? [];
+    return deduplicateByTitle((data as SagraCardData[]) ?? []);
   } catch (err) {
     console.error("getActiveSagre unexpected error:", err);
     return [];
@@ -159,7 +170,7 @@ export async function searchSagre(
         );
       }
 
-      return results;
+      return deduplicateByTitle(results);
     }
 
     // Standard query with chained filters
@@ -168,7 +179,8 @@ export async function searchSagre(
     let query = supabase
       .from("sagre")
       .select(SAGRA_CARD_FIELDS)
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .not("province", "is", null);
 
     if (provincia) {
       query = query.eq("province", provincia);
@@ -198,7 +210,7 @@ export async function searchSagre(
       return [];
     }
 
-    return (data as SagraCardData[]) ?? [];
+    return deduplicateByTitle((data as SagraCardData[]) ?? []);
   } catch (err) {
     console.error("searchSagre unexpected error:", err);
     return [];
