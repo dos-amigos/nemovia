@@ -63,7 +63,7 @@ Full details: [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
 
 - [x] **Phase 18: Data Pipeline Restoration** - Restore event count to 100+, fix Veneto gating, filter non-sagre (completed 2026-03-10)
 - [x] **Phase 19: Image Quality Foundation** - Unsplash fallbacks for cards + photo hero (completed 2026-03-11)
-- [x] **Phase 20: Layout & Branding** - Full-width layout, custom logo, complete footer (completed 2026-03-11)
+- [x] **Phase 20: Layout & Branding** - Full-width layout, custom logo, complete footer (completed 2026-03-11)
 - [ ] **Phase 21: Netflix Rows Homepage** - Horizontal scroll rows with smart categorization
 - [ ] **Phase 22: City Search & Map Fixes** - Autocomplete search bar, radius slider, fix map bugs
 - [ ] **Phase 23: Scraping Completeness** - Extract complete info from sources
@@ -149,7 +149,10 @@ Plans:
 4. User can see which row they're scrolling with clear category labels
 5. Horizontal scroll interaction feels smooth with CSS scroll-snap, not janky carousel
 
-**Plans**: TBD
+**Plans:** 1 plan
+
+Plans:
+- [ ] 21-01-PLAN.md — ScrollRow/ScrollRowSection components, getActiveSagre query, homepage rewrite with 4 category rows and dedup
 
 ---
 
@@ -211,7 +214,7 @@ Plans:
 | 17. Visual Effects, Layout & Performance | v1.3 | 3/3 | Complete | 2026-03-10 |
 | 18. Data Pipeline Restoration | v1.4 | 3/3 | Complete | 2026-03-10 |
 | 19. Image Quality Foundation | v1.4 | 2/2 | Complete | 2026-03-11 |
-| 20. Layout & Branding | v1.4 | Complete    | 2026-03-11 | 2026-03-11 |
-| 21. Netflix Rows Homepage | v1.4 | 0/? | Not started | - |
+| 20. Layout & Branding | v1.4 | 2/2 | Complete | 2026-03-11 |
+| 21. Netflix Rows Homepage | v1.4 | 0/1 | Planned | - |
 | 22. City Search & Map Fixes | v1.4 | 0/? | Not started | - |
 | 23. Scraping Completeness | v1.4 | 0/? | Not started | - |
