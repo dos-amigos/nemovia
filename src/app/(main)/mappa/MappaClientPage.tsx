@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import type L from "leaflet";
 import MapViewDynamic from "@/components/map/MapView.dynamic";
 import LocationButton from "@/components/map/LocationButton";
+import { SearchFilters } from "@/components/search/SearchFilters";
 import type { MapMarkerData } from "@/lib/queries/types";
 
 interface MappaClientPageProps {
@@ -23,8 +24,13 @@ export default function MappaClientPage({ sagre }: MappaClientPageProps) {
   );
 
   return (
-    <div className="h-[calc(100vh-5rem)] lg:h-[calc(100vh-3.5rem)]">
-      <div className="relative h-full w-full">
+    <div className="flex h-[calc(100vh-5rem)] flex-col lg:h-[calc(100vh-3.5rem)]">
+      {/* Always-visible filter bar */}
+      <div className="shrink-0 border-b bg-background px-4 py-3 sm:px-6">
+        <SearchFilters />
+      </div>
+      {/* Map fills remaining space */}
+      <div className="relative flex-1">
         <MapViewDynamic sagre={sagre} onMapReady={setMapRef} />
         <LocationButton onLocate={handleLocate} />
       </div>
