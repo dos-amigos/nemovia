@@ -4,7 +4,6 @@ import {
   parseImageCredit,
   TAG_QUERIES,
   DEFAULT_QUERY,
-  type UnsplashHeroImage,
 } from "@/lib/unsplash";
 
 describe("parseImageCredit", () => {

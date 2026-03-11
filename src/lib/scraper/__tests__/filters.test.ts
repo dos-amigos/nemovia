@@ -235,6 +235,7 @@ describe("isNonSagraTitle", () => {
     });
 
     it("returns false for null input", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(isNonSagraTitle(null as any)).toBe(false);
     });
   });
