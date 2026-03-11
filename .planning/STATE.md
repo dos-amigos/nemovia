@@ -3,27 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Esperienza Completa
 status: executing
-last_updated: "2026-03-11T13:17:40.902Z"
+stopped_at: "Completed 21-01-PLAN.md"
+last_updated: "2026-03-11T14:13:00Z"
+last_activity: 2026-03-11 -- Completed 21-01 Netflix Rows Homepage
 progress:
   total_phases: 6
-  completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
----
-
----
-gsd_state_version: 1.0
-milestone: v1.4
-milestone_name: Esperienza Completa
-status: executing
-stopped_at: "Completed 20-02-PLAN.md"
-last_updated: "2026-03-11T13:11:13Z"
-last_activity: 2026-03-11 -- Completed 20-02 Logo & Footer Branding
-progress:
-  total_phases: 6
-  completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  completed_phases: 4
+  total_plans: 8
+  completed_plans: 8
   percent: 100
 ---
 
@@ -40,14 +27,14 @@ progress:
 
 ## Current Position
 
-**Phase**: 20 - Layout & Branding (COMPLETE)
-**Plan**: 2/2 complete
-**Status**: Phase 20 complete. Ready for Phase 21 (Netflix Rows).
-**Progress**: 3/6 phases complete, 7/7 plans (100%)
+**Phase**: 21 - Netflix Rows Homepage (COMPLETE)
+**Plan**: 1/1 complete
+**Status**: Phase 21 complete. Ready for Phase 22 (City Search & Map Fixes).
+**Progress**: 4/6 phases complete, 8/8 plans (100%)
 
 ```
 v1.4 Progress: [██████████] 100%
-Phase 20:      [==================================================] 100%
+Phase 21:      [==================================================] 100%
 ```
 
 ## Performance Metrics
@@ -55,10 +42,10 @@ Phase 20:      [==================================================] 100%
 ### Milestone v1.4 (In Progress)
 
 **Timeline**: Started 2026-03-10
-**Phases complete**: 3/6
-**Plans complete**: 7 (Phase 18: 3, Phase 19: 2/2, Phase 20: 2/2)
-**Commits**: 19
-**LOC delta**: +720/-41
+**Phases complete**: 4/6
+**Plans complete**: 8 (Phase 18: 3, Phase 19: 2/2, Phase 20: 2/2, Phase 21: 1/1)
+**Commits**: 22
+**LOC delta**: +1013/-92
 
 ### Previous Milestone: v1.3 (Shipped 2026-03-10)
 
@@ -73,6 +60,15 @@ Phase 20:      [==================================================] 100%
 ## Accumulated Context
 
 ### Recent Decisions
+
+**21-01 Netflix Rows Homepage (2026-03-11)**
+- **Decision**: CSS scroll-snap-mandatory for native momentum scrolling instead of JS carousel library (SwiperJS/Embla out of scope)
+- **Decision**: In-memory Set for cross-row deduplication -- sequential row building with shown ID tracking
+- **Decision**: Drag-to-scroll with mouse events for desktop trackpad-less users
+- **Decision**: Removed image_credit from SAGRA_CARD_FIELDS -- only needed for hero/detail attribution, not card rendering
+- **Decision**: QuickFilters moved after hero, before scroll rows, for better visual hierarchy
+- **Pattern**: ScrollRow pattern: full-width CSS scroll-snap container with responsive card widths (75vw/45vw/280px)
+- **Pattern**: ScrollRowSection pattern: server component wrapper with min-3 threshold hiding sparse rows
 
 **20-02 Logo & Footer Branding (2026-03-11)**
 - **Decision**: Inline SVG paths for logo wordmark instead of `<text>` element for font-independent rendering
@@ -174,7 +170,7 @@ Phase 20:      [==================================================] 100%
 
 ### Blockers
 
-**None** -- Phase 20 complete, ready for Phase 21 (Netflix Rows).
+**None** -- Phase 21 complete, ready for Phase 22 (City Search & Map Fixes).
 
 ### Technical Notes
 
@@ -191,7 +187,8 @@ Phase 20:      [==================================================] 100%
 - Environment: UNSPLASH_ACCESS_KEY
 
 **Existing Patterns to Leverage**
-- Server component + parallel queries (Promise.all) for Netflix rows
+- Server component + parallel queries (Promise.all) for Netflix rows (established 21-01)
+- ScrollRow/ScrollRowSection pattern for horizontal scroll category rows (established 21-01)
 - Route Handlers for city autocomplete (hide Supabase anon key)
 - Edge Function inline copy pattern for filter additions (established pattern since v1.0)
 - Full-width main layout with per-page max-w-7xl containment (established 20-01)
@@ -201,9 +198,9 @@ Phase 20:      [==================================================] 100%
 
 ### How to Resume Work
 
-**If starting Phase 21 planning:**
+**If starting Phase 22 planning:**
 ```bash
-/gsd:plan-phase 21
+/gsd:plan-phase 22
 ```
 
 **If checking project status:**
@@ -223,9 +220,9 @@ cat .planning/REQUIREMENTS.md
 **Current milestone**: v1.4 "Esperienza Completa"
 **Milestone goal**: Transform Nemovia from prototype to complete product -- Netflix scroll rows, hero photographico, city search con raggio, full-width layout, logo, footer, e fix critici su dati e UX.
 
-**Phase 20 status**: COMPLETE (2/2 plans). Full-width layout restructure + logo & footer branding done.
+**Phase 21 status**: COMPLETE (1/1 plans). Netflix-style scroll rows replacing bento grid with 4 category rows, CSS scroll-snap, drag scroll, desktop hover arrows, and cross-row deduplication.
 
-**Next action**: Plan and execute Phase 21 (Netflix Rows).
+**Next action**: Plan and execute Phase 22 (City Search & Map Fixes).
 
 ---
 
