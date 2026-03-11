@@ -20,6 +20,7 @@ export function FadeImage({ className, ...props }: ImageProps) {
     <Image
       {...props}
       ref={imgRef}
+      draggable={false}
       className={cn(
         "transition-opacity duration-500 ease-in-out",
         loaded ? "opacity-100" : "opacity-0",

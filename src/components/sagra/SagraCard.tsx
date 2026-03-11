@@ -23,6 +23,7 @@ export function SagraCard({ sagra }: SagraCardProps) {
   return (
     <Link
       href={`/sagra/${sagra.slug}`}
+      draggable={false}
       className="block rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
       <m.div

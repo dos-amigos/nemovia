@@ -67,6 +67,8 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
           <div
             key={sagra.id}
             className="w-[75vw] flex-shrink-0 snap-start sm:w-[45vw] lg:w-[280px]"
+            draggable={false}
+            onDragStart={(e) => e.preventDefault()}
             onClickCapture={(e) => {
               if (drag.current.moved) {
                 e.preventDefault();
