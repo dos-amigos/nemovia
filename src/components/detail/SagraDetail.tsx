@@ -38,11 +38,12 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
   return (
     <>
       <ScrollProgress />
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
       <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
         {/* LEFT column: Hero image + Mini map */}
         <div className="space-y-6 lg:sticky lg:top-20 lg:self-start">
           {/* Hero image with parallax (mobile only) */}
-          <ParallaxHero className="relative -mx-4 -mt-4 h-48 w-[calc(100%+2rem)] overflow-hidden lg:mx-0 lg:mt-0 lg:w-full lg:h-64 lg:rounded-xl">
+          <ParallaxHero className="relative -mx-4 -mt-4 h-48 w-[calc(100%+2rem)] overflow-hidden sm:-mx-6 sm:w-[calc(100%+3rem)] lg:mx-0 lg:mt-0 lg:w-full lg:h-64 lg:rounded-xl">
             {sagra.image_url ? (
               <FadeImage
                 src={sagra.image_url}
@@ -192,6 +193,7 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
             </ScrollReveal>
           )}
         </div>
+      </div>
       </div>
     </>
   );

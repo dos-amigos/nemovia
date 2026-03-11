@@ -23,7 +23,7 @@ export default function MappaClientPage({ sagre }: MappaClientPageProps) {
   );
 
   return (
-    <div className="-mx-4 -mt-4 sm:-mx-6 lg:-mx-8 h-[calc(100vh-5rem)] lg:h-[calc(100vh-4.5rem)]">
+    <div className="h-[calc(100vh-5rem)] lg:h-[calc(100vh-3.5rem)]">
       <div className="relative h-full w-full">
         <MapViewDynamic sagre={sagre} onMapReady={setMapRef} />
         <LocationButton onLocate={handleLocate} />

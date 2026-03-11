@@ -28,51 +28,51 @@ export default async function HomePage() {
   const remainingSagre = hasSagre ? weekendSagre.slice(5) : [];
 
   return (
-    <div className="space-y-6">
-      <div className="-mx-4 -mt-4 sm:-mx-6 lg:-mx-8">
-        <HeroSection />
-      </div>
-      <QuickFilters />
+    <div>
+      <HeroSection />
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-4 sm:px-6 lg:px-8">
+        <QuickFilters />
 
-      {/* Bento grid section */}
-      <section className="space-y-3">
-        <FadeIn delay={0.1}>
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <Calendar className="h-5 w-5 text-primary" />
-            Questo weekend
-          </h2>
-        </FadeIn>
-
-        {!hasSagre ? (
-          <EmptyState
-            icon={<Calendar className="h-8 w-8 text-muted-foreground" />}
-            title="Nessuna sagra questo weekend"
-            description="Non ci sono sagre in programma per i prossimi giorni. Torna a controllare presto!"
-          />
-        ) : (
-          <FadeIn delay={0.15}>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4 lg:gap-4">
-              {/* Featured card spans 2 cols and 2 rows on lg */}
-              {featured && (
-                <div className="md:col-span-1 lg:col-span-2 lg:row-span-2">
-                  <FeaturedSagraCard sagra={featured} />
-                </div>
-              )}
-              {/* Regular cards fill remaining slots */}
-              {regularCards.map((sagra) => (
-                <SagraCard key={sagra.id} sagra={sagra} />
-              ))}
-            </div>
+        {/* Bento grid section */}
+        <section className="space-y-3">
+          <FadeIn delay={0.1}>
+            <h2 className="flex items-center gap-2 text-lg font-semibold">
+              <Calendar className="h-5 w-5 text-primary" />
+              Questo weekend
+            </h2>
           </FadeIn>
-        )}
 
-        {/* Remaining sagre below the bento grid in standard grid */}
-        {remainingSagre.length > 0 && (
-          <WeekendSection sagre={remainingSagre} />
-        )}
-      </section>
+          {!hasSagre ? (
+            <EmptyState
+              icon={<Calendar className="h-8 w-8 text-muted-foreground" />}
+              title="Nessuna sagra questo weekend"
+              description="Non ci sono sagre in programma per i prossimi giorni. Torna a controllare presto!"
+            />
+          ) : (
+            <FadeIn delay={0.15}>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4 lg:gap-4">
+                {/* Featured card spans 2 cols and 2 rows on lg */}
+                {featured && (
+                  <div className="md:col-span-1 lg:col-span-2 lg:row-span-2">
+                    <FeaturedSagraCard sagra={featured} />
+                  </div>
+                )}
+                {/* Regular cards fill remaining slots */}
+                {regularCards.map((sagra) => (
+                  <SagraCard key={sagra.id} sagra={sagra} />
+                ))}
+              </div>
+            </FadeIn>
+          )}
 
-      <ProvinceSection counts={provinceCounts} />
+          {/* Remaining sagre below the bento grid in standard grid */}
+          {remainingSagre.length > 0 && (
+            <WeekendSection sagre={remainingSagre} />
+          )}
+        </section>
+
+        <ProvinceSection counts={provinceCounts} />
+      </div>
     </div>
   );
 }
