@@ -33,7 +33,7 @@ function parseWKBPoint(
  * Catches multi-day sagre whose start_date is in the past but end_date
  * is in the future (or null, treated as single-day).
  */
-export async function getWeekendSagre(): Promise<SagraCardData[]> {
+export async function getWeekendSagre(limit = 12): Promise<SagraCardData[]> {
   try {
     const supabase = await createClient();
 
@@ -53,7 +53,7 @@ export async function getWeekendSagre(): Promise<SagraCardData[]> {
       .or(`end_date.gte.${today},end_date.is.null`)
       .lte("start_date", nextSunday)
       .order("start_date", { ascending: true })
-      .limit(8);
+      .limit(limit);
 
     if (error) {
       console.error("getWeekendSagre error:", error.message);
@@ -63,6 +63,36 @@ export async function getWeekendSagre(): Promise<SagraCardData[]> {
     return (data as SagraCardData[]) ?? [];
   } catch (err) {
     console.error("getWeekendSagre unexpected error:", err);
+    return [];
+  }
+}
+
+/**
+ * Fetch all active, non-expired sagre across all categories.
+ * Used as a broad pool for Netflix-style scroll row categorization.
+ * Ordered by start_date ascending so nearest events appear first.
+ */
+export async function getActiveSagre(limit = 80): Promise<SagraCardData[]> {
+  try {
+    const supabase = await createClient();
+    const today = new Date().toISOString().split("T")[0];
+
+    const { data, error } = await supabase
+      .from("sagre")
+      .select(SAGRA_CARD_FIELDS)
+      .eq("is_active", true)
+      .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${today})`)
+      .order("start_date", { ascending: true })
+      .limit(limit);
+
+    if (error) {
+      console.error("getActiveSagre error:", error.message);
+      return [];
+    }
+
+    return (data as SagraCardData[]) ?? [];
+  } catch (err) {
+    console.error("getActiveSagre unexpected error:", err);
     return [];
   }
 }
