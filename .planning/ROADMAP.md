@@ -211,7 +211,7 @@ Plans:
 | 17. Visual Effects, Layout & Performance | v1.3 | 3/3 | Complete | 2026-03-10 |
 | 18. Data Pipeline Restoration | v1.4 | 3/3 | Complete | 2026-03-10 |
 | 19. Image Quality Foundation | v1.4 | 2/2 | Complete | 2026-03-11 |
-| 20. Layout & Branding | v1.4 | 2/2 | Complete | 2026-03-11 |
+| 20. Layout & Branding | v1.4 | Complete    | 2026-03-11 | 2026-03-11 |
 | 21. Netflix Rows Homepage | v1.4 | 0/? | Not started | - |
 | 22. City Search & Map Fixes | v1.4 | 0/? | Not started | - |
 | 23. Scraping Completeness | v1.4 | 0/? | Not started | - |
