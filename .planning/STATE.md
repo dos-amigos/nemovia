@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Esperienza Completa
 status: executing
-stopped_at: "Completed 20-01-PLAN.md"
-last_updated: "2026-03-11T12:46:08Z"
-last_activity: 2026-03-11 -- Completed 20-01 Full-Width Layout Restructure
+stopped_at: "Completed 20-02-PLAN.md"
+last_updated: "2026-03-11T13:11:13Z"
+last_activity: 2026-03-11 -- Completed 20-02 Logo & Footer Branding
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 7
-  completed_plans: 6
-  percent: 86
+  completed_plans: 7
+  percent: 100
 ---
 
 # Project State: Nemovia v1.4
@@ -27,14 +27,14 @@ progress:
 
 ## Current Position
 
-**Phase**: 20 - Layout & Branding (IN PROGRESS)
-**Plan**: 1/2 complete
-**Status**: Plan 20-01 (Full-Width Layout) complete, ready for 20-02
-**Progress**: 2/6 phases complete, 6/7 plans (86%)
+**Phase**: 20 - Layout & Branding (COMPLETE)
+**Plan**: 2/2 complete
+**Status**: Phase 20 complete. Ready for Phase 21 (Netflix Rows).
+**Progress**: 3/6 phases complete, 7/7 plans (100%)
 
 ```
-v1.4 Progress: [█████████░] 86%
-Phase 20:      [=========================                         ] 50%
+v1.4 Progress: [██████████] 100%
+Phase 20:      [==================================================] 100%
 ```
 
 ## Performance Metrics
@@ -42,10 +42,10 @@ Phase 20:      [=========================                         ] 50%
 ### Milestone v1.4 (In Progress)
 
 **Timeline**: Started 2026-03-10
-**Phases complete**: 2/6
-**Plans complete**: 6 (Phase 18: 3, Phase 19: 2/2, Phase 20: 1/2)
-**Commits**: 17
-**LOC delta**: +616/-38
+**Phases complete**: 3/6
+**Plans complete**: 7 (Phase 18: 3, Phase 19: 2/2, Phase 20: 2/2)
+**Commits**: 19
+**LOC delta**: +720/-41
 
 ### Previous Milestone: v1.3 (Shipped 2026-03-10)
 
@@ -60,6 +60,13 @@ Phase 20:      [=========================                         ] 50%
 ## Accumulated Context
 
 ### Recent Decisions
+
+**20-02 Logo & Footer Branding (2026-03-11)**
+- **Decision**: Inline SVG paths for logo wordmark instead of `<text>` element for font-independent rendering
+- **Decision**: Footer uses pb-24 on mobile to clear fixed BottomNav, pb-8 on desktop
+- **Decision**: Logo SVG placeholder will be replaced with user's own design later
+- **Decision**: Unsplash attribution UTM params: utm_source=nemovia&utm_medium=referral
+- **Pattern**: Brand component directory: src/components/brand/ for logo and brand-identity components
 
 **20-01 Full-Width Layout Restructure (2026-03-11)**
 - **Decision**: Full-width-by-default layout: main has no max-w-7xl, pages opt into containment via wrapper divs
@@ -154,7 +161,7 @@ Phase 20:      [=========================                         ] 50%
 
 ### Blockers
 
-**None** -- Phase 20 Plan 01 complete, ready for Plan 02.
+**None** -- Phase 20 complete, ready for Phase 21 (Netflix Rows).
 
 ### Technical Notes
 
@@ -181,9 +188,9 @@ Phase 20:      [=========================                         ] 50%
 
 ### How to Resume Work
 
-**If starting Phase 20 planning:**
+**If starting Phase 21 planning:**
 ```bash
-/gsd:plan-phase 20
+/gsd:plan-phase 21
 ```
 
 **If checking project status:**
@@ -203,9 +210,9 @@ cat .planning/REQUIREMENTS.md
 **Current milestone**: v1.4 "Esperienza Completa"
 **Milestone goal**: Transform Nemovia from prototype to complete product -- Netflix scroll rows, hero photographico, city search con raggio, full-width layout, logo, footer, e fix critici su dati e UX.
 
-**Phase 20 status**: IN PROGRESS (1/2 plans). Full-width layout restructure complete. Footer & branding (Plan 02) next.
+**Phase 20 status**: COMPLETE (2/2 plans). Full-width layout restructure + logo & footer branding done.
 
-**Next action**: Execute Phase 20 Plan 02 (Footer, Logo, Branding).
+**Next action**: Plan and execute Phase 21 (Netflix Rows).
 
 ---
 

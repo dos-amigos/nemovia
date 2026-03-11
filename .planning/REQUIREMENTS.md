@@ -27,8 +27,8 @@ Requirements for v1.4 "Esperienza Completa". Each maps to roadmap phases.
 ### Layout & Branding
 
 - [x] **BRAND-01**: Full-width responsive desktop layout (hero and scroll rows edge-to-edge, content sections max-w)
-- [ ] **BRAND-02**: Custom SVG logo in navigation bar (Geist typography + stylized icon, coral/teal palette)
-- [ ] **BRAND-03**: Modern footer with credits "Fatto con cuore in Veneto" and Unsplash attribution
+- [x] **BRAND-02**: Custom SVG logo in navigation bar (Geist typography + stylized icon, coral/teal palette)
+- [x] **BRAND-03**: Modern footer with credits "Fatto con cuore in Veneto" and Unsplash attribution
 
 ### Map & Search
 
@@ -84,8 +84,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IMG-01 | Phase 19 | Complete |
 | IMG-02 | Phase 19 | Complete |
 | BRAND-01 | Phase 20 | Complete |
-| BRAND-02 | Phase 20 | Pending |
-| BRAND-03 | Phase 20 | Pending |
+| BRAND-02 | Phase 20 | Complete |
+| BRAND-03 | Phase 20 | Complete |
 | HOME-01 | Phase 21 | Pending |
 | HOME-02 | Phase 22 | Pending |
 | MAP-01 | Phase 22 | Pending |
