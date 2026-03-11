@@ -3,28 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Esperienza Completa
 status: executing
-last_updated: "2026-03-11T10:48:04.293Z"
+stopped_at: "Completed 20-01-PLAN.md"
+last_updated: "2026-03-11T12:46:08Z"
+last_activity: 2026-03-11 -- Completed 20-01 Full-Width Layout Restructure
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
----
-
----
-gsd_state_version: 1.0
-milestone: v1.4
-milestone_name: Esperienza Completa
-status: executing
-stopped_at: "Completed 19-02-PLAN.md"
-last_updated: "2026-03-11T10:42:32Z"
-last_activity: 2026-03-11 -- Completed 19-02 Unsplash Hero & Attribution UI
-progress:
-  total_phases: 6
-  completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
-  percent: 33
+  total_plans: 7
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State: Nemovia v1.4
@@ -40,14 +27,14 @@ progress:
 
 ## Current Position
 
-**Phase**: 19 - Image Quality Foundation (COMPLETE)
-**Plan**: 2/2 complete
-**Status**: Phase 19 complete, ready for Phase 20 planning
-**Progress**: 2/6 phases complete (33%)
+**Phase**: 20 - Layout & Branding (IN PROGRESS)
+**Plan**: 1/2 complete
+**Status**: Plan 20-01 (Full-Width Layout) complete, ready for 20-02
+**Progress**: 2/6 phases complete, 6/7 plans (86%)
 
 ```
-v1.4 Progress: [================                                  ] 33%
-Phase 19:      [==================================================] 100%
+v1.4 Progress: [█████████░] 86%
+Phase 20:      [=========================                         ] 50%
 ```
 
 ## Performance Metrics
@@ -56,9 +43,9 @@ Phase 19:      [==================================================] 100%
 
 **Timeline**: Started 2026-03-10
 **Phases complete**: 2/6
-**Plans complete**: 5 (Phase 18: 3, Phase 19: 2/2)
-**Commits**: 15
-**LOC delta**: +614/-36
+**Plans complete**: 6 (Phase 18: 3, Phase 19: 2/2, Phase 20: 1/2)
+**Commits**: 17
+**LOC delta**: +616/-38
 
 ### Previous Milestone: v1.3 (Shipped 2026-03-10)
 
@@ -73,6 +60,13 @@ Phase 19:      [==================================================] 100%
 ## Accumulated Context
 
 ### Recent Decisions
+
+**20-01 Full-Width Layout Restructure (2026-03-11)**
+- **Decision**: Full-width-by-default layout: main has no max-w-7xl, pages opt into containment via wrapper divs
+- **Decision**: Hero card margins use mx-4/sm:mx-6/lg:mx-8 responsive steps for breathing room in full-width context
+- **Decision**: Detail page hero keeps mobile full-bleed via -mx breakout from container (intentional design, not a hack)
+- **Decision**: Search map view stays within max-w-7xl container (secondary view, no need for edge-to-edge)
+- **Pattern**: Content containment wrapper: `div.mx-auto.max-w-7xl.px-4.sm:px-6.lg:px-8`
 
 **19-02 Unsplash Hero & Attribution UI (2026-03-11)**
 - **Decision**: Server component hero (no "use client") for static rendering with next/image priority for LCP
@@ -160,14 +154,14 @@ Phase 19:      [==================================================] 100%
 
 ### Blockers
 
-**None** -- Phase 19 complete, ready for Phase 20 planning.
+**None** -- Phase 20 Plan 01 complete, ready for Plan 02.
 
 ### Technical Notes
 
 **Critical Constraints for v1.4**
 1. **Nominatim autocomplete forbidden**: Use static veneto-comuni.json (~580 cities), single geocode only on selection
 2. **Unsplash rate limits**: Pre-fetch images at pipeline time, never runtime API calls (50 req/hr demo tier)
-3. **Full-width layout**: Use negative margin breakout (-mx-4 sm:-mx-6 lg:-mx-8), keep max-w-7xl global constraint
+3. **Full-width layout**: Main is full-width by default, pages wrap content in max-w-7xl containers (20-01 pattern)
 4. **Data pipeline first**: All UI features built against healthy dataset (100+ events), not 26-event collapsed state
 
 **Stack Additions for v1.4**
@@ -180,7 +174,7 @@ Phase 19:      [==================================================] 100%
 - Server component + parallel queries (Promise.all) for Netflix rows
 - Route Handlers for city autocomplete (hide Supabase anon key)
 - Edge Function inline copy pattern for filter additions (established pattern since v1.0)
-- Negative margin breakout already in MappaClientPage.tsx (line 26)
+- Full-width main layout with per-page max-w-7xl containment (established 20-01)
 - Schema.org microdata extraction for itinerarinelgusto (established in 18-03)
 
 ## Session Continuity
@@ -209,9 +203,9 @@ cat .planning/REQUIREMENTS.md
 **Current milestone**: v1.4 "Esperienza Completa"
 **Milestone goal**: Transform Nemovia from prototype to complete product -- Netflix scroll rows, hero photographico, city search con raggio, full-width layout, logo, footer, e fix critici su dati e UX.
 
-**Phase 19 status**: COMPLETE (2/2 plans). Full-bleed Unsplash hero, detail page attribution, and pipeline integration all done.
+**Phase 20 status**: IN PROGRESS (1/2 plans). Full-width layout restructure complete. Footer & branding (Plan 02) next.
 
-**Next action**: Plan Phase 20 (Layout & Branding: custom logo, footer, full-width layout).
+**Next action**: Execute Phase 20 Plan 02 (Footer, Logo, Branding).
 
 ---
 

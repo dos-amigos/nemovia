@@ -127,7 +127,7 @@ Plans:
 3. Footer displays on every page with credits "Fatto con cuore in Veneto" and Unsplash attribution
 4. Desktop layout at 1920px and 2560px maintains visual hierarchy without text expanding beyond readable width
 
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 20-01-PLAN.md — Layout restructure: full-width-by-default main, remove breakout hacks, add containment to all pages
@@ -211,7 +211,7 @@ Plans:
 | 17. Visual Effects, Layout & Performance | v1.3 | 3/3 | Complete | 2026-03-10 |
 | 18. Data Pipeline Restoration | v1.4 | 3/3 | Complete | 2026-03-10 |
 | 19. Image Quality Foundation | v1.4 | 2/2 | Complete | 2026-03-11 |
-| 20. Layout & Branding | v1.4 | 0/2 | Planned | - |
+| 20. Layout & Branding | 1/2 | In Progress|  | - |
 | 21. Netflix Rows Homepage | v1.4 | 0/? | Not started | - |
 | 22. City Search & Map Fixes | v1.4 | 0/? | Not started | - |
 | 23. Scraping Completeness | v1.4 | 0/? | Not started | - |
