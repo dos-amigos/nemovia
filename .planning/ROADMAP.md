@@ -156,21 +156,28 @@ Plans:
 
 ---
 
-### Phase 22: City Search & Map Fixes
-**Goal**: Enable users to quickly search for sagre near any Veneto city and fix broken map functionality on Cerca and Mappa pages.
+### Phase 22: City Search, Map Fixes & Food Icons
+**Goal**: Enable users to quickly search for sagre near any Veneto city, fix broken map functionality, and add food type icons to cards and scroll row titles.
 
 **Depends on**: Phase 21 (city search embeds in hero section from Phase 21)
 
-**Requirements**: HOME-02, MAP-01, MAP-02
+**Requirements**: ICON-01, HOME-02, MAP-01, MAP-02
 
 **Success Criteria** (what must be TRUE):
-1. User can type city name in hero search bar and see autocomplete suggestions of Veneto comuni
-2. Selecting a city redirects to Cerca page with city pre-selected and radius slider visible (5-100km)
-3. Map view on Cerca page displays correct markers matching current search filters
-4. Dedicated Mappa page displays filter controls at top allowing users to refine visible sagre
-5. No Nominatim API calls occur during autocomplete typing (IP ban prevention)
+1. Each SagraCard displays a minimal food type icon (carne, pesce, zucca, verdura, gnocco, altro) in the bottom-right corner (icon only)
+2. Scroll row section titles on homepage use the same food type icons instead of current emoji/icons
+3. User can type city name in hero search bar and see autocomplete suggestions of Veneto comuni
+4. Selecting a city redirects to Cerca page with city pre-selected and radius slider visible (5-100km)
+5. Map view on Cerca page displays correct markers matching current search filters
+6. Dedicated Mappa page displays filter controls at top allowing users to refine visible sagre
+7. No Nominatim API calls occur during autocomplete typing (IP ban prevention)
 
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 22-01-PLAN.md — Food type SVG icons: FoodIcon component + SagraCard overlay + homepage row title icons
+- [ ] 22-02-PLAN.md — City autocomplete: static veneto-comuni.json + CitySearch combobox in hero section
+- [ ] 22-03-PLAN.md — Map fixes: searchMapSagre filter sync for Cerca + always-visible filters on Mappa page
 
 ---
 
@@ -216,5 +223,5 @@ Plans:
 | 19. Image Quality Foundation | v1.4 | 2/2 | Complete | 2026-03-11 |
 | 20. Layout & Branding | v1.4 | 2/2 | Complete | 2026-03-11 |
 | 21. Netflix Rows Homepage | v1.4 | 1/1 | Complete | 2026-03-11 |
-| 22. City Search & Map Fixes | v1.4 | 0/? | Not started | - |
+| 22. City Search & Map Fixes | v1.4 | 0/3 | Not started | - |
 | 23. Scraping Completeness | v1.4 | 0/? | Not started | - |
