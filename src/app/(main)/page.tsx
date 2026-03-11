@@ -76,6 +76,11 @@ export default async function HomePage() {
     <div>
       <HeroSection />
 
+      {/* Quick filters right after hero */}
+      <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+        <QuickFilters />
+      </div>
+
       {!hasAnyData ? (
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <EmptyState
@@ -122,7 +127,6 @@ export default async function HomePage() {
       )}
 
       <div className="mx-auto max-w-7xl space-y-6 px-4 pb-6 sm:px-6 lg:px-8">
-        <QuickFilters />
         <ProvinceSection counts={provinceCounts} />
       </div>
     </div>

@@ -26,7 +26,7 @@ export function ScrollRowSection({
     <FadeIn delay={delay}>
       <section className="space-y-3">
         {/* Title row inside max-w-7xl container */}
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-[calc(max(2rem,(100vw-80rem)/2+2rem))]">
           <h2 className="flex items-center gap-2 text-lg font-semibold">
             {icon}
             {title}
