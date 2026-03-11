@@ -3,6 +3,19 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Esperienza Completa
 status: executing
+last_updated: "2026-03-11T10:48:04.293Z"
+progress:
+  total_phases: 6
+  completed_phases: 2
+  total_plans: 5
+  completed_plans: 5
+---
+
+---
+gsd_state_version: 1.0
+milestone: v1.4
+milestone_name: Esperienza Completa
+status: executing
 stopped_at: "Completed 19-02-PLAN.md"
 last_updated: "2026-03-11T10:42:32Z"
 last_activity: 2026-03-11 -- Completed 19-02 Unsplash Hero & Attribution UI

@@ -206,7 +206,7 @@ Plans:
 | 16. Design System Foundation | v1.3 | 2/2 | Complete | 2026-03-10 |
 | 17. Visual Effects, Layout & Performance | v1.3 | 3/3 | Complete | 2026-03-10 |
 | 18. Data Pipeline Restoration | 3/3 | Complete   | 2026-03-10 | - |
-| 19. Image Quality Foundation | 2/2 | Complete   | 2026-03-11 | - |
+| 19. Image Quality Foundation | 2/2 | Complete    | 2026-03-11 | - |
 | 20. Layout & Branding | v1.4 | 0/? | Not started | - |
 | 21. Netflix Rows Homepage | v1.4 | 0/? | Not started | - |
 | 22. City Search & Map Fixes | v1.4 | 0/? | Not started | - |
