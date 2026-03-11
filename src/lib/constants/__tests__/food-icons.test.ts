@@ -54,8 +54,9 @@ describe("getPrimaryCategory", () => {
     expect(getPrimaryCategory(["Prodotti Tipici", "Carne"])).toBe("carne");
   });
 
-  it("picks first specific tag when multiple specifics present", () => {
-    expect(getPrimaryCategory(["Pesce", "Carne"])).toBe("pesce");
+  it("picks highest-priority category when multiple specifics present", () => {
+    // carne has higher priority than pesce in the priority order
+    expect(getPrimaryCategory(["Pesce", "Carne"])).toBe("carne");
   });
 
   it("returns altro for undefined input", () => {
