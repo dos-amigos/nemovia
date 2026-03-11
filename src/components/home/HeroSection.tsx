@@ -1,8 +1,7 @@
 import Image from "next/image";
-import Link from "next/link";
-import { Search } from "lucide-react";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { getHeroImage } from "@/lib/unsplash";
+import { CitySearch } from "@/components/home/CitySearch";
 
 export function HeroSection() {
   const hero = getHeroImage();
@@ -30,13 +29,7 @@ export function HeroSection() {
           <p className="mt-3 max-w-lg text-white/80 lg:text-lg">
             Trova sagre ed eventi gastronomici nella tua zona
           </p>
-          <Link
-            href="/cerca"
-            className="mt-6 inline-flex items-center gap-3 rounded-full border border-white/30 bg-white/20 px-5 py-3 text-white backdrop-blur-sm transition-colors hover:bg-white/30"
-          >
-            <Search className="h-5 w-5" />
-            <span>Cerca per nome, citta...</span>
-          </Link>
+          <CitySearch />
         </div>
 
         {/* Unsplash photographer attribution */}
