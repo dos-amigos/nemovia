@@ -38,12 +38,12 @@ created: 2026-03-11
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 19-01-01 | 01 | 1 | IMG-01 | unit | `npx vitest run src/lib/__tests__/unsplash.test.ts -t "assigns image"` | No - Wave 0 | ⬜ pending |
-| 19-01-02 | 01 | 1 | IMG-01 | unit | `npx vitest run src/lib/__tests__/unsplash.test.ts -t "stores credit"` | No - Wave 0 | ⬜ pending |
-| 19-01-03 | 01 | 1 | IMG-01 | unit | `npx vitest run src/lib/__tests__/unsplash.test.ts -t "parseImageCredit"` | No - Wave 0 | ⬜ pending |
-| 19-01-04 | 01 | 1 | IMG-01 | unit | `npx vitest run src/lib/__tests__/unsplash.test.ts -t "TAG_QUERIES"` | No - Wave 0 | ⬜ pending |
-| 19-02-01 | 02 | 1 | IMG-02 | unit | `npx vitest run src/lib/__tests__/unsplash.test.ts -t "getHeroImage"` | No - Wave 0 | ⬜ pending |
-| 19-02-02 | 02 | 1 | IMG-02 | unit | `npx vitest run src/lib/__tests__/unsplash.test.ts -t "UTM"` | No - Wave 0 | ⬜ pending |
+| 19-01-01 | 01 | 1 | IMG-01 | unit | `npx vitest run src/lib/unsplash/__tests__/unsplash.test.ts -t "assigns image"` | No - Wave 0 | ⬜ pending |
+| 19-01-02 | 01 | 1 | IMG-01 | unit | `npx vitest run src/lib/unsplash/__tests__/unsplash.test.ts -t "stores credit"` | No - Wave 0 | ⬜ pending |
+| 19-01-03 | 01 | 1 | IMG-01 | unit | `npx vitest run src/lib/unsplash/__tests__/unsplash.test.ts -t "parseImageCredit"` | No - Wave 0 | ⬜ pending |
+| 19-01-04 | 01 | 1 | IMG-01 | unit | `npx vitest run src/lib/unsplash/__tests__/unsplash.test.ts -t "TAG_QUERIES"` | No - Wave 0 | ⬜ pending |
+| 19-02-01 | 02 | 1 | IMG-02 | unit | `npx vitest run src/lib/unsplash/__tests__/unsplash.test.ts -t "getHeroImage"` | No - Wave 0 | ⬜ pending |
+| 19-02-02 | 02 | 1 | IMG-02 | unit | `npx vitest run src/lib/unsplash/__tests__/unsplash.test.ts -t "UTM"` | No - Wave 0 | ⬜ pending |
 | 19-02-03 | 02 | 1 | IMG-02 | manual-only | Visual inspection in browser | N/A | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
@@ -52,7 +52,7 @@ created: 2026-03-11
 
 ## Wave 0 Requirements
 
-- [ ] `src/lib/__tests__/unsplash.test.ts` — stubs for IMG-01, IMG-02
+- [ ] `src/lib/unsplash/__tests__/unsplash.test.ts` — stubs for IMG-01, IMG-02
 - No new framework install needed — Vitest 4.0.18 already configured
 
 ---
