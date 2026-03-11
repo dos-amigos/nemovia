@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, Map } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/brand/Logo";
 
 const tabs = [
   { href: "/", label: "Home", icon: Home },
@@ -17,8 +18,8 @@ export function TopNav() {
   return (
     <nav className="hidden lg:block sticky top-0 z-50 glass-nav border-b border-white/15">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-8">
-        <Link href="/" className="text-lg font-bold text-primary">
-          Nemovia
+        <Link href="/" className="flex items-center rounded focus-visible:ring-[3px] focus-visible:ring-ring/50">
+          <Logo className="h-7 w-auto" />
         </Link>
 
         <div className="flex items-center gap-1">
