@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Esperienza Completa
 status: executing
-stopped_at: "Completed 22-01-PLAN.md"
-last_updated: "2026-03-11T15:29:33Z"
-last_activity: 2026-03-11 -- Completed 22-01 Food Type Icons
+stopped_at: "Completed 22-02-PLAN.md"
+last_updated: "2026-03-11T15:39:40Z"
+last_activity: 2026-03-11 -- Completed 22-02 City Search Autocomplete
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 11
-  completed_plans: 10
-  percent: 91
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State: Nemovia v1.4
@@ -27,14 +27,14 @@ progress:
 
 ## Current Position
 
-**Phase**: 22 - City Search, Map Fixes & Food Icons (IN PROGRESS)
-**Plan**: 2/3 complete (22-01 Food Icons, 22-03 Map Filter Sync done; 22-02 pending)
-**Status**: Executing Phase 22. Plans 22-01 and 22-03 complete.
-**Progress**: 4/6 phases complete, 10/11 plans (91%)
+**Phase**: 22 - City Search, Map Fixes & Food Icons (COMPLETE)
+**Plan**: 3/3 complete
+**Status**: Phase 22 complete. All v1.4 phases complete.
+**Progress**: 6/6 phases complete, 11/11 plans (100%)
 
 ```
-v1.4 Progress: [█████████░] 91%
-Phase 22:      [==================================                ] 67%
+v1.4 Progress: [██████████] 100%
+Phase 22:      [==================================================] 100%
 ```
 
 ## Performance Metrics
@@ -60,6 +60,14 @@ Phase 22:      [==================================                ] 67%
 ## Accumulated Context
 
 ### Recent Decisions
+
+**22-02 City Search Autocomplete (2026-03-11)**
+- **Decision**: Custom glass-styled CitySearch component instead of Shadcn Combobox UI -- hero requires transparent/glass aesthetic incompatible with standard popover styling
+- **Decision**: Static JSON import (bundled via TypeScript import) instead of runtime fetch for zero-latency client-side filtering
+- **Decision**: 555 Veneto comuni covering all 7 provinces -- accurate count after recent municipal mergers
+- **Decision**: HeroSection stays server component, CitySearch is "use client" island -- Next.js handles boundary automatically
+- **Pattern**: Static data pipeline: JSON in public/data/ -> TypeScript module in lib/constants/ -> tested filter utility
+- **Pattern**: Glass autocomplete: rounded-full input with border-white/30 bg-white/20, dropdown with bg-black/70 backdrop-blur-md
 
 **22-01 Food Type Icons (2026-03-11)**
 - **Decision**: Priority-based category selection for multi-tag sagre: carne > pesce > zucca > gnocco > verdura > altro
@@ -183,7 +191,7 @@ Phase 22:      [==================================                ] 67%
 
 ### Blockers
 
-**None** -- Phase 21 complete, ready for Phase 22 (City Search & Map Fixes).
+**None** -- All v1.4 phases complete (18-22).
 
 ### Technical Notes
 
@@ -194,9 +202,9 @@ Phase 22:      [==================================                ] 67%
 4. **Data pipeline first**: All UI features built against healthy dataset (100+ events), not 26-event collapsed state
 
 **Stack Additions for v1.4**
-- cmdk@1.1.1 for city autocomplete (Shadcn Combobox dependency)
-- Shadcn components: Popover, Command, Slider
-- Static asset: veneto-comuni.json (~25KB)
+- @base-ui/react for city autocomplete (Shadcn Combobox dependency)
+- Shadcn components: Combobox, InputGroup, Textarea
+- Static asset: veneto-comuni.json (~45KB, 555 comuni)
 - Environment: UNSPLASH_ACCESS_KEY
 
 **Existing Patterns to Leverage**
@@ -233,9 +241,9 @@ cat .planning/REQUIREMENTS.md
 **Current milestone**: v1.4 "Esperienza Completa"
 **Milestone goal**: Transform Nemovia from prototype to complete product -- Netflix scroll rows, hero photographico, city search con raggio, full-width layout, logo, footer, e fix critici su dati e UX.
 
-**Phase 22 status**: IN PROGRESS (2/3 plans). 22-01 Food Icons and 22-03 Map Filter Sync complete. 22-02 (City Search) pending.
+**Phase 22 status**: COMPLETE (3/3 plans). 22-01 Food Icons, 22-02 City Search, 22-03 Map Filter Sync all complete.
 
-**Next action**: Execute Phase 22 remaining plan (22-02 City Search).
+**Next action**: v1.4 milestone complete. Tag and archive, or proceed to Phase 23 (Scraping) if planned.
 
 ---
 

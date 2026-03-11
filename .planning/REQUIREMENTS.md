@@ -22,7 +22,7 @@ Requirements for v1.4 "Esperienza Completa". Each maps to roadmap phases.
 ### Homepage
 
 - [x] **HOME-01**: Netflix-style horizontal scroll rows on homepage with smart mix (weekend, vicino a te, tipo cucina, provincia)
-- [ ] **HOME-02**: City autocomplete search bar in hero with radius km slider, redirects to Cerca page with city pre-selected
+- [x] **HOME-02**: City autocomplete search bar in hero with radius km slider, redirects to Cerca page with city pre-selected
 
 ### Layout & Branding
 
@@ -87,7 +87,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BRAND-02 | Phase 20 | Complete |
 | BRAND-03 | Phase 20 | Complete |
 | HOME-01 | Phase 21 | Complete |
-| HOME-02 | Phase 22 | Pending |
+| HOME-02 | Phase 22 | Complete |
 | MAP-01 | Phase 22 | Complete |
 | MAP-02 | Phase 22 | Complete |
 | SCRAPE-01 | Phase 23 | Pending |

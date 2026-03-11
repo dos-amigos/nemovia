@@ -65,7 +65,7 @@ Full details: [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
 - [x] **Phase 19: Image Quality Foundation** - Unsplash fallbacks for cards + photo hero (completed 2026-03-11)
 - [x] **Phase 20: Layout & Branding** - Full-width layout, custom logo, complete footer (completed 2026-03-11)
 - [x] **Phase 21: Netflix Rows Homepage** - Horizontal scroll rows with smart categorization (completed 2026-03-11)
-- [ ] **Phase 22: City Search & Map Fixes** - Autocomplete search bar, radius slider, fix map bugs
+- [x] **Phase 22: City Search & Map Fixes** - Autocomplete search bar, radius slider, fix map bugs (completed 2026-03-11)
 - [ ] **Phase 23: Scraping Completeness** - Extract complete info from sources
 
 ## Phase Details
@@ -172,7 +172,7 @@ Plans:
 6. Dedicated Mappa page displays filter controls at top allowing users to refine visible sagre
 7. No Nominatim API calls occur during autocomplete typing (IP ban prevention)
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 22-01-PLAN.md — Food type SVG icons: FoodIcon component + SagraCard overlay + homepage row title icons
@@ -223,5 +223,5 @@ Plans:
 | 19. Image Quality Foundation | v1.4 | 2/2 | Complete | 2026-03-11 |
 | 20. Layout & Branding | v1.4 | 2/2 | Complete | 2026-03-11 |
 | 21. Netflix Rows Homepage | v1.4 | 1/1 | Complete | 2026-03-11 |
-| 22. City Search & Map Fixes | 2/3 | In Progress|  | - |
+| 22. City Search & Map Fixes | 3/3 | Complete   | 2026-03-11 | - |
 | 23. Scraping Completeness | v1.4 | 0/? | Not started | - |
