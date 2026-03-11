@@ -32,8 +32,8 @@ Requirements for v1.4 "Esperienza Completa". Each maps to roadmap phases.
 
 ### Map & Search
 
-- [ ] **MAP-01**: Cerca page map view works correctly (fix nuqs/map state sync issue)
-- [ ] **MAP-02**: Dedicated Mappa page has filter controls at top (reuse SearchFilters)
+- [x] **MAP-01**: Cerca page map view works correctly (fix nuqs/map state sync issue)
+- [x] **MAP-02**: Dedicated Mappa page has filter controls at top (reuse SearchFilters)
 
 ### Scraping
 
@@ -88,8 +88,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BRAND-03 | Phase 20 | Complete |
 | HOME-01 | Phase 21 | Complete |
 | HOME-02 | Phase 22 | Pending |
-| MAP-01 | Phase 22 | Pending |
-| MAP-02 | Phase 22 | Pending |
+| MAP-01 | Phase 22 | Complete |
+| MAP-02 | Phase 22 | Complete |
 | SCRAPE-01 | Phase 23 | Pending |
 
 **Coverage:**
