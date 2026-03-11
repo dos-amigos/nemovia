@@ -6,7 +6,13 @@ import { MapPin, Calendar, UtensilsCrossed } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FadeImage } from "@/components/animations/FadeImage";
 import { formatDateRange } from "@/lib/utils";
+import { VENETO_PROVINCES } from "@/lib/constants/veneto";
 import type { SagraCardData } from "@/lib/queries/types";
+
+/** Map full province name → 2-letter code for dedup check */
+const PROVINCE_CODES: Record<string, string> = Object.fromEntries(
+  VENETO_PROVINCES.map((p) => [p.name, p.code]),
+);
 
 interface SagraCardProps {
   sagra: SagraCardData;
@@ -53,10 +59,14 @@ export function SagraCard({ sagra }: SagraCardProps) {
             <MapPin className="h-3.5 w-3.5 shrink-0" />
             <span className="line-clamp-1">
               {sagra.location_text}
-              {sagra.province &&
-                !sagra.location_text?.includes(`(${sagra.province})`) &&
-                !sagra.location_text?.toLowerCase().includes(sagra.province.toLowerCase()) &&
-                ` (${sagra.province})`}
+              {sagra.province && (() => {
+                const loc = sagra.location_text ?? "";
+                const code = PROVINCE_CODES[sagra.province] ?? "";
+                // Skip if location already has code like "(RO)" or "(VR)" or full name
+                if (loc.includes(`(${code})`) || loc.includes(`(${sagra.province})`)) return null;
+                if (loc.toLowerCase().includes(sagra.province.toLowerCase())) return null;
+                return ` (${code})`;
+              })()}
             </span>
           </div>
           <div className="flex items-center gap-1 text-white/70 text-xs mt-0.5">

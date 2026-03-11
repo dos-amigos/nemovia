@@ -13,13 +13,7 @@ interface ScrollRowProps {
 export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const dragState = useRef({
-    isDown: false,
-    startX: 0,
-    scrollLeft: 0,
-    moved: false,
-    animId: 0,
-  });
+  const drag = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
 
   const scroll = (direction: "left" | "right") => {
     scrollRef.current?.scrollBy({
@@ -28,70 +22,53 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
     });
   };
 
-  // --- Mouse drag scrolling for desktop (smooth, no snap during drag) ---
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
+  // --- Mouse drag (desktop only — touch uses native scroll) ---
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    // Only handle mouse, not touch (touch has native momentum)
+    if (e.pointerType !== "mouse") return;
     const el = scrollRef.current;
     if (!el) return;
-    // Disable snap during drag for fluid motion
-    el.style.scrollSnapType = "none";
-    dragState.current = {
-      isDown: true,
-      startX: e.clientX,
-      scrollLeft: el.scrollLeft,
-      moved: false,
-      animId: 0,
-    };
+    el.setPointerCapture(e.pointerId);
+    drag.current = { active: true, startX: e.clientX, scrollLeft: el.scrollLeft, moved: false };
     setIsDragging(true);
   }, []);
 
-  const onMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!dragState.current.isDown) return;
-    e.preventDefault();
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!drag.current.active || e.pointerType !== "mouse") return;
     const el = scrollRef.current;
     if (!el) return;
-    const dx = e.clientX - dragState.current.startX;
-    if (Math.abs(dx) > 5) dragState.current.moved = true;
-    el.scrollLeft = dragState.current.scrollLeft - dx;
+    const dx = e.clientX - drag.current.startX;
+    if (Math.abs(dx) > 3) drag.current.moved = true;
+    el.scrollLeft = drag.current.scrollLeft - dx;
   }, []);
 
-  const stopDrag = useCallback(() => {
-    if (!dragState.current.isDown) return;
-    dragState.current.isDown = false;
-    const el = scrollRef.current;
-    if (el) {
-      // Re-enable snap after drag ends
-      el.style.scrollSnapType = "";
-    }
+  const onPointerUp = useCallback((e: React.PointerEvent) => {
+    if (!drag.current.active || e.pointerType !== "mouse") return;
+    drag.current.active = false;
     setTimeout(() => setIsDragging(false), 50);
   }, []);
 
-  // Cleanup: if mouse leaves window mid-drag
-  useEffect(() => {
-    const handleUp = () => stopDrag();
-    window.addEventListener("mouseup", handleUp);
-    return () => window.removeEventListener("mouseup", handleUp);
-  }, [stopDrag]);
-
   return (
     <div className="group relative">
-      {/* Scrollable container */}
+      {/* Scrollable container — snap only on touch (mobile), not desktop */}
       <div
         ref={scrollRef}
         role="region"
         tabIndex={0}
         aria-label={ariaLabel}
-        className={`scrollbar-hide flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 pl-4 sm:pl-6 lg:pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] scroll-pl-4 sm:scroll-pl-6 lg:scroll-pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] ${isDragging ? "cursor-grabbing select-none" : "cursor-grab"}`}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={stopDrag}
-        onMouseLeave={stopDrag}
+        className={`scrollbar-hide flex gap-3 overflow-x-auto pb-2 pl-4 sm:pl-6 lg:pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] snap-x snap-mandatory lg:snap-none scroll-pl-4 sm:scroll-pl-6 ${isDragging ? "cursor-grabbing select-none" : "lg:cursor-grab"}`}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        style={{ touchAction: "pan-x" }}
       >
         {sagre.map((sagra) => (
           <div
             key={sagra.id}
             className="w-[75vw] flex-shrink-0 snap-start sm:w-[45vw] lg:w-[280px]"
             onClickCapture={(e) => {
-              if (dragState.current.moved) {
+              if (drag.current.moved) {
                 e.preventDefault();
                 e.stopPropagation();
               }
