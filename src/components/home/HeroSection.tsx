@@ -9,7 +9,7 @@ export function HeroSection() {
 
   return (
     <FadeIn>
-      <section className="relative h-[280px] overflow-hidden sm:h-[340px] lg:h-[400px]">
+      <section className="relative mx-4 h-[280px] overflow-hidden rounded-2xl sm:h-[340px] lg:mx-6 lg:h-[400px]">
         <Image
           src={hero.url}
           alt="Sagre del Veneto"
