@@ -62,7 +62,7 @@ Full details: [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
 ### v1.4 Esperienza Completa (Phases 18-23) — IN PROGRESS
 
 - [x] **Phase 18: Data Pipeline Restoration** - Restore event count to 100+, fix Veneto gating, filter non-sagre (completed 2026-03-10)
-- [x] **Phase 19: Image Quality Foundation** - Unsplash fallbacks for cards + photo hero (completed 2026-03-11)
+- [x] **Phase 19: Image Quality Foundation** - Unsplash fallbacks for cards + photo hero (completed 2026-03-11)
 - [ ] **Phase 20: Layout & Branding** - Full-width layout, custom logo, complete footer
 - [ ] **Phase 21: Netflix Rows Homepage** - Horizontal scroll rows with smart categorization
 - [ ] **Phase 22: City Search & Map Fixes** - Autocomplete search bar, radius slider, fix map bugs
@@ -127,7 +127,11 @@ Plans:
 3. Footer displays on every page with credits "Fatto con cuore in Veneto" and Unsplash attribution
 4. Desktop layout at 1920px and 2560px maintains visual hierarchy without text expanding beyond readable width
 
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 20-01-PLAN.md — Layout restructure: full-width-by-default main, remove breakout hacks, add containment to all pages
+- [ ] 20-02-PLAN.md — Custom SVG logo in TopNav, professional footer with credits and Unsplash attribution
 
 ---
 
@@ -205,9 +209,9 @@ Plans:
 | 15. Deduplication & Classification | v1.3 | 2/2 | Complete | 2026-03-10 |
 | 16. Design System Foundation | v1.3 | 2/2 | Complete | 2026-03-10 |
 | 17. Visual Effects, Layout & Performance | v1.3 | 3/3 | Complete | 2026-03-10 |
-| 18. Data Pipeline Restoration | 3/3 | Complete   | 2026-03-10 | - |
-| 19. Image Quality Foundation | 2/2 | Complete    | 2026-03-11 | - |
-| 20. Layout & Branding | v1.4 | 0/? | Not started | - |
+| 18. Data Pipeline Restoration | v1.4 | 3/3 | Complete | 2026-03-10 |
+| 19. Image Quality Foundation | v1.4 | 2/2 | Complete | 2026-03-11 |
+| 20. Layout & Branding | v1.4 | 0/2 | Planned | - |
 | 21. Netflix Rows Homepage | v1.4 | 0/? | Not started | - |
 | 22. City Search & Map Fixes | v1.4 | 0/? | Not started | - |
 | 23. Scraping Completeness | v1.4 | 0/? | Not started | - |
