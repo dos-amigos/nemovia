@@ -3,20 +3,20 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Esperienza Completa
 status: executing
-stopped_at: "Completed 18-03-PLAN.md"
-last_updated: "2026-03-10T17:17:57Z"
-last_activity: 2026-03-10 -- Completed 18-03 itinerarinelgusto Source Investigation
+stopped_at: "Completed 19-01-PLAN.md"
+last_updated: "2026-03-11T10:24:45Z"
+last_activity: 2026-03-11 -- Completed 19-01 Unsplash Integration Foundation
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 17
+  total_plans: 4
+  completed_plans: 4
+  percent: 25
 ---
 
 # Project State: Nemovia v1.4
 
-**Last updated**: 2026-03-10
+**Last updated**: 2026-03-11
 **Current milestone**: v1.4 "Esperienza Completa"
 
 ## Project Reference
@@ -27,14 +27,14 @@ progress:
 
 ## Current Position
 
-**Phase**: 18 - Data Pipeline Restoration (COMPLETE)
-**Plan**: 3/3 complete
-**Status**: Phase 18 complete, ready for Phase 19
-**Progress**: 1/6 phases complete (17%)
+**Phase**: 19 - Image Quality Foundation (IN PROGRESS)
+**Plan**: 1/2 complete
+**Status**: Plan 19-01 complete, ready for Plan 19-02
+**Progress**: 1/6 phases complete (25%)
 
 ```
-v1.4 Progress: [========                                          ] 17%
-Phase 18:      [==================================================] 100%
+v1.4 Progress: [============                                      ] 25%
+Phase 19:      [=========================                         ] 50%
 ```
 
 ## Performance Metrics
@@ -43,9 +43,9 @@ Phase 18:      [==================================================] 100%
 
 **Timeline**: Started 2026-03-10
 **Phases complete**: 1/6
-**Plans complete**: 3/3 (Phase 18)
-**Commits**: 9
-**LOC delta**: +280/-3
+**Plans complete**: 4 (Phase 18: 3, Phase 19: 1/2)
+**Commits**: 12
+**LOC delta**: +528/-10
 
 ### Previous Milestone: v1.3 (Shipped 2026-03-10)
 
@@ -60,6 +60,13 @@ Phase 18:      [==================================================] 100%
 ## Accumulated Context
 
 ### Recent Decisions
+
+**19-01 Unsplash Integration Foundation (2026-03-11)**
+- **Decision**: Hero images use UTM params on both image URL and photographer URL for Unsplash attribution compliance
+- **Decision**: TAG_QUERIES inline copy in Edge Function follows established pattern (Deno cannot import from src/)
+- **Decision**: Rate limit check at X-Ratelimit-Remaining < 5 preserves budget for next run
+- **Decision**: Credit stored as "Name|profile_url" pipe-delimited format for simple parsing
+- **Decision**: Download tracking uses fire-and-forget pattern to avoid blocking pipeline
 
 **18-03 itinerarinelgusto Source (2026-03-10)**
 - **Decision**: Selector .row.tile.post.pad verified from live HTML (research suggested .row.post.pad)
@@ -99,6 +106,12 @@ Phase 18:      [==================================================] 100%
 
 ### Active TODOs
 
+**Phase 19 In Progress**
+- [x] Unsplash utility library with hero rotation, credit parser, tag queries (19-01)
+- [x] SQL migration 012 for image_credit column (19-01)
+- [x] Pass 3 in enrich-sagre for Unsplash image assignment (19-01)
+- [ ] UI components: hero image, attribution display, image optimization (19-02)
+
 **Phase 18 Complete**
 - [x] Investigate scraper_logs and scraper_sources for event count drop root cause (18-01)
 - [x] Plan diagnostic queries for filter rejection rates (18-01)
@@ -106,6 +119,13 @@ Phase 18:      [==================================================] 100%
 - [x] Plan heuristic filters for non-sagre detection (18-01)
 - [x] Plan province code normalization SQL migration (18-02)
 - [x] Investigate itinerarinelgusto.it and add scraper source (18-03)
+
+**User Action Required (Phase 19 Deployment)**
+- [ ] Register at unsplash.com/developers, create application, get Access Key
+- [ ] Add UNSPLASH_ACCESS_KEY to .env locally
+- [ ] Add UNSPLASH_ACCESS_KEY to Supabase Edge Function secrets (enrich-sagre)
+- [ ] Run SQL migration 012 (image_credit column) in Supabase SQL Editor
+- [ ] Deploy updated enrich-sagre Edge Function via Supabase Dashboard
 
 **User Action Required (Phase 18 Deployment)**
 - [ ] Run SQL migration 009 (filter recalibration) in Supabase SQL Editor
@@ -122,7 +142,7 @@ Phase 18:      [==================================================] 100%
 
 ### Blockers
 
-**None** -- Phase 18 complete, ready for Phase 19 planning.
+**None** -- Plan 19-01 complete, ready for Plan 19-02.
 
 ### Technical Notes
 
@@ -171,9 +191,9 @@ cat .planning/REQUIREMENTS.md
 **Current milestone**: v1.4 "Esperienza Completa"
 **Milestone goal**: Transform Nemovia from prototype to complete product -- Netflix scroll rows, hero photographico, city search con raggio, full-width layout, logo, footer, e fix critici su dati e UX.
 
-**Phase 18 status**: COMPLETE (3/3 plans). Filter recalibration, province normalization, and itinerarinelgusto source all implemented. SQL migrations 009-011 and Edge Function deployments pending user action.
+**Phase 19 status**: IN PROGRESS (1/2 plans). Unsplash utility library, SQL migration 012, and enrich-sagre Pass 3 complete. Plan 19-02 (UI components) pending.
 
-**Next action**: Deploy Phase 18 artifacts (SQL migrations + Edge Functions), then begin Phase 19 (Images).
+**Next action**: Execute Plan 19-02 (Unsplash UI components: hero image display, attribution, image optimization).
 
 ---
 

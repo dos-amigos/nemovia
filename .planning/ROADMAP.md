@@ -106,7 +106,7 @@ Plans:
 3. Homepage hero displays a stunning full-bleed food photograph with white text "SCOPRI LE SAGRE DEL VENETO"
 4. Unsplash attribution appears in footer for all displayed Unsplash images
 
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 19-01-PLAN.md — Unsplash utility library, DB migration, and enrich-sagre Pass 3 for pipeline-time image assignment
@@ -206,7 +206,7 @@ Plans:
 | 16. Design System Foundation | v1.3 | 2/2 | Complete | 2026-03-10 |
 | 17. Visual Effects, Layout & Performance | v1.3 | 3/3 | Complete | 2026-03-10 |
 | 18. Data Pipeline Restoration | 3/3 | Complete   | 2026-03-10 | - |
-| 19. Image Quality Foundation | v1.4 | 0/2 | Planned | - |
+| 19. Image Quality Foundation | 1/2 | In Progress|  | - |
 | 20. Layout & Branding | v1.4 | 0/? | Not started | - |
 | 21. Netflix Rows Homepage | v1.4 | 0/? | Not started | - |
 | 22. City Search & Map Fixes | v1.4 | 0/? | Not started | - |
