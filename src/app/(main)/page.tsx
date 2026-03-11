@@ -10,6 +10,7 @@ import { QuickFilters } from "@/components/home/QuickFilters";
 import { ProvinceSection } from "@/components/home/ProvinceSection";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Calendar, Ticket, MapPin, ChefHat } from "lucide-react";
+import type { SagraCardData } from "@/lib/queries/types";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -17,60 +18,87 @@ export const metadata: Metadata = {
     "Scopri le sagre ed eventi gastronomici del Veneto questo weekend",
 };
 
+/** Tags too generic to be a standalone row — skip these */
+const SKIP_TAGS = new Set([
+  "Prodotti Tipici",
+  "Cucina Tradizionale",
+  "Gastronomia",
+  "Specialità Locali",
+  "Prodotti Locali",
+]);
+
+const MIN_ROW = 3;
+const MAX_PROVINCE_ROWS = 3;
+const MAX_FOOD_ROWS = 4;
+
 export default async function HomePage() {
   const [weekendSagre, allActive, provinceCounts] = await Promise.all([
     getWeekendSagre(12),
-    getActiveSagre(80),
+    getActiveSagre(120),
     getProvinceCounts(),
   ]);
 
-  // Empty state: no data at all
   const hasAnyData = weekendSagre.length > 0 || allActive.length > 0;
 
   // --- Deduplication: build rows sequentially, tracking shown IDs ---
   const shown = new Set<string>();
 
-  // Row 1: Weekend sagre (first priority)
-  for (const s of weekendSagre) {
-    shown.add(s.id);
+  function takeUnshown(
+    source: SagraCardData[],
+    predicate: (s: SagraCardData) => boolean,
+    limit = 12,
+  ): SagraCardData[] {
+    const result: SagraCardData[] = [];
+    for (const s of source) {
+      if (shown.has(s.id) || !predicate(s)) continue;
+      result.push(s);
+      if (result.length >= limit) break;
+    }
+    for (const s of result) shown.add(s.id);
+    return result;
   }
 
-  // Row 2: Gratis sagre (excluding already shown)
-  const gratisSagre = allActive
-    .filter((s) => s.is_free === true && !shown.has(s.id))
-    .slice(0, 12);
-  for (const s of gratisSagre) {
-    shown.add(s.id);
+  // Row 1: Weekend
+  for (const s of weekendSagre) shown.add(s.id);
+
+  // Row 2: Gratis
+  const gratisSagre = takeUnshown(allActive, (s) => s.is_free === true);
+
+  // Province rows: top 2-3 provinces with enough sagre
+  const provinceRows: { name: string; sagre: SagraCardData[] }[] = [];
+  for (const pc of provinceCounts) {
+    if (provinceRows.length >= MAX_PROVINCE_ROWS) break;
+    const sagre = takeUnshown(allActive, (s) => s.province === pc.province);
+    if (sagre.length >= MIN_ROW) {
+      provinceRows.push({ name: pc.province, sagre });
+    }
   }
 
-  // Row 3: Top province sagre (excluding already shown)
-  const topProvinceName = provinceCounts[0]?.province;
-  const provinceSagre = topProvinceName
-    ? allActive
-        .filter((s) => s.province === topProvinceName && !shown.has(s.id))
-        .slice(0, 12)
-    : [];
-  for (const s of provinceSagre) {
-    shown.add(s.id);
-  }
-
-  // Row 4: Most common food tag with >= 3 remaining items
-  const tagCounts = new Map<string, number>();
+  // Food tag rows: multiple specific tags (skip generic ones)
+  const tagCandidates = new Map<string, number>();
   for (const s of allActive) {
     if (shown.has(s.id)) continue;
     for (const tag of s.food_tags ?? []) {
-      tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+      if (SKIP_TAGS.has(tag)) continue;
+      tagCandidates.set(tag, (tagCandidates.get(tag) ?? 0) + 1);
     }
   }
-  const topTag = [...tagCounts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .find(([, count]) => count >= 3)?.[0];
+  const sortedTags = [...tagCandidates.entries()]
+    .filter(([, count]) => count >= MIN_ROW)
+    .sort((a, b) => b[1] - a[1]);
 
-  const foodSagre = topTag
-    ? allActive
-        .filter((s) => s.food_tags?.includes(topTag) && !shown.has(s.id))
-        .slice(0, 12)
-    : [];
+  const foodRows: { tag: string; sagre: SagraCardData[] }[] = [];
+  for (const [tag] of sortedTags) {
+    if (foodRows.length >= MAX_FOOD_ROWS) break;
+    const sagre = takeUnshown(allActive, (s) =>
+      (s.food_tags ?? []).includes(tag),
+    );
+    if (sagre.length >= MIN_ROW) {
+      foodRows.push({ tag, sagre });
+    }
+  }
+
+  let delay = 0.1;
 
   return (
     <div>
@@ -96,33 +124,39 @@ export default async function HomePage() {
             icon={<Calendar className="h-5 w-5 text-primary" />}
             sagre={weekendSagre}
             viewAllHref="/cerca"
-            delay={0.1}
+            delay={(delay += 0.05)}
           />
           <ScrollRowSection
             title="Gratis"
             icon={<Ticket className="h-5 w-5 text-accent" />}
             sagre={gratisSagre}
             viewAllHref="/cerca?gratis=true"
-            delay={0.15}
+            delay={(delay += 0.05)}
           />
-          {topProvinceName && (
+
+          {/* Province rows */}
+          {provinceRows.map((row) => (
             <ScrollRowSection
-              title={`A ${topProvinceName}`}
+              key={row.name}
+              title={`A ${row.name}`}
               icon={<MapPin className="h-5 w-5 text-primary" />}
-              sagre={provinceSagre}
-              viewAllHref={`/cerca?provincia=${topProvinceName}`}
-              delay={0.2}
+              sagre={row.sagre}
+              viewAllHref={`/cerca?provincia=${row.name}`}
+              delay={(delay += 0.05)}
             />
-          )}
-          {topTag && (
+          ))}
+
+          {/* Food type rows */}
+          {foodRows.map((row) => (
             <ScrollRowSection
-              title={`Sagre di ${topTag}`}
+              key={row.tag}
+              title={`Sagre di ${row.tag}`}
               icon={<ChefHat className="h-5 w-5 text-accent" />}
-              sagre={foodSagre}
-              viewAllHref={`/cerca?cucina=${topTag}`}
-              delay={0.25}
+              sagre={row.sagre}
+              viewAllHref={`/cerca?cucina=${row.tag}`}
+              delay={(delay += 0.05)}
             />
-          )}
+          ))}
         </div>
       )}
 
