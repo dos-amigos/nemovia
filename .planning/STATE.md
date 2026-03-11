@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Esperienza Completa
 status: executing
-stopped_at: "Completed 19-01-PLAN.md"
-last_updated: "2026-03-11T10:24:45Z"
-last_activity: 2026-03-11 -- Completed 19-01 Unsplash Integration Foundation
+stopped_at: "Completed 19-02-PLAN.md"
+last_updated: "2026-03-11T10:42:32Z"
+last_activity: 2026-03-11 -- Completed 19-02 Unsplash Hero & Attribution UI
 progress:
   total_phases: 6
-  completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
-  percent: 25
+  completed_phases: 2
+  total_plans: 5
+  completed_plans: 5
+  percent: 33
 ---
 
 # Project State: Nemovia v1.4
@@ -27,14 +27,14 @@ progress:
 
 ## Current Position
 
-**Phase**: 19 - Image Quality Foundation (IN PROGRESS)
-**Plan**: 1/2 complete
-**Status**: Plan 19-01 complete, ready for Plan 19-02
-**Progress**: 1/6 phases complete (25%)
+**Phase**: 19 - Image Quality Foundation (COMPLETE)
+**Plan**: 2/2 complete
+**Status**: Phase 19 complete, ready for Phase 20 planning
+**Progress**: 2/6 phases complete (33%)
 
 ```
-v1.4 Progress: [============                                      ] 25%
-Phase 19:      [=========================                         ] 50%
+v1.4 Progress: [================                                  ] 33%
+Phase 19:      [==================================================] 100%
 ```
 
 ## Performance Metrics
@@ -42,10 +42,10 @@ Phase 19:      [=========================                         ] 50%
 ### Milestone v1.4 (In Progress)
 
 **Timeline**: Started 2026-03-10
-**Phases complete**: 1/6
-**Plans complete**: 4 (Phase 18: 3, Phase 19: 1/2)
-**Commits**: 12
-**LOC delta**: +528/-10
+**Phases complete**: 2/6
+**Plans complete**: 5 (Phase 18: 3, Phase 19: 2/2)
+**Commits**: 15
+**LOC delta**: +614/-36
 
 ### Previous Milestone: v1.3 (Shipped 2026-03-10)
 
@@ -60,6 +60,11 @@ Phase 19:      [=========================                         ] 50%
 ## Accumulated Context
 
 ### Recent Decisions
+
+**19-02 Unsplash Hero & Attribution UI (2026-03-11)**
+- **Decision**: Server component hero (no "use client") for static rendering with next/image priority for LCP
+- **Decision**: Rounded corners (rounded-2xl) on hero per user visual feedback at checkpoint
+- **Decision**: image_credit added to SAGRA_CARD_FIELDS constant to fix runtime type mismatch
 
 **19-01 Unsplash Integration Foundation (2026-03-11)**
 - **Decision**: Hero images use UTM params on both image URL and photographer URL for Unsplash attribution compliance
@@ -106,11 +111,11 @@ Phase 19:      [=========================                         ] 50%
 
 ### Active TODOs
 
-**Phase 19 In Progress**
+**Phase 19 Complete**
 - [x] Unsplash utility library with hero rotation, credit parser, tag queries (19-01)
 - [x] SQL migration 012 for image_credit column (19-01)
 - [x] Pass 3 in enrich-sagre for Unsplash image assignment (19-01)
-- [ ] UI components: hero image, attribution display, image optimization (19-02)
+- [x] UI components: hero image, attribution display (19-02)
 
 **Phase 18 Complete**
 - [x] Investigate scraper_logs and scraper_sources for event count drop root cause (18-01)
@@ -142,7 +147,7 @@ Phase 19:      [=========================                         ] 50%
 
 ### Blockers
 
-**None** -- Plan 19-01 complete, ready for Plan 19-02.
+**None** -- Phase 19 complete, ready for Phase 20 planning.
 
 ### Technical Notes
 
@@ -169,9 +174,9 @@ Phase 19:      [=========================                         ] 50%
 
 ### How to Resume Work
 
-**If starting Phase 19 planning:**
+**If starting Phase 20 planning:**
 ```bash
-/gsd:plan-phase 19
+/gsd:plan-phase 20
 ```
 
 **If checking project status:**
@@ -191,9 +196,9 @@ cat .planning/REQUIREMENTS.md
 **Current milestone**: v1.4 "Esperienza Completa"
 **Milestone goal**: Transform Nemovia from prototype to complete product -- Netflix scroll rows, hero photographico, city search con raggio, full-width layout, logo, footer, e fix critici su dati e UX.
 
-**Phase 19 status**: IN PROGRESS (1/2 plans). Unsplash utility library, SQL migration 012, and enrich-sagre Pass 3 complete. Plan 19-02 (UI components) pending.
+**Phase 19 status**: COMPLETE (2/2 plans). Full-bleed Unsplash hero, detail page attribution, and pipeline integration all done.
 
-**Next action**: Execute Plan 19-02 (Unsplash UI components: hero image display, attribution, image optimization).
+**Next action**: Plan Phase 20 (Layout & Branding: custom logo, footer, full-width layout).
 
 ---
 

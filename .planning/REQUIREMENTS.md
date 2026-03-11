@@ -17,7 +17,7 @@ Requirements for v1.4 "Esperienza Completa". Each maps to roadmap phases.
 ### Images
 
 - [x] **IMG-01**: Missing or low-res images replaced with themed Unsplash photos (pre-fetched at pipeline time, not runtime)
-- [ ] **IMG-02**: Hero section displays full-bleed Unsplash food photo with white text overlay "SCOPRI LE SAGRE DEL VENETO"
+- [x] **IMG-02**: Hero section displays full-bleed Unsplash food photo with white text overlay "SCOPRI LE SAGRE DEL VENETO"
 
 ### Homepage
 
@@ -82,7 +82,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-04 | Phase 18 | Complete |
 | SCRAPE-02 | Phase 18 | Complete |
 | IMG-01 | Phase 19 | Complete |
-| IMG-02 | Phase 19 | Pending |
+| IMG-02 | Phase 19 | Complete |
 | BRAND-01 | Phase 20 | Pending |
 | BRAND-02 | Phase 20 | Pending |
 | BRAND-03 | Phase 20 | Pending |
