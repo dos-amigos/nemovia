@@ -13,6 +13,7 @@ import { ScrollProgress } from "@/components/animations/ScrollProgress";
 import { ParallaxHero } from "@/components/animations/ParallaxHero";
 import { ScrollReveal } from "@/components/animations/ScrollReveal";
 import { formatDateRange } from "@/lib/utils";
+import { parseImageCredit } from "@/lib/unsplash";
 import type { Sagra } from "@/types/database";
 import BackButton from "./BackButton";
 import DirectionsButton from "./DirectionsButton";
@@ -29,6 +30,7 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
   const lng = hasLocation ? sagra.location!.coordinates[0] : null;
 
   const description = sagra.enhanced_description ?? sagra.description;
+  const credit = parseImageCredit(sagra.image_credit);
   const hasTags =
     (sagra.food_tags && sagra.food_tags.length > 0) ||
     (sagra.feature_tags && sagra.feature_tags.length > 0);
@@ -59,6 +61,30 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
             )}
             <BackButton />
           </ParallaxHero>
+
+          {/* Unsplash photographer attribution */}
+          {credit && (
+            <div className="text-[11px] text-muted-foreground/60 -mt-4 px-1">
+              Photo by{" "}
+              <a
+                href={credit.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-muted-foreground"
+              >
+                {credit.name}
+              </a>{" "}
+              on{" "}
+              <a
+                href="https://unsplash.com/?utm_source=nemovia&utm_medium=referral"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-muted-foreground"
+              >
+                Unsplash
+              </a>
+            </div>
+          )}
 
           {/* Mini map */}
           {hasLocation && lat !== null && lng !== null && (
