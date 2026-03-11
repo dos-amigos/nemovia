@@ -1,8 +1,9 @@
 // =============================================================================
-// enrich-sagre — Phase 3: Data Enrichment Edge Function
-// Runs two sequential passes:
-//   1. Geocoding pass: pending_geocode → pending_llm (or geocode_failed)
-//   2. LLM enrichment pass: pending_llm | geocode_failed → enriched
+// enrich-sagre — Data Enrichment Edge Function
+// Runs three sequential passes:
+//   1. Geocoding pass: pending_geocode -> pending_llm (or geocode_failed)
+//   2. LLM enrichment pass: pending_llm | geocode_failed -> enriched
+//   3. Unsplash image pass: enriched with null image_url -> assigns Unsplash fallback
 // Deploy to Supabase Dashboard (no Supabase CLI per project pattern)
 // =============================================================================
 
@@ -13,6 +14,25 @@ const GEOCODE_LIMIT = 30;   // max rows to geocode per invocation (fits 50s time
 const LLM_LIMIT = 200;      // max sagre to enrich per invocation (25 batches of 8)
 const SLEEP_MS = 1100;      // 1.1s between Nominatim calls (policy: 1 req/sec)
 const VENETO_VIEWBOX = "10.62,44.79,13.10,46.68"; // Nominatim viewbox: lon_min,lat_min,lon_max,lat_max
+
+// Pass 3: Unsplash image assignment
+const UNSPLASH_ACCESS_KEY = Deno.env.get("UNSPLASH_ACCESS_KEY");
+const UNSPLASH_LIMIT = 30;      // max images per run (within 50 req/hr demo tier)
+const UNSPLASH_SLEEP_MS = 2000;  // 2s between calls (courtesy + safety margin)
+
+// Inline copy of TAG_QUERIES from src/lib/unsplash.ts
+// Edge Functions cannot import from the Next.js src/ directory.
+const TAG_QUERIES: Record<string, string> = {
+  "Pesce": "italian seafood festival",
+  "Carne": "italian meat grill festival",
+  "Vino": "italian wine festival",
+  "Formaggi": "italian cheese market",
+  "Funghi": "mushroom food festival",
+  "Radicchio": "italian vegetable market",
+  "Dolci": "italian dessert pastry",
+  "Prodotti Tipici": "italian food market",
+};
+const DEFAULT_UNSPLASH_QUERY = "italian sagra food festival";
 
 // =============================================================================
 // Geocoding helpers (copied verbatim from src/lib/enrichment/geocode.ts)
@@ -383,6 +403,113 @@ async function runLLMPass(
 }
 
 // =============================================================================
+// Pass 3: Unsplash image assignment — enriched with null image_url → image assigned
+// =============================================================================
+
+interface SagraForUnsplash {
+  id: string;
+  food_tags: string[] | null;
+}
+
+async function runUnsplashPass(
+  supabase: SupabaseClient
+): Promise<number> {
+  // Graceful skip when UNSPLASH_ACCESS_KEY is not configured
+  if (!UNSPLASH_ACCESS_KEY) {
+    console.log("UNSPLASH_ACCESS_KEY not set, skipping Unsplash pass");
+    return 0;
+  }
+
+  let assigned = 0;
+
+  const { data: rows } = await supabase
+    .from("sagre")
+    .select("id, food_tags")
+    .is("image_url", null)
+    .eq("is_active", true)
+    .eq("status", "enriched")
+    .order("created_at", { ascending: true })
+    .limit(UNSPLASH_LIMIT);
+
+  if (!rows?.length) return 0;
+
+  for (const sagra of rows as SagraForUnsplash[]) {
+    // Determine search query from first food tag, fallback to default
+    const firstTag = sagra.food_tags?.[0];
+    const query = (firstTag && TAG_QUERIES[firstTag]) || DEFAULT_UNSPLASH_QUERY;
+
+    try {
+      const params = new URLSearchParams({
+        query,
+        orientation: "landscape",
+        per_page: "10",
+        content_filter: "high",
+      });
+
+      const resp = await fetch(
+        `https://api.unsplash.com/search/photos?${params}`,
+        {
+          headers: {
+            "Authorization": `Client-ID ${UNSPLASH_ACCESS_KEY}`,
+            "Accept-Version": "v1",
+          },
+        }
+      );
+
+      // On non-OK response (especially 403 rate limit), stop immediately
+      if (!resp.ok) {
+        console.error(`Unsplash API error: HTTP ${resp.status}`);
+        break;
+      }
+
+      // Check rate limit remaining — stop early to preserve budget
+      const remaining = parseInt(resp.headers.get("X-Ratelimit-Remaining") ?? "50", 10);
+      if (remaining < 5) {
+        console.log(`Unsplash rate limit low (${remaining} remaining), stopping early`);
+        break;
+      }
+
+      const data = await resp.json();
+      const photos = data.results ?? [];
+      if (photos.length === 0) {
+        console.log(`No Unsplash results for query: ${query}`);
+        await sleep(UNSPLASH_SLEEP_MS);
+        continue;
+      }
+
+      // Pick random photo from top 5 results for variety
+      const photo = photos[Math.floor(Math.random() * Math.min(photos.length, 5))];
+
+      // Construct optimized image URL
+      const imageUrl = `${photo.urls.raw}&w=800&h=500&fit=crop&q=80`;
+
+      // Store credit in "Name|profile_url" format with UTM attribution
+      const imageCredit = `${photo.user.name}|${photo.user.links.html}?utm_source=nemovia&utm_medium=referral`;
+
+      // Update sagra with Unsplash image and credit
+      await supabase.from("sagre").update({
+        image_url: imageUrl,
+        image_credit: imageCredit,
+        updated_at: new Date().toISOString(),
+      }).eq("id", sagra.id);
+
+      assigned++;
+
+      // Fire download tracking (Unsplash API requirement) — fire and forget
+      fetch(`${photo.links.download_location}?client_id=${UNSPLASH_ACCESS_KEY}`).catch(() => {});
+
+    } catch (err) {
+      console.error(`Unsplash fetch error for sagra ${sagra.id}:`, err);
+    }
+
+    // Rate limit: 2s between API calls
+    await sleep(UNSPLASH_SLEEP_MS);
+  }
+
+  return assigned;
+}
+
+// =============================================================================
 // Entry point — fire-and-forget pattern: return 200 immediately
 // =============================================================================
 
@@ -414,18 +541,23 @@ async function runEnrichmentPipeline(
   let geocodeFailed = 0;
   let llmEnriched = 0;
   let llmClassified = 0; // non-sagra events deactivated
+  let unsplashAssigned = 0;
   let errorMessage: string | null = null;
 
   try {
-    // Pass 1: Geocoding — status: pending_geocode → pending_llm (or geocode_failed)
+    // Pass 1: Geocoding — status: pending_geocode -> pending_llm (or geocode_failed)
     const geocodeResult = await runGeocodePass(supabase);
     geocoded = geocodeResult.geocoded;
     geocodeFailed = geocodeResult.failed;
 
-    // Pass 2: LLM enrichment — status: pending_llm | geocode_failed → enriched (or classified_non_sagra)
+    // Pass 2: LLM enrichment — status: pending_llm | geocode_failed -> enriched (or classified_non_sagra)
     const llmResult = await runLLMPass(supabase, ai);
     llmEnriched = llmResult.enriched;
     llmClassified = llmResult.classified;
+
+    // Pass 3: Unsplash image assignment — enriched with null image_url -> image assigned
+    const unsplashResult = await runUnsplashPass(supabase);
+    unsplashAssigned = unsplashResult;
   } catch (err) {
     errorMessage = err instanceof Error ? err.message : String(err);
     console.error("Enrichment pipeline error:", errorMessage);
@@ -442,5 +574,5 @@ async function runEnrichmentPipeline(
     completed_at: new Date().toISOString(),
   });
 
-  console.log(`Enrichment complete: geocoded=${geocoded}, geocode_failed=${geocodeFailed}, llm_enriched=${llmEnriched}, classified_non_sagra=${llmClassified}, error=${errorMessage}`);
+  console.log(`Enrichment complete: geocoded=${geocoded}, geocode_failed=${geocodeFailed}, llm_enriched=${llmEnriched}, classified_non_sagra=${llmClassified}, unsplash_assigned=${unsplashAssigned}, error=${errorMessage}`);
 }
