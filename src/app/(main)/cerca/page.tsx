@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { searchSagre, getMapSagre } from "@/lib/queries/sagre";
+import { searchSagre, searchMapSagre } from "@/lib/queries/sagre";
 import { SearchFilters } from "@/components/search/SearchFilters";
 import { ActiveFilters } from "@/components/search/ActiveFilters";
 import { SearchResults } from "@/components/search/SearchResults";
@@ -54,7 +54,7 @@ export default async function CercaPage({
   // Always fetch list results; also fetch map data when in mappa view
   const [sagre, mapSagre] = await Promise.all([
     searchSagre(filters),
-    vista === "mappa" ? getMapSagre() : Promise.resolve([]),
+    vista === "mappa" ? searchMapSagre(filters) : Promise.resolve([]),
   ]);
 
   return (

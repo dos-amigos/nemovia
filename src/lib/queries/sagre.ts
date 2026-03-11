@@ -256,6 +256,131 @@ export async function getProvinceCounts(): Promise<ProvinceCount[]> {
 }
 
 /**
+ * Search sagre for map rendering with optional filters.
+ * Mirrors searchSagre logic but selects MAP_MARKER_FIELDS and returns MapMarkerData[].
+ * When no filters are active, returns all active sagre with location (same as getMapSagre).
+ */
+export async function searchMapSagre(
+  filters: SearchFilters
+): Promise<MapMarkerData[]> {
+  try {
+    const supabase = await createClient();
+    const { provincia, cucina, gratis, da, a, lat, lng, raggio } = filters;
+
+    // Spatial search via PostGIS RPC
+    if (lat != null && lng != null) {
+      const { data, error } = await supabase.rpc("find_nearby_sagre", {
+        user_lat: lat,
+        user_lng: lng,
+        radius_meters: (raggio ?? 30) * 1000,
+        max_results: 200,
+      });
+
+      if (error) {
+        console.error("searchMapSagre RPC error:", error.message);
+        return [];
+      }
+
+      let results = (data ?? []) as Array<Record<string, unknown>>;
+      const today = new Date().toISOString().split("T")[0];
+
+      // Default: hide past events
+      if (!da) {
+        results = results.filter(
+          (s) =>
+            (s.end_date != null && (s.end_date as string) >= today) ||
+            (s.end_date == null &&
+              s.start_date != null &&
+              (s.start_date as string) >= today)
+        );
+      }
+
+      // Apply additional filters in-memory on RPC results
+      if (provincia) {
+        results = results.filter((s) => s.province === provincia);
+      }
+      if (cucina) {
+        results = results.filter((s) =>
+          (s.food_tags as string[] | null)?.includes(cucina)
+        );
+      }
+      if (gratis) {
+        results = results.filter((s) => s.is_free === true);
+      }
+      if (da) {
+        results = results.filter(
+          (s) => s.end_date == null || (s.end_date as string) >= da
+        );
+      }
+      if (a) {
+        results = results.filter(
+          (s) => s.start_date == null || (s.start_date as string) <= a
+        );
+      }
+
+      // Map to MapMarkerData with parsed WKB location
+      const mapped = results
+        .filter((r) => r.location != null)
+        .map((r) => ({
+          ...r,
+          location: parseWKBPoint(r.location as string),
+        })) as MapMarkerData[];
+
+      return deduplicateByTitle(mapped);
+    }
+
+    // Standard query with chained filters
+    const today = new Date().toISOString().split("T")[0];
+
+    let query = supabase
+      .from("sagre")
+      .select(MAP_MARKER_FIELDS)
+      .eq("is_active", true)
+      .not("location", "is", null);
+
+    if (provincia) {
+      query = query.eq("province", provincia);
+    }
+    if (cucina) {
+      query = query.contains("food_tags", [cucina]);
+    }
+    if (gratis) {
+      query = query.eq("is_free", true);
+    }
+    if (da) {
+      query = query.gte("end_date", da);
+    } else {
+      // Default: hide past events
+      query = query.or(
+        `end_date.gte.${today},and(end_date.is.null,start_date.gte.${today})`
+      );
+    }
+    if (a) {
+      query = query.lte("start_date", a);
+    }
+
+    const { data, error } = await query.order("start_date", {
+      ascending: true,
+    });
+
+    if (error) {
+      console.error("searchMapSagre query error:", error.message);
+      return [];
+    }
+
+    const mapped = (data ?? []).map((row) => ({
+      ...row,
+      location: parseWKBPoint(row.location as unknown as string),
+    })) as MapMarkerData[];
+
+    return deduplicateByTitle(mapped);
+  } catch (err) {
+    console.error("searchMapSagre unexpected error:", err);
+    return [];
+  }
+}
+
+/**
  * Fetch all active sagre with non-null location for map rendering.
  * Returns only the lean marker fields needed by MapView.
  */
