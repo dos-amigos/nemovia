@@ -50,6 +50,7 @@ export async function getWeekendSagre(limit = 12): Promise<SagraCardData[]> {
       .from("sagre")
       .select(SAGRA_CARD_FIELDS)
       .eq("is_active", true)
+      .not("province", "is", null)
       .or(`end_date.gte.${today},end_date.is.null`)
       .lte("start_date", nextSunday)
       .order("start_date", { ascending: true })
@@ -81,6 +82,7 @@ export async function getActiveSagre(limit = 80): Promise<SagraCardData[]> {
       .from("sagre")
       .select(SAGRA_CARD_FIELDS)
       .eq("is_active", true)
+      .not("province", "is", null)
       .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${today})`)
       .order("start_date", { ascending: true })
       .limit(limit);

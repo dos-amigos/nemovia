@@ -40,6 +40,24 @@ export default async function HomePage() {
 
   const hasAnyData = weekendSagre.length > 0 || allActive.length > 0;
 
+  // --- Pre-dedup: remove title duplicates from allActive (DB has dupes with different IDs) ---
+  const seenTitles = new Set<string>();
+  const dedupedActive = allActive.filter((s) => {
+    const key = s.title.toLowerCase().trim();
+    if (seenTitles.has(key)) return false;
+    seenTitles.add(key);
+    return true;
+  });
+
+  // Also dedup weekendSagre by title
+  const seenWeekendTitles = new Set<string>();
+  const dedupedWeekend = weekendSagre.filter((s) => {
+    const key = s.title.toLowerCase().trim();
+    if (seenWeekendTitles.has(key)) return false;
+    seenWeekendTitles.add(key);
+    return true;
+  });
+
   // --- Deduplication: build rows sequentially, tracking shown IDs ---
   const shown = new Set<string>();
 
@@ -59,16 +77,16 @@ export default async function HomePage() {
   }
 
   // Row 1: Weekend
-  for (const s of weekendSagre) shown.add(s.id);
+  for (const s of dedupedWeekend) shown.add(s.id);
 
   // Row 2: Gratis
-  const gratisSagre = takeUnshown(allActive, (s) => s.is_free === true);
+  const gratisSagre = takeUnshown(dedupedActive, (s) => s.is_free === true);
 
   // Province rows: top 2-3 provinces with enough sagre
   const provinceRows: { name: string; sagre: SagraCardData[] }[] = [];
   for (const pc of provinceCounts) {
     if (provinceRows.length >= MAX_PROVINCE_ROWS) break;
-    const sagre = takeUnshown(allActive, (s) => s.province === pc.province);
+    const sagre = takeUnshown(dedupedActive, (s) => s.province === pc.province);
     if (sagre.length >= MIN_ROW) {
       provinceRows.push({ name: pc.province, sagre });
     }
@@ -76,7 +94,7 @@ export default async function HomePage() {
 
   // Food tag rows: multiple specific tags (skip generic ones)
   const tagCandidates = new Map<string, number>();
-  for (const s of allActive) {
+  for (const s of dedupedActive) {
     if (shown.has(s.id)) continue;
     for (const tag of s.food_tags ?? []) {
       if (SKIP_TAGS.has(tag)) continue;
@@ -90,7 +108,7 @@ export default async function HomePage() {
   const foodRows: { tag: string; sagre: SagraCardData[] }[] = [];
   for (const [tag] of sortedTags) {
     if (foodRows.length >= MAX_FOOD_ROWS) break;
-    const sagre = takeUnshown(allActive, (s) =>
+    const sagre = takeUnshown(dedupedActive, (s) =>
       (s.food_tags ?? []).includes(tag),
     );
     if (sagre.length >= MIN_ROW) {
@@ -122,7 +140,7 @@ export default async function HomePage() {
           <ScrollRowSection
             title="Questo weekend"
             icon={<Calendar className="h-5 w-5 text-primary" />}
-            sagre={weekendSagre}
+            sagre={dedupedWeekend}
             viewAllHref="/cerca"
             delay={(delay += 0.05)}
           />
