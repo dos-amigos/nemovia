@@ -172,7 +172,7 @@ Plans:
 6. Dedicated Mappa page displays filter controls at top allowing users to refine visible sagre
 7. No Nominatim API calls occur during autocomplete typing (IP ban prevention)
 
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 - [ ] 22-01-PLAN.md — Food type SVG icons: FoodIcon component + SagraCard overlay + homepage row title icons
@@ -223,5 +223,5 @@ Plans:
 | 19. Image Quality Foundation | v1.4 | 2/2 | Complete | 2026-03-11 |
 | 20. Layout & Branding | v1.4 | 2/2 | Complete | 2026-03-11 |
 | 21. Netflix Rows Homepage | v1.4 | 1/1 | Complete | 2026-03-11 |
-| 22. City Search & Map Fixes | 1/3 | In Progress|  | - |
+| 22. City Search & Map Fixes | 2/3 | In Progress|  | - |
 | 23. Scraping Completeness | v1.4 | 0/? | Not started | - |

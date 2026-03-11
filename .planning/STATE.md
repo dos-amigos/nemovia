@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Esperienza Completa
 status: executing
-stopped_at: "Completed 22-03-PLAN.md"
-last_updated: "2026-03-11T15:29:00Z"
-last_activity: 2026-03-11 -- Completed 22-03 Map Filter Sync
+stopped_at: "Completed 22-01-PLAN.md"
+last_updated: "2026-03-11T15:29:33Z"
+last_activity: 2026-03-11 -- Completed 22-01 Food Type Icons
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 11
-  completed_plans: 9
-  percent: 82
+  completed_plans: 10
+  percent: 91
 ---
 
 # Project State: Nemovia v1.4
@@ -28,13 +28,13 @@ progress:
 ## Current Position
 
 **Phase**: 22 - City Search, Map Fixes & Food Icons (IN PROGRESS)
-**Plan**: 1/3 complete (22-03 done; 22-01, 22-02 pending)
-**Status**: Executing Phase 22. Plan 22-03 (Map Filter Sync) complete.
-**Progress**: 4/6 phases complete, 9/11 plans (82%)
+**Plan**: 2/3 complete (22-01 Food Icons, 22-03 Map Filter Sync done; 22-02 pending)
+**Status**: Executing Phase 22. Plans 22-01 and 22-03 complete.
+**Progress**: 4/6 phases complete, 10/11 plans (91%)
 
 ```
-v1.4 Progress: [████████░░] 82%
-Phase 22:      [=================                                 ] 33%
+v1.4 Progress: [█████████░] 91%
+Phase 22:      [==================================                ] 67%
 ```
 
 ## Performance Metrics
@@ -43,9 +43,9 @@ Phase 22:      [=================                                 ] 33%
 
 **Timeline**: Started 2026-03-10
 **Phases complete**: 4/6
-**Plans complete**: 9 (Phase 18: 3, Phase 19: 2/2, Phase 20: 2/2, Phase 21: 1/1, Phase 22: 1/3)
-**Commits**: 24
-**LOC delta**: +1183/-99
+**Plans complete**: 10 (Phase 18: 3, Phase 19: 2/2, Phase 20: 2/2, Phase 21: 1/1, Phase 22: 2/3)
+**Commits**: 27
+**LOC delta**: +1393/-102
 
 ### Previous Milestone: v1.3 (Shipped 2026-03-10)
 
@@ -60,6 +60,13 @@ Phase 22:      [=================                                 ] 33%
 ## Accumulated Context
 
 ### Recent Decisions
+
+**22-01 Food Type Icons (2026-03-11)**
+- **Decision**: Priority-based category selection for multi-tag sagre: carne > pesce > zucca > gnocco > verdura > altro
+- **Decision**: Inline SVG icons with currentColor instead of external icon library for theme compatibility
+- **Decision**: Always show food icon on cards (including altro fallback) for visual consistency
+- **Pattern**: FoodIcon component: tag array in, SVG out, with priority-based resolution
+- **Pattern**: Glass pill overlay for card icons: rounded-full bg-black/40 p-1 backdrop-blur-sm
 
 **22-03 Map Filter Sync (2026-03-11)**
 - **Decision**: searchMapSagre mirrors searchSagre logic with MAP_MARKER_FIELDS -- no code sharing to keep spatial/standard branches independent
@@ -226,9 +233,9 @@ cat .planning/REQUIREMENTS.md
 **Current milestone**: v1.4 "Esperienza Completa"
 **Milestone goal**: Transform Nemovia from prototype to complete product -- Netflix scroll rows, hero photographico, city search con raggio, full-width layout, logo, footer, e fix critici su dati e UX.
 
-**Phase 22 status**: IN PROGRESS (1/3 plans). 22-03 Map Filter Sync complete. 22-01 (Food Icons) and 22-02 (City Search) pending.
+**Phase 22 status**: IN PROGRESS (2/3 plans). 22-01 Food Icons and 22-03 Map Filter Sync complete. 22-02 (City Search) pending.
 
-**Next action**: Execute Phase 22 remaining plans (22-01, 22-02).
+**Next action**: Execute Phase 22 remaining plan (22-02 City Search).
 
 ---
 
