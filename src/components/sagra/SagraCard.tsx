@@ -5,11 +5,12 @@ import * as m from "motion/react-m";
 import { MapPin, Calendar, UtensilsCrossed } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FadeImage } from "@/components/animations/FadeImage";
+import { FoodIcon } from "@/lib/constants/food-icons";
 import { formatDateRange } from "@/lib/utils";
 import { VENETO_PROVINCES } from "@/lib/constants/veneto";
 import type { SagraCardData } from "@/lib/queries/types";
 
-/** Map full province name → 2-letter code for dedup check */
+/** Map full province name -> 2-letter code for dedup check */
 const PROVINCE_CODES: Record<string, string> = Object.fromEntries(
   VENETO_PROVINCES.map((p) => [p.name, p.code]),
 );
@@ -82,6 +83,11 @@ export function SagraCard({ sagra }: SagraCardProps) {
             Gratis
           </Badge>
         )}
+
+        {/* Food type icon positioned bottom-right */}
+        <div className="absolute bottom-2 right-2 rounded-full bg-black/40 p-1 backdrop-blur-sm">
+          <FoodIcon foodTags={sagra.food_tags} className="h-4 w-4 text-white/90" />
+        </div>
       </m.div>
     </Link>
   );
