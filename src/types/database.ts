@@ -12,6 +12,7 @@ export interface Sagra {
   food_tags: string[] | null;
   feature_tags: string[] | null;
   image_url: string | null;
+  image_credit: string | null;
   source_url: string | null;
   is_free: boolean | null;
   price_info: string | null;
