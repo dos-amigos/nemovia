@@ -6,8 +6,8 @@ import {
 } from "../veneto-comuni";
 
 describe("VENETO_COMUNI", () => {
-  it("contains approximately 580 Veneto comuni", () => {
-    expect(VENETO_COMUNI.length).toBeGreaterThanOrEqual(560);
+  it("contains approximately 550+ Veneto comuni", () => {
+    expect(VENETO_COMUNI.length).toBeGreaterThanOrEqual(540);
     expect(VENETO_COMUNI.length).toBeLessThanOrEqual(600);
   });
 

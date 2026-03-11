@@ -1,0 +1,3332 @@
+[
+  {
+    "nome": "Abano Terme",
+    "provincia": "PD",
+    "lat": 45.3586,
+    "lng": 11.7909
+  },
+  {
+    "nome": "Adria",
+    "provincia": "RO",
+    "lat": 45.0542,
+    "lng": 12.0565
+  },
+  {
+    "nome": "Affi",
+    "provincia": "VR",
+    "lat": 45.5528,
+    "lng": 10.7778
+  },
+  {
+    "nome": "Agna",
+    "provincia": "PD",
+    "lat": 45.1708,
+    "lng": 11.9611
+  },
+  {
+    "nome": "Agordo",
+    "provincia": "BL",
+    "lat": 46.2831,
+    "lng": 12.0367
+  },
+  {
+    "nome": "Agugliaro",
+    "provincia": "VI",
+    "lat": 45.3194,
+    "lng": 11.5844
+  },
+  {
+    "nome": "Alano di Piave",
+    "provincia": "BL",
+    "lat": 45.9067,
+    "lng": 11.9056
+  },
+  {
+    "nome": "Albaredo d'Adige",
+    "provincia": "VR",
+    "lat": 45.3175,
+    "lng": 11.2572
+  },
+  {
+    "nome": "Albettone",
+    "provincia": "VI",
+    "lat": 45.3622,
+    "lng": 11.5806
+  },
+  {
+    "nome": "Albignasego",
+    "provincia": "PD",
+    "lat": 45.3517,
+    "lng": 11.8694
+  },
+  {
+    "nome": "Alleghe",
+    "provincia": "BL",
+    "lat": 46.4072,
+    "lng": 12.0225
+  },
+  {
+    "nome": "Alpago",
+    "provincia": "BL",
+    "lat": 46.1303,
+    "lng": 12.3461
+  },
+  {
+    "nome": "Altavilla Vicentina",
+    "provincia": "VI",
+    "lat": 45.5072,
+    "lng": 11.4694
+  },
+  {
+    "nome": "Altino",
+    "provincia": "TV",
+    "lat": 45.9331,
+    "lng": 12.2294
+  },
+  {
+    "nome": "Altissimo",
+    "provincia": "VI",
+    "lat": 45.5864,
+    "lng": 11.2469
+  },
+  {
+    "nome": "Altivole",
+    "provincia": "TV",
+    "lat": 45.7294,
+    "lng": 11.9547
+  },
+  {
+    "nome": "Angiari",
+    "provincia": "VR",
+    "lat": 45.17,
+    "lng": 11.2797
+  },
+  {
+    "nome": "Anguillara Veneta",
+    "provincia": "PD",
+    "lat": 45.1422,
+    "lng": 11.8819
+  },
+  {
+    "nome": "Annone Veneto",
+    "provincia": "VE",
+    "lat": 45.7931,
+    "lng": 12.6869
+  },
+  {
+    "nome": "Arcade",
+    "provincia": "TV",
+    "lat": 45.7783,
+    "lng": 12.2128
+  },
+  {
+    "nome": "Arcole",
+    "provincia": "VR",
+    "lat": 45.3608,
+    "lng": 11.2886
+  },
+  {
+    "nome": "Arcugnano",
+    "provincia": "VI",
+    "lat": 45.4861,
+    "lng": 11.5222
+  },
+  {
+    "nome": "Ariano nel Polesine",
+    "provincia": "RO",
+    "lat": 44.9439,
+    "lng": 12.1228
+  },
+  {
+    "nome": "Arquà Petrarca",
+    "provincia": "PD",
+    "lat": 45.2689,
+    "lng": 11.72
+  },
+  {
+    "nome": "Arquà Polesine",
+    "provincia": "RO",
+    "lat": 45.09,
+    "lng": 11.75
+  },
+  {
+    "nome": "Arre",
+    "provincia": "PD",
+    "lat": 45.2389,
+    "lng": 11.9408
+  },
+  {
+    "nome": "Arsié",
+    "provincia": "BL",
+    "lat": 46.0147,
+    "lng": 11.7564
+  },
+  {
+    "nome": "Arsiè",
+    "provincia": "BL",
+    "lat": 46.0147,
+    "lng": 11.7564
+  },
+  {
+    "nome": "Arsiero",
+    "provincia": "VI",
+    "lat": 45.7953,
+    "lng": 11.355
+  },
+  {
+    "nome": "Arzergrande",
+    "provincia": "PD",
+    "lat": 45.2731,
+    "lng": 12.0497
+  },
+  {
+    "nome": "Arzignano",
+    "provincia": "VI",
+    "lat": 45.5211,
+    "lng": 11.3344
+  },
+  {
+    "nome": "Asiago",
+    "provincia": "VI",
+    "lat": 45.8753,
+    "lng": 11.5097
+  },
+  {
+    "nome": "Asigliano Veneto",
+    "provincia": "VI",
+    "lat": 45.3231,
+    "lng": 11.5233
+  },
+  {
+    "nome": "Asolo",
+    "provincia": "TV",
+    "lat": 45.7867,
+    "lng": 11.9089
+  },
+  {
+    "nome": "Auronzo di Cadore",
+    "provincia": "BL",
+    "lat": 46.5567,
+    "lng": 12.4347
+  },
+  {
+    "nome": "Badia Calavena",
+    "provincia": "VR",
+    "lat": 45.5847,
+    "lng": 11.1394
+  },
+  {
+    "nome": "Badia Polesine",
+    "provincia": "RO",
+    "lat": 45.0953,
+    "lng": 11.4928
+  },
+  {
+    "nome": "Bagnoli di Sopra",
+    "provincia": "PD",
+    "lat": 45.1814,
+    "lng": 11.8889
+  },
+  {
+    "nome": "Baone",
+    "provincia": "PD",
+    "lat": 45.2464,
+    "lng": 11.6831
+  },
+  {
+    "nome": "Barbarano Mossano",
+    "provincia": "VI",
+    "lat": 45.4028,
+    "lng": 11.5406
+  },
+  {
+    "nome": "Barbona",
+    "provincia": "PD",
+    "lat": 45.1056,
+    "lng": 11.7086
+  },
+  {
+    "nome": "Bardolino",
+    "provincia": "VR",
+    "lat": 45.5478,
+    "lng": 10.7206
+  },
+  {
+    "nome": "Bassano del Grappa",
+    "provincia": "VI",
+    "lat": 45.7658,
+    "lng": 11.7267
+  },
+  {
+    "nome": "Battaglia Terme",
+    "provincia": "PD",
+    "lat": 45.2875,
+    "lng": 11.7861
+  },
+  {
+    "nome": "Belfiore",
+    "provincia": "VR",
+    "lat": 45.3653,
+    "lng": 11.2083
+  },
+  {
+    "nome": "Belluno",
+    "provincia": "BL",
+    "lat": 46.1417,
+    "lng": 12.2183
+  },
+  {
+    "nome": "Bergantino",
+    "provincia": "RO",
+    "lat": 45.0589,
+    "lng": 11.2489
+  },
+  {
+    "nome": "Bevilacqua",
+    "provincia": "VR",
+    "lat": 45.2325,
+    "lng": 11.4106
+  },
+  {
+    "nome": "Boara Pisani",
+    "provincia": "PD",
+    "lat": 45.1114,
+    "lng": 11.7914
+  },
+  {
+    "nome": "Bolzano Vicentino",
+    "provincia": "VI",
+    "lat": 45.5911,
+    "lng": 11.6183
+  },
+  {
+    "nome": "Bonavigo",
+    "provincia": "VR",
+    "lat": 45.24,
+    "lng": 11.2772
+  },
+  {
+    "nome": "Borca di Cadore",
+    "provincia": "BL",
+    "lat": 46.4347,
+    "lng": 12.2208
+  },
+  {
+    "nome": "Borgo Valbelluna",
+    "provincia": "BL",
+    "lat": 46.0519,
+    "lng": 12.0972
+  },
+  {
+    "nome": "Borgo Veneto",
+    "provincia": "PD",
+    "lat": 45.22,
+    "lng": 11.74
+  },
+  {
+    "nome": "Borgoricco",
+    "provincia": "PD",
+    "lat": 45.5333,
+    "lng": 12.0261
+  },
+  {
+    "nome": "Borso del Grappa",
+    "provincia": "TV",
+    "lat": 45.8103,
+    "lng": 11.7908
+  },
+  {
+    "nome": "Bosaro",
+    "provincia": "RO",
+    "lat": 45.0086,
+    "lng": 11.7619
+  },
+  {
+    "nome": "Bosco Chiesanuova",
+    "provincia": "VR",
+    "lat": 45.6233,
+    "lng": 11.03
+  },
+  {
+    "nome": "Bovolenta",
+    "provincia": "PD",
+    "lat": 45.2672,
+    "lng": 11.9361
+  },
+  {
+    "nome": "Bovolone",
+    "provincia": "VR",
+    "lat": 45.2553,
+    "lng": 11.1172
+  },
+  {
+    "nome": "Breda di Piave",
+    "provincia": "TV",
+    "lat": 45.7228,
+    "lng": 12.3333
+  },
+  {
+    "nome": "Breganze",
+    "provincia": "VI",
+    "lat": 45.7089,
+    "lng": 11.5639
+  },
+  {
+    "nome": "Brendola",
+    "provincia": "VI",
+    "lat": 45.4678,
+    "lng": 11.4447
+  },
+  {
+    "nome": "Brentino Belluno",
+    "provincia": "VR",
+    "lat": 45.655,
+    "lng": 10.8778
+  },
+  {
+    "nome": "Bressanvido",
+    "provincia": "VI",
+    "lat": 45.6044,
+    "lng": 11.6297
+  },
+  {
+    "nome": "Brogliano",
+    "provincia": "VI",
+    "lat": 45.5903,
+    "lng": 11.3667
+  },
+  {
+    "nome": "Brugine",
+    "provincia": "PD",
+    "lat": 45.2953,
+    "lng": 12.0056
+  },
+  {
+    "nome": "Bussolengo",
+    "provincia": "VR",
+    "lat": 45.47,
+    "lng": 10.8531
+  },
+  {
+    "nome": "Buttapietra",
+    "provincia": "VR",
+    "lat": 45.3508,
+    "lng": 11.0078
+  },
+  {
+    "nome": "Cadoneghe",
+    "provincia": "PD",
+    "lat": 45.4389,
+    "lng": 11.9247
+  },
+  {
+    "nome": "Caerano di San Marco",
+    "provincia": "TV",
+    "lat": 45.775,
+    "lng": 12.0003
+  },
+  {
+    "nome": "Calalzo di Cadore",
+    "provincia": "BL",
+    "lat": 46.4467,
+    "lng": 12.3833
+  },
+  {
+    "nome": "Caldiero",
+    "provincia": "VR",
+    "lat": 45.4156,
+    "lng": 11.2128
+  },
+  {
+    "nome": "Caldogno",
+    "provincia": "VI",
+    "lat": 45.5903,
+    "lng": 11.5094
+  },
+  {
+    "nome": "Calto",
+    "provincia": "RO",
+    "lat": 44.9861,
+    "lng": 11.3478
+  },
+  {
+    "nome": "Calvene",
+    "provincia": "VI",
+    "lat": 45.7611,
+    "lng": 11.5125
+  },
+  {
+    "nome": "Camisano Vicentino",
+    "provincia": "VI",
+    "lat": 45.5133,
+    "lng": 11.7206
+  },
+  {
+    "nome": "Campagna Lupia",
+    "provincia": "VE",
+    "lat": 45.3508,
+    "lng": 12.0978
+  },
+  {
+    "nome": "Campiglia dei Berici",
+    "provincia": "VI",
+    "lat": 45.3564,
+    "lng": 11.5428
+  },
+  {
+    "nome": "Campo San Martino",
+    "provincia": "PD",
+    "lat": 45.5383,
+    "lng": 11.8333
+  },
+  {
+    "nome": "Campodarsego",
+    "provincia": "PD",
+    "lat": 45.5183,
+    "lng": 12.0019
+  },
+  {
+    "nome": "Campodoro",
+    "provincia": "PD",
+    "lat": 45.4647,
+    "lng": 11.7433
+  },
+  {
+    "nome": "Campolongo Maggiore",
+    "provincia": "VE",
+    "lat": 45.3292,
+    "lng": 12.0494
+  },
+  {
+    "nome": "Camponogara",
+    "provincia": "VE",
+    "lat": 45.3872,
+    "lng": 12.0697
+  },
+  {
+    "nome": "Camposampiero",
+    "provincia": "PD",
+    "lat": 45.5117,
+    "lng": 12
+  },
+  {
+    "nome": "Canale d'Agordo",
+    "provincia": "BL",
+    "lat": 46.3553,
+    "lng": 11.9122
+  },
+  {
+    "nome": "Canaro",
+    "provincia": "RO",
+    "lat": 44.9356,
+    "lng": 11.6767
+  },
+  {
+    "nome": "Canda",
+    "provincia": "RO",
+    "lat": 45.05,
+    "lng": 11.4847
+  },
+  {
+    "nome": "Candiana",
+    "provincia": "PD",
+    "lat": 45.2222,
+    "lng": 11.9297
+  },
+  {
+    "nome": "Caorle",
+    "provincia": "VE",
+    "lat": 45.5992,
+    "lng": 12.8889
+  },
+  {
+    "nome": "Cappella Maggiore",
+    "provincia": "TV",
+    "lat": 45.9714,
+    "lng": 12.3056
+  },
+  {
+    "nome": "Caprino Veronese",
+    "provincia": "VR",
+    "lat": 45.5908,
+    "lng": 10.7956
+  },
+  {
+    "nome": "Carbonera",
+    "provincia": "TV",
+    "lat": 45.6594,
+    "lng": 12.2867
+  },
+  {
+    "nome": "Carmignano di Brenta",
+    "provincia": "PD",
+    "lat": 45.6328,
+    "lng": 11.7064
+  },
+  {
+    "nome": "Carrè",
+    "provincia": "VI",
+    "lat": 45.7292,
+    "lng": 11.4575
+  },
+  {
+    "nome": "Cartigliano",
+    "provincia": "VI",
+    "lat": 45.7178,
+    "lng": 11.6956
+  },
+  {
+    "nome": "Cartura",
+    "provincia": "PD",
+    "lat": 45.2706,
+    "lng": 11.865
+  },
+  {
+    "nome": "Casale di Scodosia",
+    "provincia": "PD",
+    "lat": 45.2022,
+    "lng": 11.6672
+  },
+  {
+    "nome": "Casale sul Sile",
+    "provincia": "TV",
+    "lat": 45.5931,
+    "lng": 12.1783
+  },
+  {
+    "nome": "Casaleone",
+    "provincia": "VR",
+    "lat": 45.1739,
+    "lng": 11.1911
+  },
+  {
+    "nome": "Casalserugo",
+    "provincia": "PD",
+    "lat": 45.315,
+    "lng": 11.905
+  },
+  {
+    "nome": "Casier",
+    "provincia": "TV",
+    "lat": 45.6244,
+    "lng": 12.2603
+  },
+  {
+    "nome": "Cassola",
+    "provincia": "VI",
+    "lat": 45.7372,
+    "lng": 11.7856
+  },
+  {
+    "nome": "Castagnaro",
+    "provincia": "VR",
+    "lat": 45.1158,
+    "lng": 11.4053
+  },
+  {
+    "nome": "Castel d'Azzano",
+    "provincia": "VR",
+    "lat": 45.3661,
+    "lng": 10.9378
+  },
+  {
+    "nome": "Castelcucco",
+    "provincia": "TV",
+    "lat": 45.8308,
+    "lng": 11.8781
+  },
+  {
+    "nome": "Castelfranco Veneto",
+    "provincia": "TV",
+    "lat": 45.6678,
+    "lng": 11.9267
+  },
+  {
+    "nome": "Castelgomberto",
+    "provincia": "VI",
+    "lat": 45.5658,
+    "lng": 11.3856
+  },
+  {
+    "nome": "Castelguglielmo",
+    "provincia": "RO",
+    "lat": 45.0294,
+    "lng": 11.5472
+  },
+  {
+    "nome": "Castello di Godego",
+    "provincia": "TV",
+    "lat": 45.6903,
+    "lng": 11.8761
+  },
+  {
+    "nome": "Castelmassa",
+    "provincia": "RO",
+    "lat": 45.0203,
+    "lng": 11.3092
+  },
+  {
+    "nome": "Castelnovo Bariano",
+    "provincia": "RO",
+    "lat": 45.0267,
+    "lng": 11.2917
+  },
+  {
+    "nome": "Castelnuovo del Garda",
+    "provincia": "VR",
+    "lat": 45.4414,
+    "lng": 10.7608
+  },
+  {
+    "nome": "Cavaion Veronese",
+    "provincia": "VR",
+    "lat": 45.5361,
+    "lng": 10.7686
+  },
+  {
+    "nome": "Cavallino-Treporti",
+    "provincia": "VE",
+    "lat": 45.45,
+    "lng": 12.4306
+  },
+  {
+    "nome": "Cavarzere",
+    "provincia": "VE",
+    "lat": 45.1347,
+    "lng": 12.085
+  },
+  {
+    "nome": "Cazzano di Tramigna",
+    "provincia": "VR",
+    "lat": 45.4686,
+    "lng": 11.2103
+  },
+  {
+    "nome": "Ceggia",
+    "provincia": "VE",
+    "lat": 45.6808,
+    "lng": 12.6378
+  },
+  {
+    "nome": "Cencenighe Agordino",
+    "provincia": "BL",
+    "lat": 46.355,
+    "lng": 12.0028
+  },
+  {
+    "nome": "Ceneselli",
+    "provincia": "RO",
+    "lat": 45,
+    "lng": 11.3625
+  },
+  {
+    "nome": "Cerea",
+    "provincia": "VR",
+    "lat": 45.1939,
+    "lng": 11.2131
+  },
+  {
+    "nome": "Ceregnano",
+    "provincia": "RO",
+    "lat": 45.0444,
+    "lng": 11.8694
+  },
+  {
+    "nome": "Cerro Veronese",
+    "provincia": "VR",
+    "lat": 45.5667,
+    "lng": 11.0333
+  },
+  {
+    "nome": "Cervarese Santa Croce",
+    "provincia": "PD",
+    "lat": 45.3719,
+    "lng": 11.6861
+  },
+  {
+    "nome": "Cesiomaggiore",
+    "provincia": "BL",
+    "lat": 46.0856,
+    "lng": 11.9831
+  },
+  {
+    "nome": "Cessalto",
+    "provincia": "TV",
+    "lat": 45.7139,
+    "lng": 12.6097
+  },
+  {
+    "nome": "Chiampo",
+    "provincia": "VI",
+    "lat": 45.5394,
+    "lng": 11.2828
+  },
+  {
+    "nome": "Chiarano",
+    "provincia": "TV",
+    "lat": 45.7481,
+    "lng": 12.5886
+  },
+  {
+    "nome": "Chies d'Alpago",
+    "provincia": "BL",
+    "lat": 46.1625,
+    "lng": 12.3819
+  },
+  {
+    "nome": "Chioggia",
+    "provincia": "VE",
+    "lat": 45.2194,
+    "lng": 12.2781
+  },
+  {
+    "nome": "Chiuppano",
+    "provincia": "VI",
+    "lat": 45.7539,
+    "lng": 11.4461
+  },
+  {
+    "nome": "Cibiana di Cadore",
+    "provincia": "BL",
+    "lat": 46.3886,
+    "lng": 12.2808
+  },
+  {
+    "nome": "Cimadolmo",
+    "provincia": "TV",
+    "lat": 45.7822,
+    "lng": 12.3681
+  },
+  {
+    "nome": "Cinto Caomaggiore",
+    "provincia": "VE",
+    "lat": 45.8208,
+    "lng": 12.7819
+  },
+  {
+    "nome": "Cinto Euganeo",
+    "provincia": "PD",
+    "lat": 45.2889,
+    "lng": 11.6614
+  },
+  {
+    "nome": "Cismon del Grappa",
+    "provincia": "VI",
+    "lat": 45.92,
+    "lng": 11.7303
+  },
+  {
+    "nome": "Cison di Valmarino",
+    "provincia": "TV",
+    "lat": 45.9703,
+    "lng": 12.1256
+  },
+  {
+    "nome": "Cittadella",
+    "provincia": "PD",
+    "lat": 45.6481,
+    "lng": 11.7833
+  },
+  {
+    "nome": "Codevigo",
+    "provincia": "PD",
+    "lat": 45.2678,
+    "lng": 12.0969
+  },
+  {
+    "nome": "Codogne",
+    "provincia": "TV",
+    "lat": 45.865,
+    "lng": 12.4269
+  },
+  {
+    "nome": "Codognè",
+    "provincia": "TV",
+    "lat": 45.865,
+    "lng": 12.4269
+  },
+  {
+    "nome": "Cogollo del Cengio",
+    "provincia": "VI",
+    "lat": 45.785,
+    "lng": 11.4361
+  },
+  {
+    "nome": "Colceresa",
+    "provincia": "VI",
+    "lat": 45.7222,
+    "lng": 11.6186
+  },
+  {
+    "nome": "Colle Santa Lucia",
+    "provincia": "BL",
+    "lat": 46.4442,
+    "lng": 12.0131
+  },
+  {
+    "nome": "Colle Umberto",
+    "provincia": "TV",
+    "lat": 45.9603,
+    "lng": 12.3542
+  },
+  {
+    "nome": "Cologna Veneta",
+    "provincia": "VR",
+    "lat": 45.3119,
+    "lng": 11.3836
+  },
+  {
+    "nome": "Colognola ai Colli",
+    "provincia": "VR",
+    "lat": 45.4317,
+    "lng": 11.1839
+  },
+  {
+    "nome": "Comelico Superiore",
+    "provincia": "BL",
+    "lat": 46.6203,
+    "lng": 12.5058
+  },
+  {
+    "nome": "Concamarise",
+    "provincia": "VR",
+    "lat": 45.1897,
+    "lng": 11.1103
+  },
+  {
+    "nome": "Conco",
+    "provincia": "VI",
+    "lat": 45.7775,
+    "lng": 11.6083
+  },
+  {
+    "nome": "Concordia Sagittaria",
+    "provincia": "VE",
+    "lat": 45.7544,
+    "lng": 12.8458
+  },
+  {
+    "nome": "Conegliano",
+    "provincia": "TV",
+    "lat": 45.8869,
+    "lng": 12.2978
+  },
+  {
+    "nome": "Conselve",
+    "provincia": "PD",
+    "lat": 45.23,
+    "lng": 11.8756
+  },
+  {
+    "nome": "Corbola",
+    "provincia": "RO",
+    "lat": 44.9856,
+    "lng": 12.09
+  },
+  {
+    "nome": "Cordignano",
+    "provincia": "TV",
+    "lat": 45.9542,
+    "lng": 12.4347
+  },
+  {
+    "nome": "Cornedo Vicentino",
+    "provincia": "VI",
+    "lat": 45.6106,
+    "lng": 11.3433
+  },
+  {
+    "nome": "Cornuda",
+    "provincia": "TV",
+    "lat": 45.8347,
+    "lng": 12.0033
+  },
+  {
+    "nome": "Correzzola",
+    "provincia": "PD",
+    "lat": 45.24,
+    "lng": 12.0692
+  },
+  {
+    "nome": "Cortina d'Ampezzo",
+    "provincia": "BL",
+    "lat": 46.5369,
+    "lng": 12.1394
+  },
+  {
+    "nome": "Costa di Rovigo",
+    "provincia": "RO",
+    "lat": 45.0453,
+    "lng": 11.7167
+  },
+  {
+    "nome": "Costabissara",
+    "provincia": "VI",
+    "lat": 45.5694,
+    "lng": 11.4836
+  },
+  {
+    "nome": "Costermano sul Garda",
+    "provincia": "VR",
+    "lat": 45.5806,
+    "lng": 10.7353
+  },
+  {
+    "nome": "Creazzo",
+    "provincia": "VI",
+    "lat": 45.5167,
+    "lng": 11.4667
+  },
+  {
+    "nome": "Crespadoro",
+    "provincia": "VI",
+    "lat": 45.5939,
+    "lng": 11.2511
+  },
+  {
+    "nome": "Crespano del Grappa",
+    "provincia": "TV",
+    "lat": 45.8378,
+    "lng": 11.8319
+  },
+  {
+    "nome": "Crespino",
+    "provincia": "RO",
+    "lat": 44.9833,
+    "lng": 11.8833
+  },
+  {
+    "nome": "Crocetta del Montello",
+    "provincia": "TV",
+    "lat": 45.8381,
+    "lng": 12.0256
+  },
+  {
+    "nome": "Curtarolo",
+    "provincia": "PD",
+    "lat": 45.4681,
+    "lng": 11.9606
+  },
+  {
+    "nome": "Danta di Cadore",
+    "provincia": "BL",
+    "lat": 46.5744,
+    "lng": 12.5311
+  },
+  {
+    "nome": "Dolcè",
+    "provincia": "VR",
+    "lat": 45.605,
+    "lng": 10.855
+  },
+  {
+    "nome": "Dolo",
+    "provincia": "VE",
+    "lat": 45.4244,
+    "lng": 12.0756
+  },
+  {
+    "nome": "Domegge di Cadore",
+    "provincia": "BL",
+    "lat": 46.4617,
+    "lng": 12.3931
+  },
+  {
+    "nome": "Due Carrare",
+    "provincia": "PD",
+    "lat": 45.2947,
+    "lng": 11.8178
+  },
+  {
+    "nome": "Dueville",
+    "provincia": "VI",
+    "lat": 45.6322,
+    "lng": 11.5503
+  },
+  {
+    "nome": "Enego",
+    "provincia": "VI",
+    "lat": 45.9403,
+    "lng": 11.7058
+  },
+  {
+    "nome": "Eraclea",
+    "provincia": "VE",
+    "lat": 45.5792,
+    "lng": 12.6742
+  },
+  {
+    "nome": "Erbe",
+    "provincia": "VR",
+    "lat": 45.2517,
+    "lng": 10.9947
+  },
+  {
+    "nome": "Erbezzo",
+    "provincia": "VR",
+    "lat": 45.635,
+    "lng": 10.9903
+  },
+  {
+    "nome": "Este",
+    "provincia": "PD",
+    "lat": 45.2264,
+    "lng": 11.6597
+  },
+  {
+    "nome": "Falcade",
+    "provincia": "BL",
+    "lat": 46.3556,
+    "lng": 11.8711
+  },
+  {
+    "nome": "Fara Vicentino",
+    "provincia": "VI",
+    "lat": 45.7386,
+    "lng": 11.55
+  },
+  {
+    "nome": "Farra di Soligo",
+    "provincia": "TV",
+    "lat": 45.9139,
+    "lng": 12.1353
+  },
+  {
+    "nome": "Feltre",
+    "provincia": "BL",
+    "lat": 46.0194,
+    "lng": 11.9097
+  },
+  {
+    "nome": "Ferrara di Monte Baldo",
+    "provincia": "VR",
+    "lat": 45.6694,
+    "lng": 10.8569
+  },
+  {
+    "nome": "Ficarolo",
+    "provincia": "RO",
+    "lat": 44.9503,
+    "lng": 11.4325
+  },
+  {
+    "nome": "Fiesso d'Artico",
+    "provincia": "VE",
+    "lat": 45.4158,
+    "lng": 12.0331
+  },
+  {
+    "nome": "Fiesso Umbertiano",
+    "provincia": "RO",
+    "lat": 44.9606,
+    "lng": 11.6014
+  },
+  {
+    "nome": "Follina",
+    "provincia": "TV",
+    "lat": 45.9531,
+    "lng": 12.1178
+  },
+  {
+    "nome": "Fontanelle",
+    "provincia": "TV",
+    "lat": 45.8408,
+    "lng": 12.46
+  },
+  {
+    "nome": "Fontaniva",
+    "provincia": "PD",
+    "lat": 45.6103,
+    "lng": 11.7533
+  },
+  {
+    "nome": "Fonte",
+    "provincia": "TV",
+    "lat": 45.7894,
+    "lng": 11.8456
+  },
+  {
+    "nome": "Fonzaso",
+    "provincia": "BL",
+    "lat": 46.0178,
+    "lng": 11.7986
+  },
+  {
+    "nome": "Fossalta di Piave",
+    "provincia": "VE",
+    "lat": 45.6392,
+    "lng": 12.5122
+  },
+  {
+    "nome": "Fossalta di Portogruaro",
+    "provincia": "VE",
+    "lat": 45.7897,
+    "lng": 12.8956
+  },
+  {
+    "nome": "Fosso",
+    "provincia": "VE",
+    "lat": 45.3931,
+    "lng": 12.0406
+  },
+  {
+    "nome": "Fossò",
+    "provincia": "VE",
+    "lat": 45.3931,
+    "lng": 12.0406
+  },
+  {
+    "nome": "Foza",
+    "provincia": "VI",
+    "lat": 45.8914,
+    "lng": 11.6319
+  },
+  {
+    "nome": "Frassinelle Polesine",
+    "provincia": "RO",
+    "lat": 45.0186,
+    "lng": 11.6742
+  },
+  {
+    "nome": "Fratta Polesine",
+    "provincia": "RO",
+    "lat": 45.03,
+    "lng": 11.64
+  },
+  {
+    "nome": "Fregona",
+    "provincia": "TV",
+    "lat": 46.0042,
+    "lng": 12.3406
+  },
+  {
+    "nome": "Fumane",
+    "provincia": "VR",
+    "lat": 45.5367,
+    "lng": 10.88
+  },
+  {
+    "nome": "Gaiarine",
+    "provincia": "TV",
+    "lat": 45.8758,
+    "lng": 12.4836
+  },
+  {
+    "nome": "Gaiba",
+    "provincia": "RO",
+    "lat": 44.9436,
+    "lng": 11.4886
+  },
+  {
+    "nome": "Galliera Veneta",
+    "provincia": "PD",
+    "lat": 45.53,
+    "lng": 11.8317
+  },
+  {
+    "nome": "Gallio",
+    "provincia": "VI",
+    "lat": 45.8953,
+    "lng": 11.5536
+  },
+  {
+    "nome": "Galzignano Terme",
+    "provincia": "PD",
+    "lat": 45.3114,
+    "lng": 11.7297
+  },
+  {
+    "nome": "Gambellara",
+    "provincia": "VI",
+    "lat": 45.4533,
+    "lng": 11.3381
+  },
+  {
+    "nome": "Gambugliano",
+    "provincia": "VI",
+    "lat": 45.5503,
+    "lng": 11.4125
+  },
+  {
+    "nome": "Garda",
+    "provincia": "VR",
+    "lat": 45.5747,
+    "lng": 10.7106
+  },
+  {
+    "nome": "Gavello",
+    "provincia": "RO",
+    "lat": 45.0278,
+    "lng": 11.9053
+  },
+  {
+    "nome": "Gazzo",
+    "provincia": "PD",
+    "lat": 45.555,
+    "lng": 11.7106
+  },
+  {
+    "nome": "Giacciano con Baruchella",
+    "provincia": "RO",
+    "lat": 45.0711,
+    "lng": 11.4536
+  },
+  {
+    "nome": "Giavera del Montello",
+    "provincia": "TV",
+    "lat": 45.7933,
+    "lng": 12.1611
+  },
+  {
+    "nome": "Godega di Sant'Urbano",
+    "provincia": "TV",
+    "lat": 45.9244,
+    "lng": 12.3892
+  },
+  {
+    "nome": "Gorgo al Monticano",
+    "provincia": "TV",
+    "lat": 45.7203,
+    "lng": 12.5044
+  },
+  {
+    "nome": "Gosaldo",
+    "provincia": "BL",
+    "lat": 46.2111,
+    "lng": 11.9553
+  },
+  {
+    "nome": "Grancona",
+    "provincia": "VI",
+    "lat": 45.425,
+    "lng": 11.4917
+  },
+  {
+    "nome": "Grantorto",
+    "provincia": "PD",
+    "lat": 45.4906,
+    "lng": 11.7306
+  },
+  {
+    "nome": "Granze",
+    "provincia": "PD",
+    "lat": 45.17,
+    "lng": 11.73
+  },
+  {
+    "nome": "Grezzana",
+    "provincia": "VR",
+    "lat": 45.5247,
+    "lng": 11.0214
+  },
+  {
+    "nome": "Grisignano di Zocco",
+    "provincia": "VI",
+    "lat": 45.4744,
+    "lng": 11.7042
+  },
+  {
+    "nome": "Gruaro",
+    "provincia": "VE",
+    "lat": 45.8242,
+    "lng": 12.8508
+  },
+  {
+    "nome": "Grumolo delle Abbadesse",
+    "provincia": "VI",
+    "lat": 45.4772,
+    "lng": 11.6564
+  },
+  {
+    "nome": "Guarda Veneta",
+    "provincia": "RO",
+    "lat": 44.9803,
+    "lng": 11.8094
+  },
+  {
+    "nome": "Illasi",
+    "provincia": "VR",
+    "lat": 45.4639,
+    "lng": 11.2044
+  },
+  {
+    "nome": "Isola della Scala",
+    "provincia": "VR",
+    "lat": 45.2728,
+    "lng": 11.0139
+  },
+  {
+    "nome": "Isola Rizza",
+    "provincia": "VR",
+    "lat": 45.2939,
+    "lng": 11.2033
+  },
+  {
+    "nome": "Isola Vicentina",
+    "provincia": "VI",
+    "lat": 45.63,
+    "lng": 11.4494
+  },
+  {
+    "nome": "Istrana",
+    "provincia": "TV",
+    "lat": 45.6756,
+    "lng": 12.1006
+  },
+  {
+    "nome": "Jesolo",
+    "provincia": "VE",
+    "lat": 45.5339,
+    "lng": 12.6417
+  },
+  {
+    "nome": "La Valle Agordina",
+    "provincia": "BL",
+    "lat": 46.3014,
+    "lng": 12.0694
+  },
+  {
+    "nome": "Laghi",
+    "provincia": "VI",
+    "lat": 45.7858,
+    "lng": 11.2647
+  },
+  {
+    "nome": "Lamon",
+    "provincia": "BL",
+    "lat": 46.0478,
+    "lng": 11.7614
+  },
+  {
+    "nome": "Lastebasse",
+    "provincia": "VI",
+    "lat": 45.9186,
+    "lng": 11.3019
+  },
+  {
+    "nome": "Lavagno",
+    "provincia": "VR",
+    "lat": 45.4256,
+    "lng": 11.1389
+  },
+  {
+    "nome": "Lazise",
+    "provincia": "VR",
+    "lat": 45.5,
+    "lng": 10.7306
+  },
+  {
+    "nome": "Legnago",
+    "provincia": "VR",
+    "lat": 45.1964,
+    "lng": 11.3086
+  },
+  {
+    "nome": "Legnaro",
+    "provincia": "PD",
+    "lat": 45.3453,
+    "lng": 11.9619
+  },
+  {
+    "nome": "Lendinara",
+    "provincia": "RO",
+    "lat": 45.0844,
+    "lng": 11.5989
+  },
+  {
+    "nome": "Limana",
+    "provincia": "BL",
+    "lat": 46.105,
+    "lng": 12.1797
+  },
+  {
+    "nome": "Limena",
+    "provincia": "PD",
+    "lat": 45.4117,
+    "lng": 11.8297
+  },
+  {
+    "nome": "Livinallongo del Col di Lana",
+    "provincia": "BL",
+    "lat": 46.4811,
+    "lng": 11.9547
+  },
+  {
+    "nome": "Longare",
+    "provincia": "VI",
+    "lat": 45.4597,
+    "lng": 11.5858
+  },
+  {
+    "nome": "Longarone",
+    "provincia": "BL",
+    "lat": 46.265,
+    "lng": 12.2983
+  },
+  {
+    "nome": "Lonigo",
+    "provincia": "VI",
+    "lat": 45.3869,
+    "lng": 11.3847
+  },
+  {
+    "nome": "Loreggia",
+    "provincia": "PD",
+    "lat": 45.5686,
+    "lng": 12.025
+  },
+  {
+    "nome": "Lorenzago di Cadore",
+    "provincia": "BL",
+    "lat": 46.4825,
+    "lng": 12.4544
+  },
+  {
+    "nome": "Loreo",
+    "provincia": "RO",
+    "lat": 45.0667,
+    "lng": 12.1944
+  },
+  {
+    "nome": "Loria",
+    "provincia": "TV",
+    "lat": 45.73,
+    "lng": 11.8661
+  },
+  {
+    "nome": "Lozzo Atestino",
+    "provincia": "PD",
+    "lat": 45.2894,
+    "lng": 11.625
+  },
+  {
+    "nome": "Lozzo di Cadore",
+    "provincia": "BL",
+    "lat": 46.4833,
+    "lng": 12.4167
+  },
+  {
+    "nome": "Lugo di Vicenza",
+    "provincia": "VI",
+    "lat": 45.7533,
+    "lng": 11.5264
+  },
+  {
+    "nome": "Lusia",
+    "provincia": "RO",
+    "lat": 45.1086,
+    "lng": 11.6633
+  },
+  {
+    "nome": "Lusiana",
+    "provincia": "VI",
+    "lat": 45.7803,
+    "lng": 11.5658
+  },
+  {
+    "nome": "Lusiana Conco",
+    "provincia": "VI",
+    "lat": 45.7975,
+    "lng": 11.5703
+  },
+  {
+    "nome": "Malcesine",
+    "provincia": "VR",
+    "lat": 45.7628,
+    "lng": 10.8103
+  },
+  {
+    "nome": "Malo",
+    "provincia": "VI",
+    "lat": 45.6603,
+    "lng": 11.4103
+  },
+  {
+    "nome": "Mansuè",
+    "provincia": "TV",
+    "lat": 45.8203,
+    "lng": 12.5369
+  },
+  {
+    "nome": "Marano di Valpolicella",
+    "provincia": "VR",
+    "lat": 45.5558,
+    "lng": 10.9147
+  },
+  {
+    "nome": "Marano Vicentino",
+    "provincia": "VI",
+    "lat": 45.6961,
+    "lng": 11.4311
+  },
+  {
+    "nome": "Marcon",
+    "provincia": "VE",
+    "lat": 45.5583,
+    "lng": 12.2953
+  },
+  {
+    "nome": "Mareno di Piave",
+    "provincia": "TV",
+    "lat": 45.8478,
+    "lng": 12.3494
+  },
+  {
+    "nome": "Marostica",
+    "provincia": "VI",
+    "lat": 45.7478,
+    "lng": 11.6578
+  },
+  {
+    "nome": "Martellago",
+    "provincia": "VE",
+    "lat": 45.5469,
+    "lng": 12.1631
+  },
+  {
+    "nome": "Maser",
+    "provincia": "TV",
+    "lat": 45.81,
+    "lng": 11.9708
+  },
+  {
+    "nome": "Maserà di Padova",
+    "provincia": "PD",
+    "lat": 45.3228,
+    "lng": 11.8878
+  },
+  {
+    "nome": "Maserada sul Piave",
+    "provincia": "TV",
+    "lat": 45.6931,
+    "lng": 12.3178
+  },
+  {
+    "nome": "Masi",
+    "provincia": "PD",
+    "lat": 45.1289,
+    "lng": 11.5653
+  },
+  {
+    "nome": "Mason Vicentino",
+    "provincia": "VI",
+    "lat": 45.7164,
+    "lng": 11.5917
+  },
+  {
+    "nome": "Massanzago",
+    "provincia": "PD",
+    "lat": 45.5494,
+    "lng": 12.0569
+  },
+  {
+    "nome": "Meduna di Livenza",
+    "provincia": "TV",
+    "lat": 45.8028,
+    "lng": 12.5786
+  },
+  {
+    "nome": "Megliadino San Fidenzio",
+    "provincia": "PD",
+    "lat": 45.19,
+    "lng": 11.5933
+  },
+  {
+    "nome": "Megliadino San Vitale",
+    "provincia": "PD",
+    "lat": 45.1711,
+    "lng": 11.6047
+  },
+  {
+    "nome": "Mel",
+    "provincia": "BL",
+    "lat": 46.0633,
+    "lng": 12.0731
+  },
+  {
+    "nome": "Melara",
+    "provincia": "RO",
+    "lat": 45.0625,
+    "lng": 11.2008
+  },
+  {
+    "nome": "Meolo",
+    "provincia": "VE",
+    "lat": 45.6175,
+    "lng": 12.4547
+  },
+  {
+    "nome": "Merlara",
+    "provincia": "PD",
+    "lat": 45.1689,
+    "lng": 11.5547
+  },
+  {
+    "nome": "Mestrino",
+    "provincia": "PD",
+    "lat": 45.445,
+    "lng": 11.76
+  },
+  {
+    "nome": "Mezzane di Sotto",
+    "provincia": "VR",
+    "lat": 45.4831,
+    "lng": 11.1364
+  },
+  {
+    "nome": "Miane",
+    "provincia": "TV",
+    "lat": 45.9569,
+    "lng": 12.0944
+  },
+  {
+    "nome": "Minerbe",
+    "provincia": "VR",
+    "lat": 45.2372,
+    "lng": 11.3419
+  },
+  {
+    "nome": "Mira",
+    "provincia": "VE",
+    "lat": 45.4339,
+    "lng": 12.1303
+  },
+  {
+    "nome": "Mirano",
+    "provincia": "VE",
+    "lat": 45.4897,
+    "lng": 12.1081
+  },
+  {
+    "nome": "Mogliano Veneto",
+    "provincia": "TV",
+    "lat": 45.5619,
+    "lng": 12.2372
+  },
+  {
+    "nome": "Monastier di Treviso",
+    "provincia": "TV",
+    "lat": 45.6444,
+    "lng": 12.4192
+  },
+  {
+    "nome": "Monfumo",
+    "provincia": "TV",
+    "lat": 45.8283,
+    "lng": 11.8675
+  },
+  {
+    "nome": "Monselice",
+    "provincia": "PD",
+    "lat": 45.24,
+    "lng": 11.7514
+  },
+  {
+    "nome": "Montagnana",
+    "provincia": "PD",
+    "lat": 45.2314,
+    "lng": 11.4647
+  },
+  {
+    "nome": "Monte di Malo",
+    "provincia": "VI",
+    "lat": 45.675,
+    "lng": 11.3589
+  },
+  {
+    "nome": "Montebello Vicentino",
+    "provincia": "VI",
+    "lat": 45.4556,
+    "lng": 11.3789
+  },
+  {
+    "nome": "Montebelluna",
+    "provincia": "TV",
+    "lat": 45.7758,
+    "lng": 12.0439
+  },
+  {
+    "nome": "Montecchia di Crosara",
+    "provincia": "VR",
+    "lat": 45.4947,
+    "lng": 11.2744
+  },
+  {
+    "nome": "Montecchio Maggiore",
+    "provincia": "VI",
+    "lat": 45.5083,
+    "lng": 11.4092
+  },
+  {
+    "nome": "Montecchio Precalcino",
+    "provincia": "VI",
+    "lat": 45.6631,
+    "lng": 11.5628
+  },
+  {
+    "nome": "Montegalda",
+    "provincia": "VI",
+    "lat": 45.4406,
+    "lng": 11.6728
+  },
+  {
+    "nome": "Montegaldella",
+    "provincia": "VI",
+    "lat": 45.4256,
+    "lng": 11.6833
+  },
+  {
+    "nome": "Montegrotto Terme",
+    "provincia": "PD",
+    "lat": 45.3286,
+    "lng": 11.7892
+  },
+  {
+    "nome": "Monteviale",
+    "provincia": "VI",
+    "lat": 45.5328,
+    "lng": 11.4428
+  },
+  {
+    "nome": "Monticello Conte Otto",
+    "provincia": "VI",
+    "lat": 45.5978,
+    "lng": 11.5889
+  },
+  {
+    "nome": "Montorso Vicentino",
+    "provincia": "VI",
+    "lat": 45.4964,
+    "lng": 11.3536
+  },
+  {
+    "nome": "Morgano",
+    "provincia": "TV",
+    "lat": 45.6319,
+    "lng": 12.0717
+  },
+  {
+    "nome": "Moriago della Battaglia",
+    "provincia": "TV",
+    "lat": 45.8783,
+    "lng": 12.0886
+  },
+  {
+    "nome": "Mossano",
+    "provincia": "VI",
+    "lat": 45.3964,
+    "lng": 11.5575
+  },
+  {
+    "nome": "Motta di Livenza",
+    "provincia": "TV",
+    "lat": 45.7756,
+    "lng": 12.6097
+  },
+  {
+    "nome": "Mozzecane",
+    "provincia": "VR",
+    "lat": 45.3081,
+    "lng": 10.8111
+  },
+  {
+    "nome": "Musile di Piave",
+    "provincia": "VE",
+    "lat": 45.6261,
+    "lng": 12.5622
+  },
+  {
+    "nome": "Mussolente",
+    "provincia": "VI",
+    "lat": 45.7881,
+    "lng": 11.8047
+  },
+  {
+    "nome": "Nanto",
+    "provincia": "VI",
+    "lat": 45.4139,
+    "lng": 11.6125
+  },
+  {
+    "nome": "Negrar di Valpolicella",
+    "provincia": "VR",
+    "lat": 45.5297,
+    "lng": 10.9389
+  },
+  {
+    "nome": "Nervesa della Battaglia",
+    "provincia": "TV",
+    "lat": 45.8289,
+    "lng": 12.2133
+  },
+  {
+    "nome": "Noale",
+    "provincia": "VE",
+    "lat": 45.5508,
+    "lng": 12.0722
+  },
+  {
+    "nome": "Nogara",
+    "provincia": "VR",
+    "lat": 45.1794,
+    "lng": 11.0667
+  },
+  {
+    "nome": "Nogarole Rocca",
+    "provincia": "VR",
+    "lat": 45.2906,
+    "lng": 10.8847
+  },
+  {
+    "nome": "Nove",
+    "provincia": "VI",
+    "lat": 45.7258,
+    "lng": 11.6808
+  },
+  {
+    "nome": "Noventa di Piave",
+    "provincia": "VE",
+    "lat": 45.6625,
+    "lng": 12.5311
+  },
+  {
+    "nome": "Noventa Padovana",
+    "provincia": "PD",
+    "lat": 45.405,
+    "lng": 11.9397
+  },
+  {
+    "nome": "Noventa Vicentina",
+    "provincia": "VI",
+    "lat": 45.2897,
+    "lng": 11.5406
+  },
+  {
+    "nome": "Occhiobello",
+    "provincia": "RO",
+    "lat": 44.9175,
+    "lng": 11.5794
+  },
+  {
+    "nome": "Oderzo",
+    "provincia": "TV",
+    "lat": 45.7811,
+    "lng": 12.4936
+  },
+  {
+    "nome": "Oppeano",
+    "provincia": "VR",
+    "lat": 45.2906,
+    "lng": 11.1475
+  },
+  {
+    "nome": "Orgiano",
+    "provincia": "VI",
+    "lat": 45.3458,
+    "lng": 11.4694
+  },
+  {
+    "nome": "Ormelle",
+    "provincia": "TV",
+    "lat": 45.7403,
+    "lng": 12.4442
+  },
+  {
+    "nome": "Orsago",
+    "provincia": "TV",
+    "lat": 45.9361,
+    "lng": 12.4222
+  },
+  {
+    "nome": "Ospedaletto Euganeo",
+    "provincia": "PD",
+    "lat": 45.2283,
+    "lng": 11.61
+  },
+  {
+    "nome": "Ospitale di Cadore",
+    "provincia": "BL",
+    "lat": 46.3233,
+    "lng": 12.2242
+  },
+  {
+    "nome": "Paderno del Grappa",
+    "provincia": "TV",
+    "lat": 45.8442,
+    "lng": 11.8083
+  },
+  {
+    "nome": "Padova",
+    "provincia": "PD",
+    "lat": 45.4064,
+    "lng": 11.8768
+  },
+  {
+    "nome": "Paese",
+    "provincia": "TV",
+    "lat": 45.6714,
+    "lng": 12.1508
+  },
+  {
+    "nome": "Palu",
+    "provincia": "VR",
+    "lat": 45.1925,
+    "lng": 11.22
+  },
+  {
+    "nome": "Palù",
+    "provincia": "VR",
+    "lat": 45.1925,
+    "lng": 11.22
+  },
+  {
+    "nome": "Papozze",
+    "provincia": "RO",
+    "lat": 44.975,
+    "lng": 12.0486
+  },
+  {
+    "nome": "Pastrengo",
+    "provincia": "VR",
+    "lat": 45.4639,
+    "lng": 10.775
+  },
+  {
+    "nome": "Pedavena",
+    "provincia": "BL",
+    "lat": 46.0333,
+    "lng": 11.8833
+  },
+  {
+    "nome": "Pederobba",
+    "provincia": "TV",
+    "lat": 45.8717,
+    "lng": 11.9514
+  },
+  {
+    "nome": "Perarolo di Cadore",
+    "provincia": "BL",
+    "lat": 46.3908,
+    "lng": 12.3414
+  },
+  {
+    "nome": "Pernumia",
+    "provincia": "PD",
+    "lat": 45.2572,
+    "lng": 11.8028
+  },
+  {
+    "nome": "Pescantina",
+    "provincia": "VR",
+    "lat": 45.4853,
+    "lng": 10.8697
+  },
+  {
+    "nome": "Peschiera del Garda",
+    "provincia": "VR",
+    "lat": 45.4372,
+    "lng": 10.6875
+  },
+  {
+    "nome": "Pettorazza Grimani",
+    "provincia": "RO",
+    "lat": 45.0667,
+    "lng": 12.0833
+  },
+  {
+    "nome": "Piacenza d'Adige",
+    "provincia": "PD",
+    "lat": 45.1428,
+    "lng": 11.57
+  },
+  {
+    "nome": "Pianezze",
+    "provincia": "VI",
+    "lat": 45.7111,
+    "lng": 11.6417
+  },
+  {
+    "nome": "Pianiga",
+    "provincia": "VE",
+    "lat": 45.4528,
+    "lng": 12.0347
+  },
+  {
+    "nome": "Piazzola sul Brenta",
+    "provincia": "PD",
+    "lat": 45.5383,
+    "lng": 11.7858
+  },
+  {
+    "nome": "Pieve d'Alpago",
+    "provincia": "BL",
+    "lat": 46.1131,
+    "lng": 12.3619
+  },
+  {
+    "nome": "Pieve di Cadore",
+    "provincia": "BL",
+    "lat": 46.4311,
+    "lng": 12.3697
+  },
+  {
+    "nome": "Pieve di Soligo",
+    "provincia": "TV",
+    "lat": 45.8981,
+    "lng": 12.1653
+  },
+  {
+    "nome": "Pincara",
+    "provincia": "RO",
+    "lat": 44.9897,
+    "lng": 11.6025
+  },
+  {
+    "nome": "Piombino Dese",
+    "provincia": "PD",
+    "lat": 45.56,
+    "lng": 12.0083
+  },
+  {
+    "nome": "Piove di Sacco",
+    "provincia": "PD",
+    "lat": 45.2928,
+    "lng": 12.0342
+  },
+  {
+    "nome": "Piovene Rocchette",
+    "provincia": "VI",
+    "lat": 45.7619,
+    "lng": 11.4281
+  },
+  {
+    "nome": "Poiana Maggiore",
+    "provincia": "VI",
+    "lat": 45.2739,
+    "lng": 11.5061
+  },
+  {
+    "nome": "Polesella",
+    "provincia": "RO",
+    "lat": 44.9656,
+    "lng": 11.7503
+  },
+  {
+    "nome": "Polverara",
+    "provincia": "PD",
+    "lat": 45.3125,
+    "lng": 11.9644
+  },
+  {
+    "nome": "Ponso",
+    "provincia": "PD",
+    "lat": 45.1942,
+    "lng": 11.5883
+  },
+  {
+    "nome": "Ponte di Piave",
+    "provincia": "TV",
+    "lat": 45.72,
+    "lng": 12.4444
+  },
+  {
+    "nome": "Ponte nelle Alpi",
+    "provincia": "BL",
+    "lat": 46.1794,
+    "lng": 12.2756
+  },
+  {
+    "nome": "Ponte San Nicolo",
+    "provincia": "PD",
+    "lat": 45.3556,
+    "lng": 11.9261
+  },
+  {
+    "nome": "Ponte San Nicolò",
+    "provincia": "PD",
+    "lat": 45.3556,
+    "lng": 11.9261
+  },
+  {
+    "nome": "Pontecchio Polesine",
+    "provincia": "RO",
+    "lat": 45.0167,
+    "lng": 11.75
+  },
+  {
+    "nome": "Pontelongo",
+    "provincia": "PD",
+    "lat": 45.2533,
+    "lng": 12.0194
+  },
+  {
+    "nome": "Ponzano Veneto",
+    "provincia": "TV",
+    "lat": 45.6967,
+    "lng": 12.2144
+  },
+  {
+    "nome": "Porto Tolle",
+    "provincia": "RO",
+    "lat": 44.9494,
+    "lng": 12.3319
+  },
+  {
+    "nome": "Porto Viro",
+    "provincia": "RO",
+    "lat": 45.0011,
+    "lng": 12.2181
+  },
+  {
+    "nome": "Portobuffolè",
+    "provincia": "TV",
+    "lat": 45.8544,
+    "lng": 12.5328
+  },
+  {
+    "nome": "Portogruaro",
+    "provincia": "VE",
+    "lat": 45.7756,
+    "lng": 12.8375
+  },
+  {
+    "nome": "Posina",
+    "provincia": "VI",
+    "lat": 45.7928,
+    "lng": 11.2642
+  },
+  {
+    "nome": "Possagno",
+    "provincia": "TV",
+    "lat": 45.8528,
+    "lng": 11.8725
+  },
+  {
+    "nome": "Povegliano",
+    "provincia": "TV",
+    "lat": 45.7597,
+    "lng": 12.2181
+  },
+  {
+    "nome": "Povegliano Veronese",
+    "provincia": "VR",
+    "lat": 45.35,
+    "lng": 10.8833
+  },
+  {
+    "nome": "Pozzoleone",
+    "provincia": "VI",
+    "lat": 45.6167,
+    "lng": 11.6917
+  },
+  {
+    "nome": "Pozzonovo",
+    "provincia": "PD",
+    "lat": 45.1983,
+    "lng": 11.7883
+  },
+  {
+    "nome": "Pramaggiore",
+    "provincia": "VE",
+    "lat": 45.81,
+    "lng": 12.7378
+  },
+  {
+    "nome": "Preganziol",
+    "provincia": "TV",
+    "lat": 45.5981,
+    "lng": 12.2319
+  },
+  {
+    "nome": "Pressana",
+    "provincia": "VR",
+    "lat": 45.2889,
+    "lng": 11.4072
+  },
+  {
+    "nome": "Puos d'Alpago",
+    "provincia": "BL",
+    "lat": 46.1056,
+    "lng": 12.3142
+  },
+  {
+    "nome": "Quarto d'Altino",
+    "provincia": "VE",
+    "lat": 45.5778,
+    "lng": 12.3769
+  },
+  {
+    "nome": "Quero Vas",
+    "provincia": "BL",
+    "lat": 45.9272,
+    "lng": 11.9331
+  },
+  {
+    "nome": "Quinto di Treviso",
+    "provincia": "TV",
+    "lat": 45.6478,
+    "lng": 12.1544
+  },
+  {
+    "nome": "Quinto Vicentino",
+    "provincia": "VI",
+    "lat": 45.5681,
+    "lng": 11.6281
+  },
+  {
+    "nome": "Recoaro Terme",
+    "provincia": "VI",
+    "lat": 45.7056,
+    "lng": 11.2233
+  },
+  {
+    "nome": "Refrontolo",
+    "provincia": "TV",
+    "lat": 45.9325,
+    "lng": 12.2075
+  },
+  {
+    "nome": "Resana",
+    "provincia": "TV",
+    "lat": 45.6336,
+    "lng": 11.9592
+  },
+  {
+    "nome": "Revine Lago",
+    "provincia": "TV",
+    "lat": 45.9903,
+    "lng": 12.1286
+  },
+  {
+    "nome": "Riese Pio X",
+    "provincia": "TV",
+    "lat": 45.73,
+    "lng": 11.9119
+  },
+  {
+    "nome": "Rivamonte Agordino",
+    "provincia": "BL",
+    "lat": 46.2803,
+    "lng": 12.0186
+  },
+  {
+    "nome": "Rivoli Veronese",
+    "provincia": "VR",
+    "lat": 45.5744,
+    "lng": 10.8106
+  },
+  {
+    "nome": "Roana",
+    "provincia": "VI",
+    "lat": 45.8728,
+    "lng": 11.4617
+  },
+  {
+    "nome": "Rocca Pietore",
+    "provincia": "BL",
+    "lat": 46.435,
+    "lng": 11.9864
+  },
+  {
+    "nome": "Romano d'Ezzelino",
+    "provincia": "VI",
+    "lat": 45.7872,
+    "lng": 11.7725
+  },
+  {
+    "nome": "Roncà",
+    "provincia": "VR",
+    "lat": 45.4731,
+    "lng": 11.2864
+  },
+  {
+    "nome": "Roncade",
+    "provincia": "TV",
+    "lat": 45.6275,
+    "lng": 12.3725
+  },
+  {
+    "nome": "Ronco all'Adige",
+    "provincia": "VR",
+    "lat": 45.3386,
+    "lng": 11.2339
+  },
+  {
+    "nome": "Rosolina",
+    "provincia": "RO",
+    "lat": 45.07,
+    "lng": 12.2414
+  },
+  {
+    "nome": "Rossano Veneto",
+    "provincia": "VI",
+    "lat": 45.7083,
+    "lng": 11.7953
+  },
+  {
+    "nome": "Rotzo",
+    "provincia": "VI",
+    "lat": 45.8717,
+    "lng": 11.4144
+  },
+  {
+    "nome": "Roverchiara",
+    "provincia": "VR",
+    "lat": 45.2633,
+    "lng": 11.2494
+  },
+  {
+    "nome": "Rovere Veronese",
+    "provincia": "VR",
+    "lat": 45.5911,
+    "lng": 11.0833
+  },
+  {
+    "nome": "Roveredo di Guà",
+    "provincia": "VR",
+    "lat": 45.2947,
+    "lng": 11.3178
+  },
+  {
+    "nome": "Rovigo",
+    "provincia": "RO",
+    "lat": 45.0706,
+    "lng": 11.7897
+  },
+  {
+    "nome": "Rovolon",
+    "provincia": "PD",
+    "lat": 45.3514,
+    "lng": 11.6528
+  },
+  {
+    "nome": "Rubano",
+    "provincia": "PD",
+    "lat": 45.4261,
+    "lng": 11.7892
+  },
+  {
+    "nome": "Saccolongo",
+    "provincia": "PD",
+    "lat": 45.3917,
+    "lng": 11.7572
+  },
+  {
+    "nome": "Salara",
+    "provincia": "RO",
+    "lat": 45.0175,
+    "lng": 11.3978
+  },
+  {
+    "nome": "Salcedo",
+    "provincia": "VI",
+    "lat": 45.7467,
+    "lng": 11.5614
+  },
+  {
+    "nome": "Salgareda",
+    "provincia": "TV",
+    "lat": 45.7083,
+    "lng": 12.5158
+  },
+  {
+    "nome": "Salizzole",
+    "provincia": "VR",
+    "lat": 45.2342,
+    "lng": 11.0772
+  },
+  {
+    "nome": "Salzano",
+    "provincia": "VE",
+    "lat": 45.5275,
+    "lng": 12.1042
+  },
+  {
+    "nome": "San Bellino",
+    "provincia": "RO",
+    "lat": 45.0289,
+    "lng": 11.5656
+  },
+  {
+    "nome": "San Biagio di Callalta",
+    "provincia": "TV",
+    "lat": 45.6806,
+    "lng": 12.3797
+  },
+  {
+    "nome": "San Bonifacio",
+    "provincia": "VR",
+    "lat": 45.3942,
+    "lng": 11.2694
+  },
+  {
+    "nome": "San Dona di Piave",
+    "provincia": "VE",
+    "lat": 45.6306,
+    "lng": 12.5656
+  },
+  {
+    "nome": "San Fior",
+    "provincia": "TV",
+    "lat": 45.9197,
+    "lng": 12.3578
+  },
+  {
+    "nome": "San Giorgio delle Pertiche",
+    "provincia": "PD",
+    "lat": 45.5331,
+    "lng": 11.9739
+  },
+  {
+    "nome": "San Giorgio in Bosco",
+    "provincia": "PD",
+    "lat": 45.5567,
+    "lng": 11.8033
+  },
+  {
+    "nome": "San Giovanni Ilarione",
+    "provincia": "VR",
+    "lat": 45.5206,
+    "lng": 11.2314
+  },
+  {
+    "nome": "San Giovanni Lupatoto",
+    "provincia": "VR",
+    "lat": 45.3847,
+    "lng": 11.0358
+  },
+  {
+    "nome": "San Gregorio nelle Alpi",
+    "provincia": "BL",
+    "lat": 46.0928,
+    "lng": 12.0264
+  },
+  {
+    "nome": "San Martino Buon Albergo",
+    "provincia": "VR",
+    "lat": 45.4178,
+    "lng": 11.0925
+  },
+  {
+    "nome": "San Martino di Lupari",
+    "provincia": "PD",
+    "lat": 45.5672,
+    "lng": 11.8594
+  },
+  {
+    "nome": "San Martino di Venezze",
+    "provincia": "RO",
+    "lat": 45.0553,
+    "lng": 11.87
+  },
+  {
+    "nome": "San Mauro di Saline",
+    "provincia": "VR",
+    "lat": 45.5608,
+    "lng": 11.1167
+  },
+  {
+    "nome": "San Michele al Tagliamento",
+    "provincia": "VE",
+    "lat": 45.7636,
+    "lng": 12.9942
+  },
+  {
+    "nome": "San Nicolo di Comelico",
+    "provincia": "BL",
+    "lat": 46.5822,
+    "lng": 12.4289
+  },
+  {
+    "nome": "San Nicolò di Comelico",
+    "provincia": "BL",
+    "lat": 46.5822,
+    "lng": 12.4289
+  },
+  {
+    "nome": "San Pietro di Cadore",
+    "provincia": "BL",
+    "lat": 46.5642,
+    "lng": 12.5714
+  },
+  {
+    "nome": "San Pietro di Feletto",
+    "provincia": "TV",
+    "lat": 45.9167,
+    "lng": 12.2417
+  },
+  {
+    "nome": "San Pietro di Morubio",
+    "provincia": "VR",
+    "lat": 45.2539,
+    "lng": 11.1714
+  },
+  {
+    "nome": "San Pietro in Cariano",
+    "provincia": "VR",
+    "lat": 45.5178,
+    "lng": 10.8847
+  },
+  {
+    "nome": "San Pietro in Gu",
+    "provincia": "PD",
+    "lat": 45.61,
+    "lng": 11.665
+  },
+  {
+    "nome": "San Pietro Mussolino",
+    "provincia": "VI",
+    "lat": 45.5297,
+    "lng": 11.3044
+  },
+  {
+    "nome": "San Pietro Viminario",
+    "provincia": "PD",
+    "lat": 45.2519,
+    "lng": 11.8239
+  },
+  {
+    "nome": "San Polo di Piave",
+    "provincia": "TV",
+    "lat": 45.7889,
+    "lng": 12.3931
+  },
+  {
+    "nome": "San Stino di Livenza",
+    "provincia": "VE",
+    "lat": 45.7308,
+    "lng": 12.6781
+  },
+  {
+    "nome": "San Tomaso Agordino",
+    "provincia": "BL",
+    "lat": 46.3575,
+    "lng": 12.0481
+  },
+  {
+    "nome": "San Vito di Cadore",
+    "provincia": "BL",
+    "lat": 46.4608,
+    "lng": 12.2117
+  },
+  {
+    "nome": "San Vito di Leguzzano",
+    "provincia": "VI",
+    "lat": 45.6581,
+    "lng": 11.3847
+  },
+  {
+    "nome": "San Zeno di Montagna",
+    "provincia": "VR",
+    "lat": 45.6292,
+    "lng": 10.7369
+  },
+  {
+    "nome": "San Zenone degli Ezzelini",
+    "provincia": "TV",
+    "lat": 45.7831,
+    "lng": 11.8369
+  },
+  {
+    "nome": "Sandrigo",
+    "provincia": "VI",
+    "lat": 45.6619,
+    "lng": 11.6022
+  },
+  {
+    "nome": "Sanguinetto",
+    "provincia": "VR",
+    "lat": 45.1844,
+    "lng": 11.1531
+  },
+  {
+    "nome": "Sant'Ambrogio di Valpolicella",
+    "provincia": "VR",
+    "lat": 45.5211,
+    "lng": 10.8472
+  },
+  {
+    "nome": "Sant'Anna d'Alfaedo",
+    "provincia": "VR",
+    "lat": 45.5892,
+    "lng": 10.9661
+  },
+  {
+    "nome": "Santa Giustina",
+    "provincia": "BL",
+    "lat": 46.0828,
+    "lng": 12.0419
+  },
+  {
+    "nome": "Santa Giustina in Colle",
+    "provincia": "PD",
+    "lat": 45.5656,
+    "lng": 11.9236
+  },
+  {
+    "nome": "Santa Lucia di Piave",
+    "provincia": "TV",
+    "lat": 45.8547,
+    "lng": 12.2889
+  },
+  {
+    "nome": "Santa Maria di Sala",
+    "provincia": "VE",
+    "lat": 45.505,
+    "lng": 12.0353
+  },
+  {
+    "nome": "Santo Stefano di Cadore",
+    "provincia": "BL",
+    "lat": 46.5569,
+    "lng": 12.5522
+  },
+  {
+    "nome": "Santorso",
+    "provincia": "VI",
+    "lat": 45.7308,
+    "lng": 11.3783
+  },
+  {
+    "nome": "Saonara",
+    "provincia": "PD",
+    "lat": 45.3683,
+    "lng": 11.9842
+  },
+  {
+    "nome": "Sappada",
+    "provincia": "BL",
+    "lat": 46.5669,
+    "lng": 12.6908
+  },
+  {
+    "nome": "Sarcedo",
+    "provincia": "VI",
+    "lat": 45.7011,
+    "lng": 11.5358
+  },
+  {
+    "nome": "Sarego",
+    "provincia": "VI",
+    "lat": 45.4036,
+    "lng": 11.4131
+  },
+  {
+    "nome": "Sarmede",
+    "provincia": "TV",
+    "lat": 46.0058,
+    "lng": 12.3894
+  },
+  {
+    "nome": "Schiavon",
+    "provincia": "VI",
+    "lat": 45.6364,
+    "lng": 11.6467
+  },
+  {
+    "nome": "Schio",
+    "provincia": "VI",
+    "lat": 45.7122,
+    "lng": 11.3536
+  },
+  {
+    "nome": "Scorzè",
+    "provincia": "VE",
+    "lat": 45.5722,
+    "lng": 12.1078
+  },
+  {
+    "nome": "Sedico",
+    "provincia": "BL",
+    "lat": 46.1083,
+    "lng": 12.0908
+  },
+  {
+    "nome": "Segusino",
+    "provincia": "TV",
+    "lat": 45.9231,
+    "lng": 11.9517
+  },
+  {
+    "nome": "Selva di Cadore",
+    "provincia": "BL",
+    "lat": 46.4475,
+    "lng": 12.0353
+  },
+  {
+    "nome": "Selva di Progno",
+    "provincia": "VR",
+    "lat": 45.6083,
+    "lng": 11.1508
+  },
+  {
+    "nome": "Selvazzano Dentro",
+    "provincia": "PD",
+    "lat": 45.38,
+    "lng": 11.7944
+  },
+  {
+    "nome": "Seren del Grappa",
+    "provincia": "BL",
+    "lat": 45.9681,
+    "lng": 11.8508
+  },
+  {
+    "nome": "Silea",
+    "provincia": "TV",
+    "lat": 45.6522,
+    "lng": 12.2933
+  },
+  {
+    "nome": "Soave",
+    "provincia": "VR",
+    "lat": 45.4183,
+    "lng": 11.2469
+  },
+  {
+    "nome": "Solagna",
+    "provincia": "VI",
+    "lat": 45.8264,
+    "lng": 11.7361
+  },
+  {
+    "nome": "Solesino",
+    "provincia": "PD",
+    "lat": 45.175,
+    "lng": 11.7369
+  },
+  {
+    "nome": "Sommacampagna",
+    "provincia": "VR",
+    "lat": 45.3997,
+    "lng": 10.8406
+  },
+  {
+    "nome": "Sona",
+    "provincia": "VR",
+    "lat": 45.4339,
+    "lng": 10.8272
+  },
+  {
+    "nome": "Sorgà",
+    "provincia": "VR",
+    "lat": 45.1811,
+    "lng": 10.9564
+  },
+  {
+    "nome": "Sospirolo",
+    "provincia": "BL",
+    "lat": 46.1453,
+    "lng": 12.0781
+  },
+  {
+    "nome": "Soverzene",
+    "provincia": "BL",
+    "lat": 46.2103,
+    "lng": 12.3008
+  },
+  {
+    "nome": "Sovizzo",
+    "provincia": "VI",
+    "lat": 45.5133,
+    "lng": 11.4394
+  },
+  {
+    "nome": "Sovramonte",
+    "provincia": "BL",
+    "lat": 46.06,
+    "lng": 11.8167
+  },
+  {
+    "nome": "Spinea",
+    "provincia": "VE",
+    "lat": 45.4925,
+    "lng": 12.155
+  },
+  {
+    "nome": "Spresiano",
+    "provincia": "TV",
+    "lat": 45.775,
+    "lng": 12.2506
+  },
+  {
+    "nome": "Stanghella",
+    "provincia": "PD",
+    "lat": 45.1367,
+    "lng": 11.7628
+  },
+  {
+    "nome": "Stienta",
+    "provincia": "RO",
+    "lat": 44.9372,
+    "lng": 11.54
+  },
+  {
+    "nome": "Stra",
+    "provincia": "VE",
+    "lat": 45.4131,
+    "lng": 12.0089
+  },
+  {
+    "nome": "Susegana",
+    "provincia": "TV",
+    "lat": 45.8531,
+    "lng": 12.2531
+  },
+  {
+    "nome": "Taglio di Po",
+    "provincia": "RO",
+    "lat": 44.9858,
+    "lng": 12.2294
+  },
+  {
+    "nome": "Taibon Agordino",
+    "provincia": "BL",
+    "lat": 46.2939,
+    "lng": 12.0283
+  },
+  {
+    "nome": "Tambre",
+    "provincia": "BL",
+    "lat": 46.1219,
+    "lng": 12.4169
+  },
+  {
+    "nome": "Tarzo",
+    "provincia": "TV",
+    "lat": 45.9789,
+    "lng": 12.2264
+  },
+  {
+    "nome": "Teolo",
+    "provincia": "PD",
+    "lat": 45.3531,
+    "lng": 11.6697
+  },
+  {
+    "nome": "Terrassa Padovana",
+    "provincia": "PD",
+    "lat": 45.2256,
+    "lng": 11.915
+  },
+  {
+    "nome": "Terrazzo",
+    "provincia": "VR",
+    "lat": 45.1672,
+    "lng": 11.3706
+  },
+  {
+    "nome": "Tezze sul Brenta",
+    "provincia": "VI",
+    "lat": 45.6875,
+    "lng": 11.7053
+  },
+  {
+    "nome": "Thiene",
+    "provincia": "VI",
+    "lat": 45.7094,
+    "lng": 11.4764
+  },
+  {
+    "nome": "Tombolo",
+    "provincia": "PD",
+    "lat": 45.5739,
+    "lng": 11.8589
+  },
+  {
+    "nome": "Tonezza del Cimone",
+    "provincia": "VI",
+    "lat": 45.8575,
+    "lng": 11.3467
+  },
+  {
+    "nome": "Torre di Mosto",
+    "provincia": "VE",
+    "lat": 45.6456,
+    "lng": 12.7053
+  },
+  {
+    "nome": "Torrebelvicino",
+    "provincia": "VI",
+    "lat": 45.7083,
+    "lng": 11.3122
+  },
+  {
+    "nome": "Torreglia",
+    "provincia": "PD",
+    "lat": 45.3319,
+    "lng": 11.7186
+  },
+  {
+    "nome": "Torri del Benaco",
+    "provincia": "VR",
+    "lat": 45.6106,
+    "lng": 10.6922
+  },
+  {
+    "nome": "Torri di Quartesolo",
+    "provincia": "VI",
+    "lat": 45.5178,
+    "lng": 11.6211
+  },
+  {
+    "nome": "Trebaseleghe",
+    "provincia": "PD",
+    "lat": 45.5989,
+    "lng": 12.0467
+  },
+  {
+    "nome": "Trecenta",
+    "provincia": "RO",
+    "lat": 45.0281,
+    "lng": 11.4528
+  },
+  {
+    "nome": "Tregnago",
+    "provincia": "VR",
+    "lat": 45.5153,
+    "lng": 11.1614
+  },
+  {
+    "nome": "Trevenzuolo",
+    "provincia": "VR",
+    "lat": 45.2667,
+    "lng": 10.9333
+  },
+  {
+    "nome": "Trevignano",
+    "provincia": "TV",
+    "lat": 45.7064,
+    "lng": 11.9564
+  },
+  {
+    "nome": "Treviso",
+    "provincia": "TV",
+    "lat": 45.6669,
+    "lng": 12.2431
+  },
+  {
+    "nome": "Tribano",
+    "provincia": "PD",
+    "lat": 45.2097,
+    "lng": 11.8206
+  },
+  {
+    "nome": "Trissino",
+    "provincia": "VI",
+    "lat": 45.5636,
+    "lng": 11.3756
+  },
+  {
+    "nome": "Urbana",
+    "provincia": "PD",
+    "lat": 45.1953,
+    "lng": 11.4783
+  },
+  {
+    "nome": "Valbrenta",
+    "provincia": "VI",
+    "lat": 45.8783,
+    "lng": 11.6981
+  },
+  {
+    "nome": "Valdagno",
+    "provincia": "VI",
+    "lat": 45.6514,
+    "lng": 11.3011
+  },
+  {
+    "nome": "Valdobbiadene",
+    "provincia": "TV",
+    "lat": 45.9003,
+    "lng": 11.9964
+  },
+  {
+    "nome": "Valeggio sul Mincio",
+    "provincia": "VR",
+    "lat": 45.3544,
+    "lng": 10.7364
+  },
+  {
+    "nome": "Vallada Agordina",
+    "provincia": "BL",
+    "lat": 46.3628,
+    "lng": 11.9264
+  },
+  {
+    "nome": "Valle di Cadore",
+    "provincia": "BL",
+    "lat": 46.4183,
+    "lng": 12.3253
+  },
+  {
+    "nome": "Valli del Pasubio",
+    "provincia": "VI",
+    "lat": 45.7522,
+    "lng": 11.2647
+  },
+  {
+    "nome": "Valstagna",
+    "provincia": "VI",
+    "lat": 45.8647,
+    "lng": 11.6644
+  },
+  {
+    "nome": "Vazzola",
+    "provincia": "TV",
+    "lat": 45.8403,
+    "lng": 12.3739
+  },
+  {
+    "nome": "Vedelago",
+    "provincia": "TV",
+    "lat": 45.6844,
+    "lng": 12.0178
+  },
+  {
+    "nome": "Veggiano",
+    "provincia": "PD",
+    "lat": 45.4211,
+    "lng": 11.7303
+  },
+  {
+    "nome": "Velo d'Astico",
+    "provincia": "VI",
+    "lat": 45.7847,
+    "lng": 11.3808
+  },
+  {
+    "nome": "Velo Veronese",
+    "provincia": "VR",
+    "lat": 45.595,
+    "lng": 11.1094
+  },
+  {
+    "nome": "Venezia",
+    "provincia": "VE",
+    "lat": 45.4408,
+    "lng": 12.3155
+  },
+  {
+    "nome": "Verona",
+    "provincia": "VR",
+    "lat": 45.4384,
+    "lng": 10.9917
+  },
+  {
+    "nome": "Veronella",
+    "provincia": "VR",
+    "lat": 45.2853,
+    "lng": 11.3278
+  },
+  {
+    "nome": "Vescovana",
+    "provincia": "PD",
+    "lat": 45.1328,
+    "lng": 11.7217
+  },
+  {
+    "nome": "Vestenanova",
+    "provincia": "VR",
+    "lat": 45.5764,
+    "lng": 11.2231
+  },
+  {
+    "nome": "Vicenza",
+    "provincia": "VI",
+    "lat": 45.5455,
+    "lng": 11.5354
+  },
+  {
+    "nome": "Vidor",
+    "provincia": "TV",
+    "lat": 45.8681,
+    "lng": 12.0428
+  },
+  {
+    "nome": "Vigasio",
+    "provincia": "VR",
+    "lat": 45.3167,
+    "lng": 10.9417
+  },
+  {
+    "nome": "Vigodarzere",
+    "provincia": "PD",
+    "lat": 45.4514,
+    "lng": 11.8844
+  },
+  {
+    "nome": "Vigonovo",
+    "provincia": "VE",
+    "lat": 45.3889,
+    "lng": 12.0025
+  },
+  {
+    "nome": "Vigonza",
+    "provincia": "PD",
+    "lat": 45.4433,
+    "lng": 11.9839
+  },
+  {
+    "nome": "Villa Bartolomea",
+    "provincia": "VR",
+    "lat": 45.1594,
+    "lng": 11.34
+  },
+  {
+    "nome": "Villa del Conte",
+    "provincia": "PD",
+    "lat": 45.5822,
+    "lng": 11.8711
+  },
+  {
+    "nome": "Villa Estense",
+    "provincia": "PD",
+    "lat": 45.1806,
+    "lng": 11.6667
+  },
+  {
+    "nome": "Villadose",
+    "provincia": "RO",
+    "lat": 45.0697,
+    "lng": 11.9039
+  },
+  {
+    "nome": "Villafranca di Verona",
+    "provincia": "VR",
+    "lat": 45.3522,
+    "lng": 10.8467
+  },
+  {
+    "nome": "Villafranca Padovana",
+    "provincia": "PD",
+    "lat": 45.4517,
+    "lng": 11.7944
+  },
+  {
+    "nome": "Villaga",
+    "provincia": "VI",
+    "lat": 45.3917,
+    "lng": 11.55
+  },
+  {
+    "nome": "Villamarzana",
+    "provincia": "RO",
+    "lat": 45.0486,
+    "lng": 11.7439
+  },
+  {
+    "nome": "Villanova del Ghebbo",
+    "provincia": "RO",
+    "lat": 45.0697,
+    "lng": 11.5722
+  },
+  {
+    "nome": "Villanova Marchesana",
+    "provincia": "RO",
+    "lat": 44.9917,
+    "lng": 11.9667
+  },
+  {
+    "nome": "Villaverla",
+    "provincia": "VI",
+    "lat": 45.6539,
+    "lng": 11.505
+  },
+  {
+    "nome": "Villorba",
+    "provincia": "TV",
+    "lat": 45.705,
+    "lng": 12.2439
+  },
+  {
+    "nome": "Vittorio Veneto",
+    "provincia": "TV",
+    "lat": 45.9803,
+    "lng": 12.3061
+  },
+  {
+    "nome": "Vò",
+    "provincia": "PD",
+    "lat": 45.3267,
+    "lng": 11.6361
+  },
+  {
+    "nome": "Vo'",
+    "provincia": "PD",
+    "lat": 45.3267,
+    "lng": 11.6361
+  },
+  {
+    "nome": "Vodo di Cadore",
+    "provincia": "BL",
+    "lat": 46.4194,
+    "lng": 12.2467
+  },
+  {
+    "nome": "Volpago del Montello",
+    "provincia": "TV",
+    "lat": 45.7764,
+    "lng": 12.1119
+  },
+  {
+    "nome": "Voltago Agordino",
+    "provincia": "BL",
+    "lat": 46.2878,
+    "lng": 12.0003
+  },
+  {
+    "nome": "Zanè",
+    "provincia": "VI",
+    "lat": 45.7175,
+    "lng": 11.4483
+  },
+  {
+    "nome": "Zenson di Piave",
+    "provincia": "TV",
+    "lat": 45.68,
+    "lng": 12.4828
+  },
+  {
+    "nome": "Zermeghedo",
+    "provincia": "VI",
+    "lat": 45.5033,
+    "lng": 11.3372
+  },
+  {
+    "nome": "Zero Branco",
+    "provincia": "TV",
+    "lat": 45.6014,
+    "lng": 12.1653
+  },
+  {
+    "nome": "Zevio",
+    "provincia": "VR",
+    "lat": 45.3725,
+    "lng": 11.1344
+  },
+  {
+    "nome": "Zimella",
+    "provincia": "VR",
+    "lat": 45.3622,
+    "lng": 11.3181
+  },
+  {
+    "nome": "Zoppè di Cadore",
+    "provincia": "BL",
+    "lat": 46.3919,
+    "lng": 12.1539
+  },
+  {
+    "nome": "Zovencedo",
+    "provincia": "VI",
+    "lat": 45.4239,
+    "lng": 11.5081
+  },
+  {
+    "nome": "Zugliano",
+    "provincia": "VI",
+    "lat": 45.7331,
+    "lng": 11.5283
+  }
+]
