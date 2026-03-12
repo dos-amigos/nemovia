@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { SagraCard } from "@/components/sagra/SagraCard";
 import type { SagraCardData } from "@/lib/queries/types";
@@ -13,7 +13,7 @@ interface ScrollRowProps {
 export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const drag = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
+  const drag = useRef({ active: false, startX: 0, scrollLeft: 0, totalDelta: 0 });
 
   const scroll = (direction: "left" | "right") => {
     scrollRef.current?.scrollBy({
@@ -27,7 +27,7 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
     const el = scrollRef.current;
     if (!el) return;
     el.setPointerCapture(e.pointerId);
-    drag.current = { active: true, startX: e.clientX, scrollLeft: el.scrollLeft, moved: false };
+    drag.current = { active: true, startX: e.clientX, scrollLeft: el.scrollLeft, totalDelta: 0 };
     setIsDragging(true);
   }, []);
 
@@ -36,14 +36,18 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
     const el = scrollRef.current;
     if (!el) return;
     const dx = e.clientX - drag.current.startX;
-    if (Math.abs(dx) > 3) drag.current.moved = true;
+    drag.current.totalDelta = Math.abs(dx);
     el.scrollLeft = drag.current.scrollLeft - dx;
   }, []);
 
   const onPointerUp = useCallback(() => {
     if (!drag.current.active) return;
     drag.current.active = false;
-    setTimeout(() => setIsDragging(false), 50);
+    // Reset totalDelta after a short delay so onClickCapture can still read it
+    setTimeout(() => {
+      setIsDragging(false);
+      drag.current.totalDelta = 0;
+    }, 100);
 
     // Magnetic snap: align nearest card after release
     const el = scrollRef.current;
@@ -84,7 +88,9 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
             draggable={false}
             onDragStart={(e) => e.preventDefault()}
             onClickCapture={(e) => {
-              if (drag.current.moved) {
+              // Only prevent click if significant drag occurred (>10px)
+              // This allows normal clicks while still preventing accidental clicks during scrolling
+              if (drag.current.totalDelta > 10) {
                 e.preventDefault();
                 e.stopPropagation();
               }

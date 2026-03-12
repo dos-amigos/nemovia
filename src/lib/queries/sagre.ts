@@ -182,15 +182,7 @@ export async function searchSagre(
       .eq("is_active", true)
       .not("province", "is", null);
 
-    if (provincia) {
-      query = query.eq("province", provincia);
-    }
-    if (cucina) {
-      query = query.contains("food_tags", [cucina]);
-    }
-    if (gratis) {
-      query = query.eq("is_free", true);
-    }
+    // Apply date filter BEFORE optional filters to avoid PostgREST .or() precedence issues
     if (da) {
       query = query.gte("end_date", da);
     } else {
@@ -199,6 +191,16 @@ export async function searchSagre(
     }
     if (a) {
       query = query.lte("start_date", a);
+    }
+
+    if (provincia) {
+      query = query.eq("province", provincia);
+    }
+    if (cucina) {
+      query = query.contains("food_tags", [cucina]);
+    }
+    if (gratis) {
+      query = query.eq("is_free", true);
     }
 
     const { data, error } = await query
@@ -338,15 +340,7 @@ export async function searchMapSagre(
       .eq("is_active", true)
       .not("location", "is", null);
 
-    if (provincia) {
-      query = query.eq("province", provincia);
-    }
-    if (cucina) {
-      query = query.contains("food_tags", [cucina]);
-    }
-    if (gratis) {
-      query = query.eq("is_free", true);
-    }
+    // Apply date filter BEFORE optional filters to avoid PostgREST .or() precedence issues
     if (da) {
       query = query.gte("end_date", da);
     } else {
@@ -357,6 +351,16 @@ export async function searchMapSagre(
     }
     if (a) {
       query = query.lte("start_date", a);
+    }
+
+    if (provincia) {
+      query = query.eq("province", provincia);
+    }
+    if (cucina) {
+      query = query.contains("food_tags", [cucina]);
+    }
+    if (gratis) {
+      query = query.eq("is_free", true);
     }
 
     const { data, error } = await query.order("start_date", {

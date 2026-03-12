@@ -1,15 +1,17 @@
 /**
  * Food type icon mapping for sagra cards and scroll row titles.
- * Maps FOOD_TAGS values to 6 minimal SVG icon categories.
+ * Maps FOOD_TAGS values to 8 minimal SVG icon categories.
  */
 
-/** The 6 icon categories available */
+/** The 8 icon categories available */
 export type FoodCategory =
   | "carne"
   | "pesce"
   | "zucca"
   | "verdura"
   | "gnocco"
+  | "vino"
+  | "dolci"
   | "altro";
 
 /**
@@ -23,9 +25,9 @@ const TAG_TO_CATEGORY: Record<string, FoodCategory> = {
   Gnocchi: "gnocco",
   Funghi: "verdura",
   Radicchio: "verdura",
-  Vino: "altro",
+  Vino: "vino",
+  Dolci: "dolci",
   Formaggi: "altro",
-  Dolci: "altro",
   "Prodotti Tipici": "altro",
 };
 
@@ -36,6 +38,8 @@ const CATEGORY_PRIORITY: FoodCategory[] = [
   "zucca",
   "gnocco",
   "verdura",
+  "vino",
+  "dolci",
   "altro",
 ];
 
@@ -153,6 +157,41 @@ const ICONS: Record<
       <ellipse cx="12" cy="14" rx="8" ry="5" />
       <path d="M8 12c0-2 1.8-4 4-4s4 2 4 4" />
       <path d="M9 14.5h1M11.5 14.5h1M14 14.5h1" />
+    </svg>
+  ),
+
+  /** Wine glass */
+  vino: ({ className }) => (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M8 2h8M12 2v20M9 22h6" />
+      <path d="M7 6c0 4.4 2.2 8 5 8s5-3.6 5-8c0-1.1-.2-2-.6-3H7.6c-.4 1-.6 1.9-.6 3z" />
+    </svg>
+  ),
+
+  /** Cake / birthday cake */
+  dolci: ({ className }) => (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M3 20h18v-8H3v8z" />
+      <path d="M5 12V6l2-2 2 2V6l2-2 2 2V6l2-2 2 2v6" />
+      <path d="M7 20v-4M12 20v-4M17 20v-4" />
     </svg>
   ),
 

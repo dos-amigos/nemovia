@@ -22,7 +22,7 @@ export default function LocationButton({ onLocate }: LocationButtonProps) {
   const hasLocation = lat != null && lng != null;
 
   return (
-    <div className="absolute top-3 right-3 z-[1000]">
+    <div className="absolute top-3 right-3 z-[1000] flex flex-col items-end gap-2">
       {hasLocation ? (
         <Button
           variant="outline"
@@ -50,7 +50,7 @@ export default function LocationButton({ onLocate }: LocationButtonProps) {
         </Button>
       )}
       {error && (
-        <p className="mt-1 rounded bg-destructive/10 px-2 py-1 text-xs text-destructive">
+        <p className="rounded bg-destructive/10 px-2 py-1 text-xs text-destructive shadow-md">
           {error}
         </p>
       )}
