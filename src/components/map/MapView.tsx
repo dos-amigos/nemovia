@@ -9,6 +9,7 @@ import L from "leaflet";
 import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import { VENETO_CENTER, DEFAULT_MAP_ZOOM } from "@/lib/constants/veneto";
+import { getMarkerIcon } from "@/lib/map-markers";
 import type { MapMarkerData } from "@/lib/queries/types";
 import MapMarkerPopup from "./MapMarkerPopup";
 
@@ -70,7 +71,7 @@ export default function MapView({
             sagra.location.coordinates[0],
           ];
           return (
-            <Marker key={sagra.id} position={position}>
+            <Marker key={sagra.id} position={position} icon={getMarkerIcon(sagra.food_tags)}>
               <Tooltip>{sagra.title}</Tooltip>
               <Popup>
                 <MapMarkerPopup sagra={sagra} />

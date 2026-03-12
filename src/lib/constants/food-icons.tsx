@@ -67,6 +67,34 @@ export function getPrimaryCategory(
   return best;
 }
 
+/**
+ * Themed color per food category — used for scroll row titles, map markers, etc.
+ * Colors chosen for intuitive food association:
+ * - Pesce: sky blue (mare, oceano)
+ * - Carne: red (griglia, carne rossa)
+ * - Vino: bordeaux (vino rosso, eleganza)
+ * - Zucca: orange (zucca, autunno)
+ * - Verdura: green (natura, orto)
+ * - Gnocco: golden/wheat (pasta, grano)
+ * - Dolci: magenta/pink (dolcezza, zucchero)
+ * - Altro: coral (brand primary)
+ */
+export const CATEGORY_COLORS: Record<FoodCategory, string> = {
+  pesce: "#0EA5E9",
+  carne: "#DC2626",
+  vino: "#881337",
+  zucca: "#EA580C",
+  verdura: "#16A34A",
+  gnocco: "#CA8A04",
+  dolci: "#DB2777",
+  altro: "#C1512D",
+};
+
+/** Get themed color for a set of food tags */
+export function getCategoryColor(foodTags: string[] | null | undefined): string {
+  return CATEGORY_COLORS[getPrimaryCategory(foodTags)];
+}
+
 /** SVG icon render functions keyed by category */
 const ICONS: Record<
   FoodCategory,
@@ -216,14 +244,25 @@ const ICONS: Record<
 interface FoodIconProps {
   foodTags: string[] | null;
   className?: string;
+  style?: React.CSSProperties;
+  /** When true, automatically applies the themed category color */
+  themed?: boolean;
 }
 
 /**
  * Renders the appropriate food category SVG icon based on food tags.
  * Falls back to "altro" (fork and knife) when no specific match is found.
+ * Pass themed=true to auto-apply the category color.
  */
-export function FoodIcon({ foodTags, className }: FoodIconProps) {
+export function FoodIcon({ foodTags, className, style, themed }: FoodIconProps) {
   const category = getPrimaryCategory(foodTags);
   const IconFn = ICONS[category];
-  return <IconFn className={className} />;
+  const mergedStyle = themed
+    ? { color: CATEGORY_COLORS[category], ...style }
+    : style;
+  return (
+    <span style={mergedStyle} className="inline-flex">
+      <IconFn className={className} />
+    </span>
+  );
 }

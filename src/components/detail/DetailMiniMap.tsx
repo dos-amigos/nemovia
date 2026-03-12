@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 
 import L from "leaflet";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { getMarkerIcon } from "@/lib/map-markers";
 
 // Fix default marker icons -- Turbopack breaks Leaflet's icon URL detection.
 // Use CDN URLs as the safest approach across Webpack and Turbopack.
@@ -20,9 +21,11 @@ interface DetailMiniMapProps {
   lat: number;
   lng: number;
   title: string;
+  /** Food tags used to pick a themed marker icon */
+  foodTags?: string[] | null;
 }
 
-export default function DetailMiniMap({ lat, lng, title }: DetailMiniMapProps) {
+export default function DetailMiniMap({ lat, lng, title, foodTags }: DetailMiniMapProps) {
   return (
     <MapContainer
       center={[lat, lng]}
@@ -36,7 +39,7 @@ export default function DetailMiniMap({ lat, lng, title }: DetailMiniMapProps) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <Marker position={[lat, lng]}>
+      <Marker position={[lat, lng]} icon={getMarkerIcon(foodTags)}>
         <Popup>{title}</Popup>
       </Marker>
     </MapContainer>

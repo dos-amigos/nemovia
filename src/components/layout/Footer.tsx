@@ -17,7 +17,7 @@ export function Footer() {
           Aplicaxion realixà con ❤️ in Veneto
         </p>
 
-        {/* Unsplash attribution */}
+        {/* Media attribution */}
         <p className="text-xs text-muted-foreground/60">
           Photos by{" "}
           <a
@@ -27,6 +27,16 @@ export function Footer() {
             className="underline hover:text-foreground"
           >
             Unsplash
+          </a>
+          {" "}&middot;{" "}
+          Videos by{" "}
+          <a
+            href="https://www.pexels.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-foreground"
+          >
+            Pexels
           </a>
         </p>
 

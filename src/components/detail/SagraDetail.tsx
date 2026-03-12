@@ -90,6 +90,7 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
                     lat={lat}
                     lng={lng}
                     title={sagra.title}
+                    foodTags={sagra.food_tags}
                   />
                 </div>
               </div>
