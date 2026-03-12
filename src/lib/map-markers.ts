@@ -64,7 +64,7 @@ function buildMarkerSvg(color: string, iconPaths: string): string {
   <path d="M20 54 C20 54 4 34 4 20 A16 16 0 1 1 36 20 C36 34 20 54 20 54Z"
         fill="${color}" stroke="white" stroke-width="2" filter="url(#s)"/>
   <!-- White food icon centered in the circle part of the pin -->
-  <g transform="translate(10,10) scale(0.83)">
+  <g transform="translate(10,8) scale(0.83)">
     <svg viewBox="0 0 24 24" width="24" height="24"
          fill="none" stroke="white" stroke-width="2.2"
          stroke-linecap="round" stroke-linejoin="round">

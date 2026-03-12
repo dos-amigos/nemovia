@@ -42,7 +42,7 @@ export default function MappaClientPage({ sagre, searchLat, searchLng }: MappaCl
       {/* Always-visible filter bar - constrained to header width */}
       <div className="shrink-0 border-b bg-background">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
-          <SearchFilters />
+          <SearchFilters variant="topbar" />
         </div>
       </div>
       {/* Map fills remaining space */}
