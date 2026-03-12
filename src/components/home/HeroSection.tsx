@@ -1,27 +1,45 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { CitySearch } from "@/components/home/CitySearch";
 import { HERO_VIDEOS, type HeroVideo } from "@/lib/hero-videos";
 
+/** Shuffle array (Fisher-Yates) and return first N items */
+function shuffleAndTake(arr: HeroVideo[], n: number): HeroVideo[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, n);
+}
+
+const PLAYLIST_SIZE = 4;
+
 export function HeroSection() {
-  // Random video on every mount (= every page refresh)
-  const [video, setVideo] = useState<HeroVideo | null>(null);
+  const [playlist, setPlaylist] = useState<HeroVideo[]>([]);
+  const [currentIdx, setCurrentIdx] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Build a random playlist of 4 videos on mount
   useEffect(() => {
-    const idx = Math.floor(Math.random() * HERO_VIDEOS.length);
-    setVideo(HERO_VIDEOS[idx]);
+    setPlaylist(shuffleAndTake(HERO_VIDEOS, PLAYLIST_SIZE));
   }, []);
 
-  // Ensure playback starts even if autoplay is delayed
+  const video = playlist[currentIdx] ?? null;
+
+  // When a video ends, advance to next in playlist (loop back to 0)
+  const handleEnded = useCallback(() => {
+    setCurrentIdx((prev) => (prev + 1) % playlist.length);
+  }, [playlist.length]);
+
+  // Play video when it changes
   useEffect(() => {
     const el = videoRef.current;
     if (!el || !video) return;
-    el.play().catch(() => {
-      // Autoplay blocked — the poster frame is still visible
-    });
+    el.load();
+    el.play().catch(() => {});
   }, [video]);
 
   return (
@@ -33,9 +51,9 @@ export function HeroSection() {
             ref={videoRef}
             src={video.src}
             autoPlay
-            loop
             muted
             playsInline
+            onEnded={handleEnded}
             className="absolute inset-0 h-full w-full object-cover"
           />
         )}

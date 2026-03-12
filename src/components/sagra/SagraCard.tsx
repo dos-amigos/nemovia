@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import * as m from "motion/react-m";
-import { MapPin, Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
+import { NemoviaIcon } from "@/components/brand/NemoviaIcon";
 import { Badge } from "@/components/ui/badge";
 import { FadeImage } from "@/components/animations/FadeImage";
 import { FoodIcon } from "@/lib/constants/food-icons";
@@ -53,7 +54,7 @@ export function SagraCard({ sagra }: SagraCardProps) {
             {sagra.title}
           </h3>
           <div className="flex items-center gap-1 text-white/80 text-sm mt-1">
-            <MapPin className="h-3.5 w-3.5 shrink-0" />
+            <NemoviaIcon className="h-3.5 w-3.5 shrink-0" />
             <span className="line-clamp-1">
               {sagra.location_text}
               {sagra.province && (() => {
