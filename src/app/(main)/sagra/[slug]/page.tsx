@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getSagraBySlug } from "@/lib/queries/sagre";
+import { isLowQualityUrl } from "@/lib/fallback-images";
+import { searchCityVideo } from "@/lib/pexels-video";
 import SagraDetail from "@/components/detail/SagraDetail";
 
 export async function generateMetadata({
@@ -42,5 +44,11 @@ export default async function SagraDetailPage({
     notFound();
   }
 
-  return <SagraDetail sagra={sagra} />;
+  // Fetch city video when no good image available
+  const hasGoodImage = sagra.image_url && !isLowQualityUrl(sagra.image_url);
+  const videoUrl = hasGoodImage
+    ? null
+    : await searchCityVideo(sagra.location_text, sagra.province);
+
+  return <SagraDetail sagra={sagra} videoUrl={videoUrl} />;
 }

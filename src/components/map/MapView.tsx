@@ -12,6 +12,7 @@ import { VENETO_CENTER, DEFAULT_MAP_ZOOM } from "@/lib/constants/veneto";
 import { getMarkerIcon } from "@/lib/map-markers";
 import type { MapMarkerData } from "@/lib/queries/types";
 import MapMarkerPopup from "./MapMarkerPopup";
+import MapGestureHandler from "./MapGestureHandler";
 
 // Fix default marker icons -- Turbopack breaks Leaflet's icon URL detection.
 // Use CDN URLs as the safest approach across Webpack and Turbopack.
@@ -81,6 +82,7 @@ export default function MapView({
         })}
       </MarkerClusterGroup>
       <MapReadyHandler onMapReady={onMapReady} />
+      <MapGestureHandler />
     </MapContainer>
   );
 }

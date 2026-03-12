@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { getMarkerIcon } from "@/lib/map-markers";
+import MapGestureHandler from "@/components/map/MapGestureHandler";
 
 // Fix default marker icons -- Turbopack breaks Leaflet's icon URL detection.
 // Use CDN URLs as the safest approach across Webpack and Turbopack.
@@ -42,6 +43,7 @@ export default function DetailMiniMap({ lat, lng, title, foodTags }: DetailMiniM
       <Marker position={[lat, lng]} icon={getMarkerIcon(foodTags)}>
         <Popup>{title}</Popup>
       </Marker>
+      <MapGestureHandler />
     </MapContainer>
   );
 }

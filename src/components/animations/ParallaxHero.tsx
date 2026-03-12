@@ -15,13 +15,14 @@ export function ParallaxHero({ children, className }: ParallaxHeroProps) {
     target: ref,
     offset: ["start start", "end start"],
   });
-  const y = useTransform(scrollYProgress, [0, 1], [0, 60]);
+  const y = useTransform(scrollYProgress, [0, 1], [0, 30]);
+  // Smooth fade-out as the hero scrolls off screen (avoids abrupt clip)
+  const opacity = useTransform(scrollYProgress, [0, 0.7, 1], [1, 1, 0]);
 
   return (
     <div ref={ref} className={className}>
-      {/* Hide on lg+ where sticky layout conflicts with parallax (Pitfall 5) */}
-      {/* On mobile: parallax effect. On desktop: static (no transform). */}
-      <m.div className="lg:!transform-none" style={{ y }}>
+      {/* On mobile: subtle parallax + fade-out. On desktop: static (sticky layout). */}
+      <m.div className="lg:!transform-none lg:!opacity-100" style={{ y, opacity }}>
         {children}
       </m.div>
     </div>

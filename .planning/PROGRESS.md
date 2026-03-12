@@ -46,6 +46,11 @@
 - [x] Food icons tematiche (carne, pesce, zucca, gnocco, verdura, vino, dolci, altro)
 - [x] Brand color CSS variables (--brand-l/c/h)
 - [x] OG metadata, share button, back button
+- [x] Hero dettaglio: overlay scuro + titolo/luogo sovrapposto sull'immagine
+- [x] Video Pexels della città come fallback quando immagine non disponibile
+- [x] Mappa mobile: drag con 2 dita (MapGestureHandler) + hint "Usa due dita"
+- [x] Hero parallax: fade-out graduale allo scroll (no scomparsa brusca)
+- [x] ScrollRow: snap-always per evitare skip di 2 card allo swipe
 
 ---
 
@@ -225,6 +230,15 @@
 - Utente ha applicato migration 016 in Supabase SQL Editor
 - 6 bug identificati e tutti FIXATI (BUG-001 a BUG-006)
 - Pianificata Fase 3: sezione "Sagre dell'orto" in homepage
+
+### 2026-03-12 (sera) — Hero overlay + bugfix UX
+- **Hero dettaglio**: titolo + luogo sovrapposti sull'immagine con gradient scuro (from-black/70)
+- **Video fallback**: Pexels Video API cerca video della città quando immagine non disponibile (fallback: città → provincia → "Veneto Italy")
+- **Mappa mobile 2 dita**: MapGestureHandler disabilita drag 1 dito su mobile, mostra hint "Usa due dita", abilita drag con 2+ tocchi
+- **Hero fade-out**: parallax ridotto (60→30px) + opacity fade-out graduale (70-100% scroll), elimina scomparsa brusca
+- **ScrollRow snap-always**: `scroll-snap-stop: always` impedisce di saltare 2 card con swipe veloce
+- Nuovi file: `pexels-video.ts`, `MapGestureHandler.tsx`
+- File modificati: SagraDetail.tsx, page.tsx (sagra/[slug]), ParallaxHero.tsx, ScrollRow.tsx, MapView.tsx, DetailMiniMap.tsx
 
 ---
 

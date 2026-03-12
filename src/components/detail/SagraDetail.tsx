@@ -24,9 +24,10 @@ import DetailMiniMapDynamic from "./DetailMiniMap.dynamic";
 
 interface SagraDetailProps {
   sagra: Sagra;
+  videoUrl?: string | null;
 }
 
-export default function SagraDetail({ sagra }: SagraDetailProps) {
+export default function SagraDetail({ sagra, videoUrl }: SagraDetailProps) {
   const hasLocation = sagra.location !== null;
   const lat = hasLocation ? sagra.location!.coordinates[1] : null;
   const lng = hasLocation ? sagra.location!.coordinates[0] : null;
@@ -48,17 +49,54 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
       <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
         {/* LEFT column: Hero image + Mini map */}
         <div className="space-y-6 lg:sticky lg:top-20 lg:self-start">
-          {/* Hero image with parallax (mobile only) */}
+          {/* Hero image/video with parallax (mobile only) */}
           <ParallaxHero className="relative -mx-4 -mt-4 h-64 w-[calc(100%+2rem)] overflow-hidden sm:-mx-6 sm:h-72 sm:w-[calc(100%+3rem)] lg:mx-0 lg:mt-0 lg:w-full lg:h-[28rem] lg:rounded-xl">
-            <FadeImage
-              src={imageSrc}
-              fallbackSrc={fallback}
-              alt={sagra.title}
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              priority
-            />
+            {/* Media: video fallback or image */}
+            {!hasGoodImage && videoUrl ? (
+              <video
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="absolute inset-0 h-full w-full object-cover"
+              >
+                <source src={videoUrl} type="video/mp4" />
+              </video>
+            ) : (
+              <FadeImage
+                src={imageSrc}
+                fallbackSrc={fallback}
+                alt={sagra.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                priority
+              />
+            )}
+
+            {/* Dark gradient overlay for title readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+
+            {/* Title overlay */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 lg:p-6">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg">
+                {sagra.title}
+              </h1>
+              {sagra.location_text && (
+                <p className="mt-1 flex items-center gap-1.5 text-sm text-white/80 drop-shadow">
+                  <MapPin className="size-3.5 shrink-0" />
+                  <span>
+                    {sagra.location_text}
+                    {sagra.province && (() => {
+                      const loc = sagra.location_text ?? "";
+                      if (loc.includes(`(${sagra.province})`) || loc.toLowerCase().includes(sagra.province.toLowerCase())) return null;
+                      return ` (${sagra.province})`;
+                    })()}
+                  </span>
+                </p>
+              )}
+            </div>
+
             <BackButton />
           </ParallaxHero>
 
@@ -106,23 +144,9 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
 
         {/* RIGHT column: Title, info, tags, description, actions, source */}
         <div className="space-y-6">
-          {/* Title & location/date info */}
+          {/* Date & price info */}
           <ScrollReveal direction="up">
-            <div className="space-y-6">
-              <h1 className="text-2xl font-bold">{sagra.title}</h1>
-
-              <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                <MapPin className="mt-0.5 size-4 shrink-0" />
-                <span>
-                  {sagra.location_text}
-                  {sagra.province && (() => {
-                    const loc = sagra.location_text ?? "";
-                    if (loc.includes(`(${sagra.province})`) || loc.toLowerCase().includes(sagra.province.toLowerCase())) return null;
-                    return ` (${sagra.province})`;
-                  })()}
-                </span>
-              </div>
-
+            <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="size-4 shrink-0" />
                 <span>{formatDateRange(sagra.start_date, sagra.end_date)}</span>
