@@ -160,7 +160,14 @@
 ### BUG-002: Click su sagra in homepage non naviga alla pagina dettaglio
 - **Repro**: Homepage → click/tap su card sagra → non succede nulla
 - **Causa**: `setPointerCapture` nello ScrollRow intercettava tutti i pointer events inclusi i tap
-- **Fix applicato**: Rimosso `setPointerCapture`, rimosso snap magnetico (viola regola utente), drag inizia solo dopo 5px di movimento
+- **Fix applicato**: Rimosso `setPointerCapture`, drag inizia solo dopo 5px di movimento
+- **Stato**: FIXATO
+
+### BUG-007: Scroll row mobile — card non si allineano a sinistra dopo swipe
+- **Repro**: Mobile → swipe ScrollRow → le card si fermano a metà, non snappano
+- **Causa**: Rimosso snap magnetico JS nel fix BUG-002 senza sostituirlo con CSS snap
+- **Regola UX**: Mobile=snap nativo CSS, Desktop=drag fluido+frecce NO snap
+- **Fix applicato**: Aggiunto `snap-x snap-mandatory lg:snap-none` al container, `snap-start` alle card
 - **Stato**: FIXATO
 
 ### BUG-003: Immagini a bassa risoluzione ancora visibili

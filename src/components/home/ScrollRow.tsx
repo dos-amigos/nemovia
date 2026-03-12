@@ -60,7 +60,7 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
         role="region"
         tabIndex={0}
         aria-label={ariaLabel}
-        className={`scrollbar-hide flex gap-3 overflow-x-auto pb-2 pl-4 sm:pl-6 lg:pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] ${isDragging ? "cursor-grabbing select-none" : "cursor-grab"}`}
+        className={`scrollbar-hide flex gap-3 overflow-x-auto snap-x snap-mandatory lg:snap-none pb-2 pl-4 sm:pl-6 lg:pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] ${isDragging ? "cursor-grabbing select-none" : "cursor-grab"}`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -70,7 +70,7 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
         {sagre.map((sagra) => (
           <div
             key={sagra.id}
-            className="w-[75vw] flex-shrink-0 sm:w-[45vw] lg:w-[280px]"
+            className="w-[75vw] flex-shrink-0 snap-start sm:w-[45vw] lg:w-[280px]"
             draggable={false}
             onDragStart={(e) => e.preventDefault()}
             onClickCapture={(e) => {
