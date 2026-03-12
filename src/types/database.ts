@@ -9,6 +9,9 @@ export interface Sagra {
   end_date: string | null;
   description: string | null;
   enhanced_description: string | null;
+  source_description: string | null;
+  menu_text: string | null;
+  orari_text: string | null;
   food_tags: string[] | null;
   feature_tags: string[] | null;
   image_url: string | null;
