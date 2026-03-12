@@ -1,5 +1,24 @@
 # Milestones
 
+## v1.4 Esperienza Completa (Shipped: 2026-03-12)
+
+**Delivered:** Complete product experience — restored data pipeline, Unsplash image quality, full-width layout with branding, Netflix-style discovery rows, city search autocomplete, food type icons, map filter sync, and source detail scraping.
+
+**Phases completed:** 6 phases, 13 plans
+**Commits:** 74 | **Files changed:** 92 | **LOC delta:** +2,671/-122 TypeScript/CSS
+**Timeline:** 3 days (2026-03-10 → 2026-03-12)
+**Git range:** `v1.3..v1.4`
+
+**Key accomplishments:**
+1. Restored data pipeline with whitelist-aware filters, Veneto-bounded geocoding, province normalization, and itinerarinelgusto.it as 6th scraper source (100+ active events)
+2. Unsplash image integration at pipeline time with hero rotation, credit parsing, full-bleed photo hero, and photographer attribution
+3. Full-width responsive layout with custom SVG logo in coral/teal palette and professional footer with Italian credits
+4. Netflix-style horizontal scroll rows with CSS scroll-snap, drag-to-scroll, desktop arrows, and cross-row Set deduplication
+5. City autocomplete search from 555 static Veneto comuni, 6 SVG food type icons with priority-based tag mapping, and map filter sync fixes
+6. Source-specific Cheerio detail extractors for menu, orari, and descriptions with 10-page-capped backfill strategy
+
+---
+
 ## v1.3 Dati Puliti + Redesign (Shipped: 2026-03-10)
 
 **Delivered:** Data quality overhaul + UI/UX redesign — heuristic filters, LLM classification, fuzzy dedup, Geist/OKLCH palette, glassmorphism, mesh gradients, bento grid, and LazyMotion performance optimization.

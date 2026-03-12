@@ -196,6 +196,57 @@
 
 ---
 
+## Milestone: v1.4 -- Esperienza Completa
+
+**Shipped:** 2026-03-12
+**Phases:** 6 | **Plans:** 13 | **Commits:** 74
+
+### What Was Built
+- Data pipeline restoration: whitelist-aware filters, Veneto-bounded Nominatim, province normalization, itinerarinelgusto.it 6th source (100+ active events)
+- Unsplash image quality: pipeline-time image assignment with hero rotation, credit parsing, full-bleed photo hero with attribution
+- Full-width responsive layout with custom SVG logo (coral/teal) and professional footer ("Fatto con cuore in Veneto")
+- Netflix-style horizontal scroll rows: CSS scroll-snap, drag-to-scroll, desktop hover arrows, cross-row Set deduplication
+- City autocomplete search from 555 static Veneto comuni with glass-styled dropdown and keyboard navigation
+- 6 SVG food type icons (carne, pesce, zucca, verdura, gnocco, altro) with priority-based tag mapping on cards and row titles
+- Map filter sync fixes: searchMapSagre for Cerca page, always-visible filters on Mappa page
+- Source-specific detail extractors for menu, orari, descriptions with 10-page-capped backfill strategy
+
+### What Worked
+- **Data-first phase ordering**: restoring 100+ events in Phase 18 before building Netflix rows in Phase 21 meant real content from day one — building on empty data would have been misleading
+- **Static data for city search**: bundling 555 comuni as JSON avoided Nominatim API calls entirely, instant client-side filtering, zero rate limit risk
+- **CSS scroll-snap for Netflix rows**: native momentum scrolling with no JS carousel dependency, drag-to-scroll added as lightweight mouse event handler
+- **Unsplash at pipeline time**: pre-fetching images during enrich-sagre run avoided runtime API calls (50 req/hr demo tier limitation)
+- **NULL-only update pattern**: detail scraping never overwrites existing content, preserving curated/LLM content while filling gaps progressively
+- **6-phase milestone with clear dependencies**: Phase 18→19→20→21→22→23 chain ensured each phase built on solid foundation
+
+### What Was Inefficient
+- **Edge Function inline copies still unresolved**: now 5 milestones with this pattern — filters.ts, llm.ts, unsplash.ts, detail extractors all have inline copies in Edge Functions
+- **Food type icon coverage gap**: "vino" and "dolci" categories map to generic "altro" fallback arrow icon instead of thematic icons (wine glass, cake) — should have expanded icon set
+- **image_credit migration not applied to remote DB**: migration 012 exists but was never run on production, forced temporary removal from SAGRA_CARD_FIELDS
+- **Phase 22 overloaded**: combining city search, map fixes, and food icons in one phase (3 plans) stretched scope — could have been 2 focused phases
+
+### Patterns Established
+- **ScrollRow/ScrollRowSection**: full-width CSS scroll-snap container with responsive card widths (75vw/45vw/280px), server component wrapper with min-3 threshold
+- **Full-width-by-default layout**: main has no max-w, pages opt into containment via mx-auto max-w-7xl wrapper divs
+- **Static data import**: JSON in public/data/ → TypeScript module in lib/constants/ → tested filter utility for zero-API client features
+- **Glass autocomplete**: rounded-full input with border-white/30 bg-white/20, dropdown with bg-black/70 backdrop-blur-md
+- **Detail extractor pattern**: function extractXxxDetail($: cheerio.CheerioAPI): DetailContent per source
+- **Combined new+backfill strategy**: newly inserted events get priority, remaining budget fills gaps progressively
+
+### Key Lessons
+1. **Data pipeline first, UI second** — building Netflix rows on 26 events would have looked broken; restoring 100+ events first was critical
+2. **Static data avoids rate limits** — 555 comuni as bundled JSON eliminated all Nominatim autocomplete risk with instant client-side filtering
+3. **Plan icon sets for ALL categories before implementation** — implementing 6 icons and discovering "vino" and "dolci" need thematic icons post-launch is avoidable
+4. **Apply migrations to production immediately** — delaying migration 012 caused runtime errors and forced workarounds
+5. **3 plans per phase is the sweet spot** — Phase 22 with 3 diverse features felt overloaded; Phase 21 with 1 focused plan was the most efficient
+
+### Cost Observations
+- Model mix: primarily Opus for planning and execution, Sonnet/Haiku for research subagents
+- Sessions: ~5 across 3 days
+- Notable: 13 plans across 6 phases in 3 days — largest milestone by phase count, maintained velocity through clear dependency chain
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -206,6 +257,7 @@
 | v1.1 | 29 | 4 | 7 | Data pipeline focus -- no frontend, all scraper/quality work |
 | v1.2 | 37 | 3 | 7 | UX polish -- responsive layout, transitions, micro-interactions |
 | v1.3 | 60 | 4 | 9 | Dual-track -- data quality overhaul + UI/UX redesign |
+| v1.4 | 74 | 6 | 13 | Full product -- data restore, Unsplash, Netflix rows, city search, detail scraping |
 
 ### Cumulative Quality
 
@@ -215,12 +267,14 @@
 | v1.1 | ~3,900 | 159 | 5/5 | 735 | Noise filter + location gating |
 | v1.2 | ~4,200 | 170+ | 5/5 | 735 | Same as v1.1 |
 | v1.3 | ~5,100 | 180+ | 5/5 | Clean | Heuristic + LLM + fuzzy dedup |
+| v1.4 | ~7,700 | 200+ | 6/6 | 100+ | + Unsplash images + detail scraping |
 
 ### Top Lessons (Verified Across Milestones)
 
 1. **Validate assumptions about external sites before planning** -- v1.0 assumed JS rendering for sagritaly, v1.1 proved it was SSR (validated v1.0 + v1.1)
-2. **Phase-by-phase incremental delivery works** -- all 4 milestones shipped incrementally with verification at each phase (validated v1.0-v1.3)
-3. **Edge Function inline copies are a growing burden** -- noted in all 4 milestones, still unresolved (validated v1.0-v1.3)
-4. **Foundation work before polish** -- v1.2 A11Y before animations, v1.3 data quality before design refresh (validated v1.2 + v1.3)
-5. **Research third-party libraries before planning** -- v1.2 eliminated 3 incompatible libraries; v1.3 research identified OKLCH backdrop-filter pitfall (validated v1.2 + v1.3)
-6. **Piggyback on existing infrastructure** -- v1.3 is_sagra piggybacked on Gemini enrichment; CSS custom props bridged Phase 15-16 palette transition (validated v1.3)
+2. **Phase-by-phase incremental delivery works** -- all 5 milestones shipped incrementally with verification at each phase (validated v1.0-v1.4)
+3. **Edge Function inline copies are a growing burden** -- noted in all 5 milestones, still unresolved (validated v1.0-v1.4)
+4. **Foundation/data work before UI polish** -- v1.2 A11Y before animations, v1.3 data quality before design refresh, v1.4 data pipeline before Netflix rows (validated v1.2-v1.4)
+5. **Research third-party libraries before planning** -- v1.2 eliminated 3 incompatible libraries; v1.3 research identified OKLCH backdrop-filter pitfall; v1.4 eliminated SwiperJS/Embla (validated v1.2-v1.4)
+6. **Piggyback on existing infrastructure** -- v1.3 is_sagra on Gemini enrichment; v1.4 Unsplash assignment on enrich-sagre Pass 3, static JSON for city search (validated v1.3 + v1.4)
+7. **Apply DB migrations to production immediately** -- v1.4 delayed migration 012 causing runtime errors and workarounds (validated v1.4)

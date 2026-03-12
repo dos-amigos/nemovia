@@ -2,23 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Esperienza Completa
-status: executing
-last_updated: "2026-03-12T09:22:39.968Z"
-progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 13
-  completed_plans: 13
----
-
----
-gsd_state_version: 1.0
-milestone: v1.4
-milestone_name: Esperienza Completa
-status: executing
-stopped_at: "Completed 23-02-PLAN.md"
-last_updated: "2026-03-12T08:45:07Z"
-last_activity: 2026-03-12 -- Completed 23-02 Detail Page Scraping
+status: completed
+last_updated: "2026-03-12"
 progress:
   total_phases: 6
   completed_phases: 6
@@ -27,38 +12,33 @@ progress:
   percent: 100
 ---
 
-# Project State: Nemovia v1.4
+# Project State: Nemovia
 
 **Last updated**: 2026-03-12
-**Current milestone**: v1.4 "Esperienza Completa"
+**Last milestone**: v1.4 "Esperienza Completa" (SHIPPED 2026-03-12)
 
 ## Project Reference
 
-**Core value**: Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
+See: .planning/PROJECT.md (updated 2026-03-12)
 
-**Current focus**: Transform Nemovia from prototype to complete product through data pipeline restoration, Netflix-style discovery UI, and UX polish. Phase 23 adds scraping completeness.
+**Core value:** Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-**Phase**: 23 - Scraping Completeness (COMPLETE)
-**Plan**: 2/2 complete
-**Status**: Phase 23 complete. All v1.4 phases complete (18-23).
-**Progress**: 13/13 plans complete (100%)
-
-```
-v1.4 Progress: [██████████] 100%
-Phase 23:      [==================================================] 100%
-```
+**Milestone v1.4**: SHIPPED 2026-03-12
+**Phases**: 18-23 complete (13/13 plans, 100%)
+**Git tag**: v1.4
 
 ## Performance Metrics
 
-### Milestone v1.4 (In Progress)
+### Milestone v1.4 (Shipped 2026-03-12)
 
-**Timeline**: Started 2026-03-10
-**Phases complete**: 4/6
-**Plans complete**: 10 (Phase 18: 3, Phase 19: 2/2, Phase 20: 2/2, Phase 21: 1/1, Phase 22: 2/3)
-**Commits**: 27
-**LOC delta**: +1393/-102
+**Timeline**: 3 days (2026-03-10 → 2026-03-12)
+**Phases**: 6/6 complete
+**Plans**: 13/13 complete
+**Commits**: 74
+**LOC delta**: +2,671/-122 TypeScript/CSS
 
 ### Previous Milestone: v1.3 (Shipped 2026-03-10)
 
@@ -68,212 +48,32 @@ Phase 23:      [==================================================] 100%
 **Commits**: 60
 **LOC delta**: +1173/-259 TypeScript/CSS
 
-**Velocity**: 30 commits/day, ~+457 net LOC/day
-
 ## Accumulated Context
-
-### Recent Decisions
-
-**23-02 Detail Page Scraping (2026-03-12)**
-- **Decision**: Source-specific Cheerio extractors over generic heuristics for higher accuracy per source
-- **Decision**: 10-page cap per source per run to stay within Edge Function timeout budget (~35s added per source)
-- **Decision**: Combined new+backfill strategy: newly inserted events get priority, remaining budget fills gaps
-- **Decision**: NULL-only update pattern: never overwrite existing detail content (preserves curated/LLM content)
-- **Decision**: Sagritaly and solosagre get stub extractors with TODO comments (sites unreachable during research)
-- **Pattern**: Detail extractor: function extractXxxDetail($: cheerio.CheerioAPI): DetailContent
-- **Pattern**: Backfill query: active events with source_url but NULL source_description
-- **Pattern**: upsertEvent returns { result, id } for post-insert processing
-
-**23-01 Data Model & Detail Page UI (2026-03-12)**
-- **Decision**: Inline Menu/Orari sections instead of separate components -- small sections with no reuse needed
-- **Decision**: Description priority: source_description > enhanced_description > description for progressive quality enrichment
-- **Decision**: whitespace-pre-line on menu/orari text to preserve multiline source formatting
-- **Pattern**: Conditional detail sections: ScrollReveal-wrapped, icon-headed, truthy-gated
-- **Pattern**: Progressive description priority chain for multi-source content
-
-**22-02 City Search Autocomplete (2026-03-11)**
-- **Decision**: Custom glass-styled CitySearch component instead of Shadcn Combobox UI -- hero requires transparent/glass aesthetic incompatible with standard popover styling
-- **Decision**: Static JSON import (bundled via TypeScript import) instead of runtime fetch for zero-latency client-side filtering
-- **Decision**: 555 Veneto comuni covering all 7 provinces -- accurate count after recent municipal mergers
-- **Decision**: HeroSection stays server component, CitySearch is "use client" island -- Next.js handles boundary automatically
-- **Pattern**: Static data pipeline: JSON in public/data/ -> TypeScript module in lib/constants/ -> tested filter utility
-- **Pattern**: Glass autocomplete: rounded-full input with border-white/30 bg-white/20, dropdown with bg-black/70 backdrop-blur-md
-
-**22-01 Food Type Icons (2026-03-11)**
-- **Decision**: Priority-based category selection for multi-tag sagre: carne > pesce > zucca > gnocco > verdura > altro
-- **Decision**: Inline SVG icons with currentColor instead of external icon library for theme compatibility
-- **Decision**: Always show food icon on cards (including altro fallback) for visual consistency
-- **Pattern**: FoodIcon component: tag array in, SVG out, with priority-based resolution
-- **Pattern**: Glass pill overlay for card icons: rounded-full bg-black/40 p-1 backdrop-blur-sm
-
-**22-03 Map Filter Sync (2026-03-11)**
-- **Decision**: searchMapSagre mirrors searchSagre logic with MAP_MARKER_FIELDS -- no code sharing to keep spatial/standard branches independent
-- **Decision**: Mappa filter bar always visible above map, not behind toggle overlay
-- **Decision**: No limit on searchMapSagre standard query (map shows all matching markers)
-- **Pattern**: Filtered map pattern: server page parses searchParams, calls searchMapSagre(filters), client renders SearchFilters + map
-
-**21-01 Netflix Rows Homepage (2026-03-11)**
-- **Decision**: CSS scroll-snap-mandatory for native momentum scrolling instead of JS carousel library (SwiperJS/Embla out of scope)
-- **Decision**: In-memory Set for cross-row deduplication -- sequential row building with shown ID tracking
-- **Decision**: Drag-to-scroll with mouse events for desktop trackpad-less users
-- **Decision**: Removed image_credit from SAGRA_CARD_FIELDS -- only needed for hero/detail attribution, not card rendering
-- **Decision**: QuickFilters moved after hero, before scroll rows, for better visual hierarchy
-- **Pattern**: ScrollRow pattern: full-width CSS scroll-snap container with responsive card widths (75vw/45vw/280px)
-- **Pattern**: ScrollRowSection pattern: server component wrapper with min-3 threshold hiding sparse rows
-
-**20-02 Logo & Footer Branding (2026-03-11)**
-- **Decision**: Inline SVG paths for logo wordmark instead of `<text>` element for font-independent rendering
-- **Decision**: Footer uses pb-24 on mobile to clear fixed BottomNav, pb-8 on desktop
-- **Decision**: Logo SVG placeholder will be replaced with user's own design later
-- **Decision**: Unsplash attribution UTM params: utm_source=nemovia&utm_medium=referral
-- **Pattern**: Brand component directory: src/components/brand/ for logo and brand-identity components
-
-**20-01 Full-Width Layout Restructure (2026-03-11)**
-- **Decision**: Full-width-by-default layout: main has no max-w-7xl, pages opt into containment via wrapper divs
-- **Decision**: Hero card margins use mx-4/sm:mx-6/lg:mx-8 responsive steps for breathing room in full-width context
-- **Decision**: Detail page hero keeps mobile full-bleed via -mx breakout from container (intentional design, not a hack)
-- **Decision**: Search map view stays within max-w-7xl container (secondary view, no need for edge-to-edge)
-- **Pattern**: Content containment wrapper: `div.mx-auto.max-w-7xl.px-4.sm:px-6.lg:px-8`
-
-**19-02 Unsplash Hero & Attribution UI (2026-03-11)**
-- **Decision**: Server component hero (no "use client") for static rendering with next/image priority for LCP
-- **Decision**: Rounded corners (rounded-2xl) on hero per user visual feedback at checkpoint
-- **Decision**: image_credit added to SAGRA_CARD_FIELDS constant to fix runtime type mismatch
-
-**19-01 Unsplash Integration Foundation (2026-03-11)**
-- **Decision**: Hero images use UTM params on both image URL and photographer URL for Unsplash attribution compliance
-- **Decision**: TAG_QUERIES inline copy in Edge Function follows established pattern (Deno cannot import from src/)
-- **Decision**: Rate limit check at X-Ratelimit-Remaining < 5 preserves budget for next run
-- **Decision**: Credit stored as "Name|profile_url" pipe-delimited format for simple parsing
-- **Decision**: Download tracking uses fire-and-forget pattern to avoid blocking pipeline
-
-**18-03 itinerarinelgusto Source (2026-03-10)**
-- **Decision**: Selector .row.tile.post.pad verified from live HTML (research suggested .row.post.pad)
-- **Decision**: Schema.org meta tags used for dates instead of text parsing -- ISO format provides reliable data
-- **Decision**: max_pages set to 3 (conservative) to avoid Edge Function timeout
-- **Decision**: Full-size CDN image preferred over midsize thumbnail
-
-**18-01 Filter Recalibration (2026-03-10)**
-- **Decision**: Whitelist-first approach for isNonSagraTitle() -- check sagra/festa/food keywords before non-sagra rejection
-- **Decision**: Dedup guard in re-activation SQL prevents duplicates from re-activated events
-- **Decision**: SQL migration 009 mirrors isNonSagraTitle() logic in PostgreSQL regex for retroactive cleanup
-
-**18-02 Province Normalization (2026-03-10)**
-- **Decision**: Veneto viewbox 10.62,44.79,13.10,46.68 with bounded=1 restricts Nominatim to Veneto region
-- **Decision**: Province codes stored as 2-letter format (BL,PD,RO,TV,VE,VR,VI) not Nominatim raw text
-- **Decision**: SQL migration for retroactive normalization of existing province values
-
-**v1.4 Roadmap Structure (2026-03-10)**
-- **Decision**: 6-phase structure prioritizing data pipeline restoration before all UI work
-- **Rationale**: Event count collapse (26 vs 735) makes all UI features appear broken. Building Netflix rows on empty data produces misleading results.
-- **Phases**: 18 (Data), 19 (Images), 20 (Layout/Branding), 21 (Netflix Rows), 22 (City Search/Map), 23 (Scraping)
-
-**v1.3 LazyMotion Migration (2026-03-10)**
-- **Decision**: Async domMax loading with strict mode, m.* components in client code
-- **Outcome**: ~28KB initial JS reduction, runtime leak detection, no visual regressions
-- **Pattern**: Providers.tsx wraps LazyMotion(strict) + MotionConfig, components use m.* from motion/react-m
-
-**v1.3 OKLCH Color Migration (2026-03-10)**
-- **Decision**: Literal OKLCH values in glass utilities to avoid backdrop-filter composition issues
-- **Pattern**: `oklch(0.637 0.237 25.5)` inline, not CSS vars, for glass-nav and glass-overlay
-- **Outcome**: Consistent glassmorphism rendering across all browsers
-
-**v1.3 Bento Grid Featured Card (2026-03-10)**
-- **Decision**: First weekend sagra as featured card (lg:col-span-2 lg:row-span-2)
-- **Rationale**: Editorial feel without database schema changes or CMS complexity
-- **Implementation**: Filter first item from weekend sagre array, render as featured, slice rest
 
 ### Active TODOs
 
-**Phase 19 Complete**
-- [x] Unsplash utility library with hero rotation, credit parser, tag queries (19-01)
-- [x] SQL migration 012 for image_credit column (19-01)
-- [x] Pass 3 in enrich-sagre for Unsplash image assignment (19-01)
-- [x] UI components: hero image, attribution display (19-02)
-
-**Phase 18 Complete**
-- [x] Investigate scraper_logs and scraper_sources for event count drop root cause (18-01)
-- [x] Plan diagnostic queries for filter rejection rates (18-01)
-- [x] Design Veneto bounding box parameters for Nominatim (18-02)
-- [x] Plan heuristic filters for non-sagre detection (18-01)
-- [x] Plan province code normalization SQL migration (18-02)
-- [x] Investigate itinerarinelgusto.it and add scraper source (18-03)
-
-**User Action Required (Phase 19 Deployment)**
-- [ ] Register at unsplash.com/developers, create application, get Access Key
-- [ ] Add UNSPLASH_ACCESS_KEY to .env locally
-- [ ] Add UNSPLASH_ACCESS_KEY to Supabase Edge Function secrets (enrich-sagre)
-- [ ] Run SQL migration 012 (image_credit column) in Supabase SQL Editor
-- [ ] Deploy updated enrich-sagre Edge Function via Supabase Dashboard
-
-**User Action Required (Phase 18 Deployment)**
-- [ ] Run SQL migration 009 (filter recalibration) in Supabase SQL Editor
-- [ ] Run SQL migration 010 (province normalization) in Supabase SQL Editor
-- [ ] Run SQL migration 011 (itinerarinelgusto source) in Supabase SQL Editor
-- [ ] Deploy scrape-sagre Edge Function via Supabase Dashboard
-- [ ] Deploy enrich-sagre Edge Function via Supabase Dashboard
-- [ ] Verify: `SELECT count(*) FROM sagre WHERE is_active = true;` should approach 100+
-
-**Research Integration**
-- [ ] Review research/SUMMARY.md pitfalls section during phase planning
-- [ ] Reference research/ARCHITECTURE.md for Unsplash integration patterns (Phase 19)
-- [ ] Reference research/FEATURES.md for Netflix rows implementation details (Phase 21)
+- [ ] Apply migration 012 (image_credit column) to remote DB
+- [ ] Fix food type icons for "vino" and "dolci" categories (need wine glass, cake icons)
+- [ ] Province count mismatch on homepage
+- [ ] Investigate low-quality images still visible
 
 ### Blockers
 
-**None** -- All v1.4 phases complete (18-23).
-
-### Technical Notes
-
-**Critical Constraints for v1.4**
-1. **Nominatim autocomplete forbidden**: Use static veneto-comuni.json (~580 cities), single geocode only on selection
-2. **Unsplash rate limits**: Pre-fetch images at pipeline time, never runtime API calls (50 req/hr demo tier)
-3. **Full-width layout**: Main is full-width by default, pages wrap content in max-w-7xl containers (20-01 pattern)
-4. **Data pipeline first**: All UI features built against healthy dataset (100+ events), not 26-event collapsed state
-
-**Stack Additions for v1.4**
-- @base-ui/react for city autocomplete (Shadcn Combobox dependency)
-- Shadcn components: Combobox, InputGroup, Textarea
-- Static asset: veneto-comuni.json (~45KB, 555 comuni)
-- Environment: UNSPLASH_ACCESS_KEY
-
-**Existing Patterns to Leverage**
-- Server component + parallel queries (Promise.all) for Netflix rows (established 21-01)
-- ScrollRow/ScrollRowSection pattern for horizontal scroll category rows (established 21-01)
-- Route Handlers for city autocomplete (hide Supabase anon key)
-- Edge Function inline copy pattern for filter additions (established pattern since v1.0)
-- Full-width main layout with per-page max-w-7xl containment (established 20-01)
-- Schema.org microdata extraction for itinerarinelgusto (established in 18-03)
+**None** -- between milestones.
 
 ## Session Continuity
 
 ### How to Resume Work
 
-**If starting Phase 22 planning:**
+**Start next milestone:**
 ```bash
-/gsd:plan-phase 22
-```
-
-**If checking project status:**
-```bash
-cat .planning/STATE.md
-cat .planning/ROADMAP.md
-```
-
-**If reviewing milestone goals:**
-```bash
-cat .planning/PROJECT.md
-cat .planning/REQUIREMENTS.md
+/gsd:new-milestone
 ```
 
 ### Context for Next Session
 
-**Current milestone**: v1.4 "Esperienza Completa"
-**Milestone goal**: Transform Nemovia from prototype to complete product -- Netflix scroll rows, hero photographico, city search con raggio, full-width layout, logo, footer, e fix critici su dati e UX.
-
-**Phase 23 status**: COMPLETE (2/2 plans). 23-01 Data Model & Detail Page UI, 23-02 Detail Page Scraping.
-
-**Next action**: All v1.4 phases complete (18-23, 13 plans). Tag and archive v1.4, or plan next milestone.
+**Last milestone**: v1.4 "Esperienza Completa" shipped 2026-03-12
+**Next action**: `/gsd:new-milestone` to plan v1.5
 
 ---
 

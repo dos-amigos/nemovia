@@ -6,7 +6,7 @@
 - ✅ **v1.1 Dati Reali** — Phases 7-10 (shipped 2026-03-07)
 - ✅ **v1.2 Polish** — Phases 11-13 (shipped 2026-03-09)
 - ✅ **v1.3 Dati Puliti + Redesign** — Phases 14-17 (shipped 2026-03-10)
-- 🚧 **v1.4 Esperienza Completa** — Phases 18-23 (in progress)
+- ✅ **v1.4 Esperienza Completa** — Phases 18-23 (shipped 2026-03-12)
 
 ## Phases
 
@@ -59,148 +59,19 @@ Full details: [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
 
 </details>
 
-### v1.4 Esperienza Completa (Phases 18-23) — IN PROGRESS
+<details>
+<summary>✅ v1.4 Esperienza Completa (Phases 18-23) — SHIPPED 2026-03-12</summary>
 
-- [x] **Phase 18: Data Pipeline Restoration** - Restore event count to 100+, fix Veneto gating, filter non-sagre (completed 2026-03-10)
-- [x] **Phase 19: Image Quality Foundation** - Unsplash fallbacks for cards + photo hero (completed 2026-03-11)
-- [x] **Phase 20: Layout & Branding** - Full-width layout, custom logo, complete footer (completed 2026-03-11)
-- [x] **Phase 21: Netflix Rows Homepage** - Horizontal scroll rows with smart categorization (completed 2026-03-11)
-- [x] **Phase 22: City Search & Map Fixes** - Autocomplete search bar, radius slider, fix map bugs (completed 2026-03-11)
-- [x] **Phase 23: Scraping Completeness** - Extract complete info from sources (completed 2026-03-12)
+- [x] Phase 18: Data Pipeline Restoration (3/3 plans) — completed 2026-03-10
+- [x] Phase 19: Image Quality Foundation (2/2 plans) — completed 2026-03-11
+- [x] Phase 20: Layout & Branding (2/2 plans) — completed 2026-03-11
+- [x] Phase 21: Netflix Rows Homepage (1/1 plans) — completed 2026-03-11
+- [x] Phase 22: City Search, Map Fixes & Food Icons (3/3 plans) — completed 2026-03-11
+- [x] Phase 23: Scraping Completeness (2/2 plans) — completed 2026-03-12
 
-## Phase Details
+Full details: [milestones/v1.4-ROADMAP.md](milestones/v1.4-ROADMAP.md)
 
-### Phase 18: Data Pipeline Restoration
-**Goal**: Restore application to healthy data state with 100+ active sagre, accurate Veneto gating, and effective non-sagre filtering.
-
-**Depends on**: Nothing (first phase of v1.4)
-
-**Requirements**: DATA-01, DATA-02, DATA-03, DATA-04, SCRAPE-02
-
-**Success Criteria** (what must be TRUE):
-1. User sees 100+ active sagre when browsing homepage or search page
-2. User never encounters events from outside Veneto region (no San Miniato Toscana)
-3. User never sees non-sagre events like passeggiate, concerti, carnevale, or mostre in results
-4. Every sagra's location displays with provincia in parentheses (e.g. "Zugliano (VI)")
-5. Scraper health dashboard shows all sources active or failing sources identified with new candidates added
-
-**Plans:** 3/3 plans complete
-
-Plans:
-- [ ] 18-01-PLAN.md — Filter recalibration: isNonSagraTitle() TDD + SQL re-activation of false positives
-- [ ] 18-02-PLAN.md — Veneto gating: Nominatim viewbox + province code normalization + display fix
-- [ ] 18-03-PLAN.md — New source investigation: itinerarinelgusto.it + combined count verification
-
----
-
-### Phase 19: Image Quality Foundation
-**Goal**: Ensure every sagra displays a high-quality, relevant image through Unsplash integration and replace homepage placeholder with full-bleed photo hero.
-
-**Depends on**: Phase 18 (needs healthy dataset to test image assignments)
-
-**Requirements**: IMG-01, IMG-02
-
-**Success Criteria** (what must be TRUE):
-1. User never sees low-resolution or broken placeholder images on any sagra card
-2. Every sagra without a source image displays a thematically relevant Unsplash photo (food/festival themed)
-3. Homepage hero displays a stunning full-bleed food photograph with white text "SCOPRI LE SAGRE DEL VENETO"
-4. Unsplash attribution appears in footer for all displayed Unsplash images
-
-**Plans:** 2/2 plans complete
-
-Plans:
-- [ ] 19-01-PLAN.md — Unsplash utility library, DB migration, and enrich-sagre Pass 3 for pipeline-time image assignment
-- [ ] 19-02-PLAN.md — Full-bleed hero photo, homepage breakout layout, and detail page attribution
-
----
-
-### Phase 20: Layout & Branding
-**Goal**: Transform site visual identity with custom logo, professional footer, and full-width responsive layout that feels premium on desktop.
-
-**Depends on**: Phase 19 (hero image integration needs layout foundation)
-
-**Requirements**: BRAND-01, BRAND-02, BRAND-03
-
-**Success Criteria** (what must be TRUE):
-1. User sees custom SVG logo in coral/teal palette on all pages (not generic text)
-2. Homepage hero and scroll rows extend edge-to-edge on desktop while content maintains readable width
-3. Footer displays on every page with credits "Fatto con cuore in Veneto" and Unsplash attribution
-4. Desktop layout at 1920px and 2560px maintains visual hierarchy without text expanding beyond readable width
-
-**Plans:** 2/2 plans complete
-
-Plans:
-- [ ] 20-01-PLAN.md — Layout restructure: full-width-by-default main, remove breakout hacks, add containment to all pages
-- [ ] 20-02-PLAN.md — Custom SVG logo in TopNav, professional footer with credits and Unsplash attribution
-
----
-
-### Phase 21: Netflix Rows Homepage
-**Goal**: Replace static bento grid with engaging Netflix-style horizontal scroll rows that surface sagre through multiple discovery paths.
-
-**Depends on**: Phase 20 (needs full-width layout and hero foundation)
-
-**Requirements**: HOME-01
-
-**Success Criteria** (what must be TRUE):
-1. User can horizontally scroll through 4-5 distinct sagra categories (weekend, nearby, cuisine type, province)
-2. Each row displays minimum 3 sagre or is hidden (no sparse rows)
-3. Sagre do not duplicate across multiple rows (weekend excludes items from nearby, etc.)
-4. User can see which row they're scrolling with clear category labels
-5. Horizontal scroll interaction feels smooth with CSS scroll-snap, not janky carousel
-
-**Plans:** 1/1 plans complete
-
-Plans:
-- [x] 21-01-PLAN.md — ScrollRow/ScrollRowSection components, getActiveSagre query, homepage rewrite with 4 category rows and dedup
-
----
-
-### Phase 22: City Search, Map Fixes & Food Icons
-**Goal**: Enable users to quickly search for sagre near any Veneto city, fix broken map functionality, and add food type icons to cards and scroll row titles.
-
-**Depends on**: Phase 21 (city search embeds in hero section from Phase 21)
-
-**Requirements**: ICON-01, HOME-02, MAP-01, MAP-02
-
-**Success Criteria** (what must be TRUE):
-1. Each SagraCard displays a minimal food type icon (carne, pesce, zucca, verdura, gnocco, altro) in the bottom-right corner (icon only)
-2. Scroll row section titles on homepage use the same food type icons instead of current emoji/icons
-3. User can type city name in hero search bar and see autocomplete suggestions of Veneto comuni
-4. Selecting a city redirects to Cerca page with city pre-selected and radius slider visible (5-100km)
-5. Map view on Cerca page displays correct markers matching current search filters
-6. Dedicated Mappa page displays filter controls at top allowing users to refine visible sagre
-7. No Nominatim API calls occur during autocomplete typing (IP ban prevention)
-
-**Plans:** 3/3 plans complete
-
-Plans:
-- [ ] 22-01-PLAN.md — Food type SVG icons: FoodIcon component + SagraCard overlay + homepage row title icons
-- [ ] 22-02-PLAN.md — City autocomplete: static veneto-comuni.json + CitySearch combobox in hero section
-- [ ] 22-03-PLAN.md — Map fixes: searchMapSagre filter sync for Cerca + always-visible filters on Mappa page
-
----
-
-### Phase 23: Scraping Completeness
-**Goal**: Extract maximum information from source sites (menu, orari, descriptions) to provide users with complete sagra details.
-
-**Depends on**: Phase 18 (needs stable scraper infrastructure)
-
-**Requirements**: SCRAPE-01
-
-**Success Criteria** (what must be TRUE):
-1. Sagre from sources that publish menus display menu information on detail pages
-2. Sagre from sources that publish orari display opening hours/schedule
-3. Sagre with detailed descriptions show richer content than generic LLM summaries
-4. Source attribution links remain functional and direct users to original event pages
-
-**Plans:** 2/2 plans complete
-
-Plans:
-- [ ] 23-01-PLAN.md — Schema migration + types + detail page UI for menu, orari, source description
-- [ ] 23-02-PLAN.md — Edge Function detail page scraping with source-specific extractors and backfill
-
----
+</details>
 
 ## Progress
 
@@ -227,5 +98,5 @@ Plans:
 | 19. Image Quality Foundation | v1.4 | 2/2 | Complete | 2026-03-11 |
 | 20. Layout & Branding | v1.4 | 2/2 | Complete | 2026-03-11 |
 | 21. Netflix Rows Homepage | v1.4 | 1/1 | Complete | 2026-03-11 |
-| 22. City Search & Map Fixes | v1.4 | 3/3 | Complete | 2026-03-11 |
-| 23. Scraping Completeness | 2/2 | Complete    | 2026-03-12 | - |
+| 22. City Search, Map Fixes & Food Icons | v1.4 | 3/3 | Complete | 2026-03-11 |
+| 23. Scraping Completeness | v1.4 | 2/2 | Complete | 2026-03-12 |

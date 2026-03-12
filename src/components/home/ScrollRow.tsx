@@ -22,10 +22,8 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
     });
   };
 
-  // --- Mouse drag (desktop only — touch uses native scroll) ---
+  // --- Pointer drag (mouse + touch) ---
   const onPointerDown = useCallback((e: React.PointerEvent) => {
-    // Only handle mouse, not touch (touch has native momentum)
-    if (e.pointerType !== "mouse") return;
     const el = scrollRef.current;
     if (!el) return;
     el.setPointerCapture(e.pointerId);
@@ -34,7 +32,7 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
   }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!drag.current.active || e.pointerType !== "mouse") return;
+    if (!drag.current.active) return;
     const el = scrollRef.current;
     if (!el) return;
     const dx = e.clientX - drag.current.startX;
@@ -42,10 +40,26 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
     el.scrollLeft = drag.current.scrollLeft - dx;
   }, []);
 
-  const onPointerUp = useCallback((e: React.PointerEvent) => {
-    if (!drag.current.active || e.pointerType !== "mouse") return;
+  const onPointerUp = useCallback(() => {
+    if (!drag.current.active) return;
     drag.current.active = false;
     setTimeout(() => setIsDragging(false), 50);
+
+    // Magnetic snap: align nearest card after release
+    const el = scrollRef.current;
+    if (!el || !el.firstElementChild) return;
+
+    const firstCard = el.firstElementChild as HTMLElement;
+    const cardWidth = firstCard.offsetWidth;
+    const gap = 12; // gap-3 = 12px
+    const cardPlusGap = cardWidth + gap;
+
+    // Find nearest card index
+    const nearestIndex = Math.round(el.scrollLeft / cardPlusGap);
+    const snapPosition = nearestIndex * cardPlusGap;
+
+    // Smooth scroll to snap position
+    el.scrollTo({ left: snapPosition, behavior: "smooth" });
   }, []);
 
   return (
@@ -56,17 +70,17 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
         role="region"
         tabIndex={0}
         aria-label={ariaLabel}
-        className={`scrollbar-hide flex gap-3 overflow-x-auto pb-2 pl-4 sm:pl-6 lg:pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] snap-x snap-mandatory lg:snap-none scroll-pl-4 sm:scroll-pl-6 ${isDragging ? "cursor-grabbing select-none" : "lg:cursor-grab"}`}
+        className={`scrollbar-hide flex gap-3 overflow-x-auto pb-2 pl-4 sm:pl-6 lg:pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] ${isDragging ? "cursor-grabbing select-none" : "cursor-grab"}`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        style={{ touchAction: "pan-x" }}
+        style={{ touchAction: "pan-y" }}
       >
         {sagre.map((sagra) => (
           <div
             key={sagra.id}
-            className="w-[75vw] flex-shrink-0 snap-start sm:w-[45vw] lg:w-[280px]"
+            className="w-[75vw] flex-shrink-0 sm:w-[45vw] lg:w-[280px]"
             draggable={false}
             onDragStart={(e) => e.preventDefault()}
             onClickCapture={(e) => {

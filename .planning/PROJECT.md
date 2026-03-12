@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Un'app web che aggrega tutte le sagre ed eventi gastronomici del Veneto da 5+ siti diversi e li presenta in una UI moderna e d'impatto, mobile-first, con mappa interattiva, filtri, e dettagli condivisibili. Pipeline automatica con filtri heuristic, classificazione LLM, e deduplicazione fuzzy garantiscono dati puliti. Design system con Geist typography, OKLCH coral/teal palette, glassmorphism, mesh gradients, e bento grid layout.
+Un'app web che aggrega tutte le sagre ed eventi gastronomici del Veneto da 6+ siti diversi e li presenta in una UI moderna e d'impatto, mobile-first, con mappa interattiva, filtri, Netflix-style scroll rows, city search autocomplete, e dettagli condivisibili con menu e orari. Pipeline automatica con filtri heuristic, classificazione LLM, deduplicazione fuzzy, e Unsplash image fallback garantiscono dati puliti e immagini di alta qualità. Design system con Geist typography, OKLCH coral/teal palette, glassmorphism, full-width layout, custom logo, e footer professionale.
 
 ## Core Value
 
@@ -45,25 +45,26 @@ Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, 
 - ✓ Glassmorphism nav bars and floating overlays -- v1.3
 - ✓ Mesh gradient hero + image-overlay SagraCard + bento grid homepage -- v1.3
 - ✓ LazyMotion migration (~28KB initial JS reduction) -- v1.3
+- ✓ Event count restored to 100+ active sagre with filter recalibration and new source -- v1.4
+- ✓ No events outside Veneto (Nominatim viewbox + province gating) -- v1.4
+- ✓ Non-sagre filtered out (whitelist-aware isNonSagraTitle) -- v1.4
+- ✓ City names always display with provincia in parentheses -- v1.4
+- ✓ Missing/low-res images replaced with themed Unsplash photos (pipeline-time) -- v1.4
+- ✓ Full-bleed Unsplash food photo hero with white text overlay -- v1.4
+- ✓ Netflix-style horizontal scroll rows (weekend, gratis, province, food type) -- v1.4
+- ✓ City autocomplete search bar in hero with redirect to Cerca -- v1.4
+- ✓ Full-width responsive desktop layout -- v1.4
+- ✓ Custom SVG logo in navigation bar (coral/teal palette) -- v1.4
+- ✓ Modern footer with credits "Fatto con cuore in Veneto" and Unsplash attribution -- v1.4
+- ✓ Cerca page map view works correctly (filter sync) -- v1.4
+- ✓ Mappa page has filter controls at top -- v1.4
+- ✓ 6 SVG food type icons on cards and scroll row titles -- v1.4
+- ✓ Source sites scraped for complete info (menu, orari, descriptions) -- v1.4
+- ✓ itinerarinelgusto.it added as 6th scraper source -- v1.4
 
 ### Active
 
-<!-- v1.4 Esperienza Completa -->
-- [ ] Netflix-style horizontal scroll rows (mix smart: weekend, vicino a te, tipo cucina, provincia)
-- [ ] Hero con foto sagra Unsplash API + testo bianco "SCOPRI LE SAGRE DEL VENETO"
-- [ ] Search bar home → autocomplete città → redirect Cerca con città + slider raggio km
-- [ ] Layout full-width responsive desktop
-- [ ] Footer completo con credits "Fatto con cuore in Veneto"
-- [ ] Logo SVG custom (Geist + icona stilizzata coral/teal)
-- [ ] Fix mappa pagina Cerca non funzionante
-- [ ] Filtri in cima alla pagina Mappa dedicata
-- [ ] Fix placeholder immagini brandizzato non visibile
-- [ ] Immagini low-res → fallback Unsplash a tema (NO bassa risoluzione mai)
-- [ ] Sempre provincia tra parentesi dopo nome città (es. "Zugliano (VI)")
-- [ ] Scrape info complete dalle fonti (menu, orari, descrizioni)
-- [ ] Fix eventi fuori Veneto (San Miniato Toscana)
-- [ ] Fix non-sagre ancora presenti (Passeggiata, Carnevale)
-- [ ] Investigare calo drastico eventi (26 vs 735) e cercare nuove fonti scraping
+(None — planning next milestone)
 
 ### Out of Scope
 
@@ -79,34 +80,34 @@ Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, 
 - Neo-brutalism -- non coerente con estetica premium
 - 3D elements (Three.js) -- overhead bundle eccessivo per zero-cost constraint
 - Recensioni e foto utenti -- premature, prima validare con utenti reali
+- SwiperJS/Embla carousel -- CSS scroll-snap handles Netflix rows natively
+- Nominatim autocomplete -- explicitly forbidden by usage policy, use static data
+- unsplash-js SDK -- unnecessary wrapper, native fetch sufficient
+- Runtime Unsplash API calls -- rate limit risk, pre-fetch at pipeline time only
 
-## Current Milestone: v1.4 "Esperienza Completa"
+## Previous Milestone: v1.4 "Esperienza Completa" (Shipped 2026-03-12)
 
-**Goal:** Trasformare Nemovia da prototipo a prodotto completo — Netflix scroll rows, hero fotografico, city search con raggio, full-width layout, logo, footer, e fix critici su dati e UX.
-
-**Target features:**
-- Netflix-style scroll rows (mix smart) in homepage
-- Hero fotografico Unsplash + city search autocomplete con slider raggio
-- Logo SVG custom + footer completo
-- Full-width responsive desktop
-- Data quality: fix Veneto gating, non-sagre, calo eventi, nuove fonti, scraping completo
-- UX fixes: mappa Cerca, filtri Mappa, placeholder immagini, provincia sempre visibile
-
-## Previous Milestone: v1.3 "Dati Puliti + Redesign" (Shipped 2026-03-10)
-
-**Delivered:** Data quality overhaul + UI/UX redesign -- heuristic filters, LLM classification, fuzzy dedup, Geist/OKLCH palette, glassmorphism, mesh gradients, bento grid, and LazyMotion performance optimization.
+**Delivered:** Complete product experience — restored data pipeline to 100+ events, Unsplash image quality at pipeline time, full-width layout with custom branding, Netflix-style discovery rows, city search autocomplete from 555 Veneto comuni, food type icons, map filter sync, and source-specific detail scraping for menu/orari/descriptions.
 
 ## Context
 
 ### Current State
 
-Shipped v1.3 with ~5,100 LOC TypeScript/CSS across 34 source files modified.
-Tech stack: Next.js 15 App Router, Supabase (PostgreSQL + PostGIS + pg_trgm), Tailwind v4 + Shadcn/UI, Leaflet + OSM, Cheerio, Nominatim, Gemini 2.5 Flash, Motion (LazyMotion + domMax).
+Shipped v1.4 with ~7,700 LOC TypeScript/CSS across 92 files modified since v1.3.
+Tech stack: Next.js 15 App Router, Supabase (PostgreSQL + PostGIS + pg_trgm), Tailwind v4 + Shadcn/UI, Leaflet + OSM, Cheerio, Nominatim, Gemini 2.5 Flash, Motion (LazyMotion + domMax), Unsplash API.
 Deployed on Vercel at nemovia.it.
 
-Pipeline: 5 scraper sources active. Heuristic filters (noise, calendar, duration, past-year) + LLM is_sagra classification + fuzzy dedup in pipeline. Enrichment + scraping run 2x/day via pg_cron.
+Pipeline: 6 scraper sources active (assosagre, venetoinfesta, solosagre, sagritaly, eventiesagre, itinerarinelgusto). Heuristic filters + LLM is_sagra classification + fuzzy dedup + Unsplash image assignment in pipeline. Detail scraping for menu/orari/descriptions. Scraping 2x/day, enrichment 2x/day, expire 1x/day via pg_cron.
 
-UI: Geist font, coral/teal OKLCH palette, glassmorphism nav bars, mesh gradient hero, image-overlay SagraCard, bento grid homepage with featured card, LazyMotion (m.* components, ~28KB savings). Responsive desktop layout. Full accessibility support.
+UI: Geist font, coral/teal OKLCH palette, glassmorphism nav bars, full-bleed Unsplash photo hero, Netflix scroll rows with CSS scroll-snap and drag-to-scroll, city autocomplete, 6 SVG food type icons, custom logo, professional footer. Full-width layout with per-page containment. LazyMotion with m.* components.
+
+### Known Issues
+
+- Food type icons for "vino" and "dolci" use generic arrow/cursor fallback instead of thematic icons (wine glass, cake)
+- Province count mismatch: clicking province count on homepage shows different number in results
+- Search pill in hero is autocomplete but could be clearer
+- image_credit column migration 012 not applied to remote DB
+- Some low-quality images still visible
 
 ### Il problema
 
@@ -126,12 +127,12 @@ Italiano, informale ma competente. L'app deve sembrare curata, non un template.
 
 ## Constraints
 
-- **Tech stack**: Next.js 15 App Router, TypeScript, Tailwind v4 + Shadcn/UI, Supabase (PostgreSQL + PostGIS + pg_trgm), Leaflet + OSM, Cheerio, Nominatim, Gemini 2.5 Flash
-- **Budget**: Zero costi fissi -- tutti servizi free tier (Supabase, Gemini, Nominatim, Vercel, OSM)
+- **Tech stack**: Next.js 15 App Router, TypeScript, Tailwind v4 + Shadcn/UI, Supabase (PostgreSQL + PostGIS + pg_trgm), Leaflet + OSM, Cheerio, Nominatim, Gemini 2.5 Flash, Unsplash API
+- **Budget**: Zero costi fissi -- tutti servizi free tier (Supabase, Gemini, Nominatim, Vercel, OSM, Unsplash)
 - **LLM**: Solo Gemini 2.5 Flash, singolo provider, batch (15 req/min free tier)
-- **Geocoding**: Nominatim con rate limit 1 req/sec
+- **Geocoding**: Nominatim con rate limit 1 req/sec, viewbox bounded to Veneto
 - **Deploy**: Vercel
-- **Design**: Mobile-first obbligatorio, grafica premium (Geist + OKLCH + glassmorphism + Motion)
+- **Design**: Mobile-first obbligatorio, grafica premium (Geist + OKLCH + glassmorphism + Motion + Unsplash)
 
 ## Key Decisions
 
@@ -145,17 +146,23 @@ Italiano, informale ma competente. L'app deve sembrare curata, non un template.
 | LLM enrichment asincrono via cron | Disaccoppia scraping da enrichment | ✓ Good |
 | Shadcn/UI + Motion | Componenti base solidi + animazioni premium | ✓ Good |
 | nuqs for URL search params | Type-safe URL state management for filters | ✓ Good |
-| Inline pure function copy for Deno Edge Functions | Deno can't import from Next.js src/ | ⚠️ Revisit -- growing maintenance burden (4+ milestones) |
+| Inline pure function copy for Deno Edge Functions | Deno can't import from Next.js src/ | ⚠️ Revisit -- growing maintenance burden (5 milestones) |
 | Source-specific extraction branches | Non-standard HTML layouts need keyed branches | ✓ Good |
 | Providers.tsx client wrapper | Single client component wrapping LazyMotion + MotionConfig + NuqsAdapter | ✓ Good |
 | FrozenRouter for page transitions | Freeze LayoutRouterContext during AnimatePresence exit | ✓ Good |
-| Heuristic filters for data quality | Regex/length patterns instead of ML classification for known noise | ✓ Good -- simple, fast, catches all known patterns |
-| LLM is_sagra piggybacking on enrichment | Zero additional API calls, add field to existing Gemini batch | ✓ Good -- no cost increase |
-| pg_trgm fuzzy dedup with GIN index | Similarity thresholds (0.6 title, 0.5 city) + date overlap | ✓ Good -- catches duplicates without false positives |
-| Geist font + OKLCH coral/teal palette | Modern aesthetic, high chroma, cool neutrals | ✓ Good -- transformed visual identity |
-| Literal OKLCH in glass CSS utilities | Avoid backdrop-filter composition issues with CSS vars | ✓ Good -- consistent glass rendering |
-| LazyMotion with domMax + strict mode | ~28KB savings, runtime leak detection | ✓ Good -- significant performance win |
-| Bento grid with featured card | First weekend sagra as featured, no DB change needed | ✓ Good -- editorial feel without complexity |
+| Heuristic filters for data quality | Regex/length patterns instead of ML classification for known noise | ✓ Good |
+| LLM is_sagra piggybacking on enrichment | Zero additional API calls, add field to existing Gemini batch | ✓ Good |
+| pg_trgm fuzzy dedup with GIN index | Similarity thresholds (0.6 title, 0.5 city) + date overlap | ✓ Good |
+| Geist font + OKLCH coral/teal palette | Modern aesthetic, high chroma, cool neutrals | ✓ Good |
+| Literal OKLCH in glass CSS utilities | Avoid backdrop-filter composition issues with CSS vars | ✓ Good |
+| LazyMotion with domMax + strict mode | ~28KB savings, runtime leak detection | ✓ Good |
+| Unsplash pipeline-time image assignment | Pre-fetch at scrape/enrich time, never runtime (50 req/hr demo tier) | ✓ Good |
+| Full-width-by-default layout | Main has no max-w, pages opt into containment via wrapper divs | ✓ Good |
+| CSS scroll-snap for Netflix rows | Native momentum, no JS carousel library needed | ✓ Good |
+| Static veneto-comuni.json for autocomplete | Zero Nominatim API calls, 555 comuni, instant client-side filtering | ✓ Good |
+| Priority-based food icon mapping | Deterministic category: carne > pesce > zucca > gnocco > verdura > altro | ✓ Good |
+| Source-specific detail extractors | Cheerio extractors per source for menu/orari/descriptions | ✓ Good |
+| NULL-only update pattern for details | Never overwrite existing detail content, preserves curated/LLM content | ✓ Good |
 
 ---
-*Last updated: 2026-03-10 after v1.4 milestone started*
+*Last updated: 2026-03-12 after v1.4 milestone*
