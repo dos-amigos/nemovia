@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import * as m from "motion/react-m";
-import { MapPin, Calendar, UtensilsCrossed } from "lucide-react";
+import { MapPin, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FadeImage } from "@/components/animations/FadeImage";
+import { getFallbackImage } from "@/lib/fallback-images";
 import { formatDateRange } from "@/lib/utils";
 import type { SagraCardData } from "@/lib/queries/types";
 
@@ -27,19 +28,13 @@ export function FeaturedSagraCard({ sagra }: FeaturedSagraCardProps) {
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
         className="relative h-full min-h-[320px] w-full overflow-hidden rounded-xl"
       >
-        {sagra.image_url ? (
-          <FadeImage
-            src={sagra.image_url}
-            alt={sagra.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 100vw, 50vw"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/15 via-accent/8 to-primary/15">
-            <UtensilsCrossed className="h-14 w-14 text-muted-foreground/25" />
-          </div>
-        )}
+        <FadeImage
+          src={sagra.image_url || getFallbackImage(sagra.id, sagra.food_tags)}
+          alt={sagra.title}
+          fill
+          className="object-cover"
+          sizes="(max-width: 640px) 100vw, 50vw"
+        />
 
         {/* Stronger gradient for larger card */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" />

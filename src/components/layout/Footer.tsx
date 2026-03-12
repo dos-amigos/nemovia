@@ -1,9 +1,7 @@
-import { Heart } from "lucide-react";
-
 /**
  * Site footer shown on every page.
  *
- * - "Fatto con cuore in Veneto" credit line
+ * - "Aplicaxion realixà con ❤️ in Veneto" credit line
  * - Unsplash attribution link with UTM params (API compliance)
  * - Dynamic copyright year
  * - Extra bottom padding on mobile to clear the fixed BottomNav (h-16 = 4rem)
@@ -16,8 +14,7 @@ export function Footer() {
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 pb-24 pt-8 sm:px-6 lg:px-8 lg:pb-8">
         {/* Credit line */}
         <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          Fatto con{" "}
-          <Heart className="h-3.5 w-3.5 fill-primary text-primary" /> in Veneto
+          Aplicaxion realixà con ❤️ in Veneto
         </p>
 
         {/* Unsplash attribution */}

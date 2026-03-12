@@ -8,6 +8,7 @@ import {
   UtensilsCrossed,
   Clock,
 } from "lucide-react";
+import { getFallbackImage } from "@/lib/fallback-images";
 import { Badge } from "@/components/ui/badge";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { ScrollProgress } from "@/components/animations/ScrollProgress";
@@ -44,23 +45,14 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
         {/* LEFT column: Hero image + Mini map */}
         <div className="space-y-6 lg:sticky lg:top-20 lg:self-start">
           {/* Hero image with parallax (mobile only) */}
-          <ParallaxHero className="relative -mx-4 -mt-4 h-48 w-[calc(100%+2rem)] overflow-hidden sm:-mx-6 sm:w-[calc(100%+3rem)] lg:mx-0 lg:mt-0 lg:w-full lg:h-64 lg:rounded-xl">
-            {sagra.image_url ? (
-              <FadeImage
-                src={sagra.image_url}
-                alt={sagra.title}
-                fill
-                className="object-cover"
-                priority
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10">
-                <div className="flex flex-col items-center gap-2 text-muted-foreground/40">
-                  <UtensilsCrossed className="h-10 w-10" />
-                  <span className="text-sm font-medium tracking-wide uppercase">Sagra</span>
-                </div>
-              </div>
-            )}
+          <ParallaxHero className="relative -mx-4 -mt-4 h-64 w-[calc(100%+2rem)] overflow-hidden sm:-mx-6 sm:h-72 sm:w-[calc(100%+3rem)] lg:mx-0 lg:mt-0 lg:w-full lg:h-[28rem] lg:rounded-xl">
+            <FadeImage
+              src={sagra.image_url || getFallbackImage(sagra.id, sagra.food_tags)}
+              alt={sagra.title}
+              fill
+              className="object-cover"
+              priority
+            />
             <BackButton />
           </ParallaxHero>
 

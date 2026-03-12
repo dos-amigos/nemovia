@@ -28,9 +28,9 @@ export default function DetailMiniMap({ lat, lng, title }: DetailMiniMapProps) {
       center={[lat, lng]}
       zoom={14}
       className="h-full w-full rounded-lg"
-      scrollWheelZoom={false}
-      dragging={false}
-      zoomControl={false}
+      scrollWheelZoom={true}
+      dragging={true}
+      zoomControl={true}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

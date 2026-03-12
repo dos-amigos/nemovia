@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import * as m from "motion/react-m";
-import { MapPin, Calendar, UtensilsCrossed } from "lucide-react";
+import { MapPin, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FadeImage } from "@/components/animations/FadeImage";
 import { FoodIcon } from "@/lib/constants/food-icons";
+import { getFallbackImage } from "@/lib/fallback-images";
 import { formatDateRange } from "@/lib/utils";
 import { VENETO_PROVINCES } from "@/lib/constants/veneto";
 import type { SagraCardData } from "@/lib/queries/types";
@@ -34,20 +35,14 @@ export function SagraCard({ sagra }: SagraCardProps) {
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
         className="relative h-52 w-full overflow-hidden rounded-xl"
       >
-        {/* Image or placeholder */}
-        {sagra.image_url ? (
-          <FadeImage
-            src={sagra.image_url}
-            alt={sagra.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10">
-            <UtensilsCrossed className="h-10 w-10 text-muted-foreground/30" />
-          </div>
-        )}
+        {/* Image (pipeline or themed fallback) */}
+        <FadeImage
+          src={sagra.image_url || getFallbackImage(sagra.id, sagra.food_tags)}
+          alt={sagra.title}
+          fill
+          className="object-cover"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+        />
 
         {/* Dark gradient overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
