@@ -223,7 +223,7 @@ const ICONS: Record<
     </svg>
   ),
 
-  /** Fork and knife crossed */
+  /** Fork and knife */
   altro: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
@@ -235,8 +235,12 @@ const ICONS: Record<
       className={className}
       aria-hidden="true"
     >
-      <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
-      <path d="M13 13l8 8" />
+      {/* Fork */}
+      <path d="M3 2v7c0 1.7 1.3 3 3 3v10h1V12c1.7 0 3-1.3 3-3V2" />
+      <path d="M5 2v6M7 2v6" />
+      {/* Knife */}
+      <path d="M17 2l-1 9h-2l-1-9" />
+      <path d="M15 11v11" />
     </svg>
   ),
 };

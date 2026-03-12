@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import * as m from "motion/react-m";
-import { Calendar } from "lucide-react";
-import { NemoviaIcon } from "@/components/brand/NemoviaIcon";
+import { Calendar, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FadeImage } from "@/components/animations/FadeImage";
 import { FoodIcon } from "@/lib/constants/food-icons";
-import { getFallbackImage } from "@/lib/fallback-images";
+import { getFallbackImage, isLowQualityUrl } from "@/lib/fallback-images";
 import { formatDateRange } from "@/lib/utils";
 import { VENETO_PROVINCES } from "@/lib/constants/veneto";
 import type { SagraCardData } from "@/lib/queries/types";
@@ -22,7 +21,12 @@ interface SagraCardProps {
   distanceKm?: number;
 }
 
-export function SagraCard({ sagra }: SagraCardProps) {
+export function SagraCard({ sagra, distanceKm }: SagraCardProps) {
+  const distance = distanceKm ?? sagra.distance_km;
+  const fallback = getFallbackImage(sagra.id, sagra.food_tags);
+  const hasGoodImage = sagra.image_url && !isLowQualityUrl(sagra.image_url);
+  const imageSrc = hasGoodImage ? sagra.image_url! : fallback;
+
   return (
     <Link
       href={`/sagra/${sagra.slug}`}
@@ -36,13 +40,14 @@ export function SagraCard({ sagra }: SagraCardProps) {
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
         className="relative h-52 w-full overflow-hidden rounded-xl"
       >
-        {/* Image (pipeline or themed fallback) */}
+        {/* Image (pipeline or themed fallback) — with onError fallback for broken URLs */}
         <FadeImage
-          src={sagra.image_url || getFallbackImage(sagra.id, sagra.food_tags)}
+          src={imageSrc}
+          fallbackSrc={fallback}
           alt={sagra.title}
           fill
           className="object-cover"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          sizes="(max-width: 640px) 75vw, (max-width: 1024px) 45vw, 280px"
         />
 
         {/* Dark gradient overlay for text readability */}
@@ -54,7 +59,7 @@ export function SagraCard({ sagra }: SagraCardProps) {
             {sagra.title}
           </h3>
           <div className="flex items-center gap-1 text-white/80 text-sm mt-1">
-            <NemoviaIcon className="h-3.5 w-3.5 shrink-0" />
+            <MapPin className="h-3.5 w-3.5 shrink-0" />
             <span className="line-clamp-1">
               {sagra.location_text}
               {sagra.province && (() => {
@@ -72,6 +77,14 @@ export function SagraCard({ sagra }: SagraCardProps) {
             <span>{formatDateRange(sagra.start_date, sagra.end_date)}</span>
           </div>
         </div>
+
+        {/* Distance badge positioned top-left */}
+        {distance != null && (
+          <Badge className="absolute left-2 top-2 gap-1 bg-black/50 text-white backdrop-blur-sm">
+            <MapPin className="h-3 w-3" />
+            {distance} km
+          </Badge>
+        )}
 
         {/* Free badge positioned top-right */}
         {sagra.is_free === true && (

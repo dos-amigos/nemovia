@@ -48,11 +48,21 @@ export default async function CercaPage({
   const sagre = await searchSagre(filters);
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4 px-4 py-4 sm:px-6 lg:px-8">
-      <h1 className="text-xl font-bold">Cerca sagre</h1>
-      <SearchFilters />
-      <ActiveFilters />
-      <SearchResults sagre={sagre} />
+    <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+      <h1 className="text-xl font-bold mb-4">Cerca sagre</h1>
+      <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
+        {/* Sidebar filters (left on desktop, top on mobile) */}
+        <aside className="w-full shrink-0 lg:w-72">
+          <div className="lg:sticky lg:top-20">
+            <SearchFilters />
+          </div>
+        </aside>
+        {/* Results */}
+        <div className="min-w-0 flex-1 space-y-4">
+          <ActiveFilters />
+          <SearchResults sagre={sagre} />
+        </div>
+      </div>
     </div>
   );
 }

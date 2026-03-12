@@ -14,7 +14,11 @@ export default function MapMarkerPopup({ sagra }: MapMarkerPopupProps) {
       <p className="text-sm font-bold leading-tight">{sagra.title}</p>
       <p className="text-xs text-muted-foreground">
         {sagra.location_text}
-        {sagra.province ? ` (${sagra.province})` : ""}
+        {sagra.province && (() => {
+          const loc = sagra.location_text ?? "";
+          if (loc.includes(`(${sagra.province})`) || loc.toLowerCase().includes(sagra.province.toLowerCase())) return null;
+          return ` (${sagra.province})`;
+        })()}
       </p>
       <p className="text-xs text-muted-foreground">
         {formatDateRange(sagra.start_date, sagra.end_date)}

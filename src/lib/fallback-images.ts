@@ -2,6 +2,9 @@
  * Maps food_tags to local fallback images in /public/images/fallback/.
  * Used when a sagra has no image_url from the pipeline.
  * Deterministic selection based on sagra ID for SSR/hydration consistency.
+ *
+ * Also exports isLowQualityUrl() for detecting known bad/low-res image patterns
+ * from scraped sources (site logos, placeholder images, tracking pixels, tiny thumbnails).
  */
 
 const CATEGORY_IMAGES: Record<string, string[]> = {
@@ -46,6 +49,69 @@ const CATEGORY_PRIORITY: Record<string, number> = {
   verdura: 1,
   "prodotti-tipici": 1,
 };
+
+// =============================================================================
+// Low-quality / bad image URL detection
+// =============================================================================
+
+/**
+ * Known patterns that indicate a scraped image_url is NOT a real event photo.
+ * These are site logos, default placeholders, tracking pixels, or tiny thumbnails
+ * that should be replaced with a themed Unsplash/local fallback.
+ */
+const BAD_IMAGE_PATTERNS: RegExp[] = [
+  // Tracking pixels and spacer GIFs
+  /spacer\.(gif|png)/i,
+  /pixel\.(gif|png)/i,
+  /1x1\.(gif|png|jpg)/i,
+  /blank\.(gif|png|jpg)/i,
+  /transparent\.(gif|png)/i,
+
+  // Common placeholder / default image filenames
+  /no[-_]?image/i,
+  /no[-_]?photo/i,
+  /no[-_]?pic/i,
+  /default[-_]?(image|img|photo|thumb)/i,
+  /placeholder/i,
+  /coming[-_]?soon/i,
+  /image[-_]?not[-_]?found/i,
+  /missing[-_]?(image|photo)/i,
+
+  // Site logos and branding (not event photos)
+  /\blogo[-_]?(sito|site|header|footer|main)?\b.*\.(png|jpg|svg|gif|webp)$/i,
+  /\bfavicon\b/i,
+  /\bicon[-_]?\d*\.(png|ico|svg)/i,
+
+  // WordPress placeholder patterns
+  /wp-content\/plugins\/.*placeholder/i,
+  /woocommerce-placeholder/i,
+
+  // Data URIs (shouldn't be in DB but just in case)
+  /^data:image/i,
+
+  // Very small dimension indicators in URL (e.g., ?w=50, -50x50)
+  /[?&]w=([1-9]\d?|1[0-4]\d|150)(&|$)/,  // width <= 150 in query param
+  /[?&]h=([1-9]\d?|1[0-4]\d|150)(&|$)/,   // height <= 150 in query param
+  /-(\d{1,2}|1[0-4]\d|150)x(\d{1,2}|1[0-4]\d|150)\.\w+$/,  // WxH suffix <= 150x150
+];
+
+/**
+ * Returns true if the image URL matches known low-quality / bad image patterns.
+ * Used both at display time (client) and in the enrich pipeline (Edge Function).
+ */
+export function isLowQualityUrl(url: string | null | undefined): boolean {
+  if (!url || url.trim() === "") return true;
+
+  for (const pattern of BAD_IMAGE_PATTERNS) {
+    if (pattern.test(url)) return true;
+  }
+
+  return false;
+}
+
+// =============================================================================
+// Deterministic fallback image selection
+// =============================================================================
 
 /** Simple string hash for deterministic image selection */
 function hashString(str: string): number {

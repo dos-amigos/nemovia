@@ -365,10 +365,18 @@ async function runLLMPass(
 
       const raw = JSON.parse(response.text) as EnrichmentResult[];
 
+      // Hardcoded blocklist: events that are NOT sagre regardless of LLM classification
+      const BLOCKLIST_TITLES = ["vinitaly"];
+
       // Write each enriched event back to DB
       for (const result of raw) {
+        // Check hardcoded blocklist FIRST (case-insensitive title match)
+        const matchedSagra = batch.find((s: { id: string }) => s.id === result.id);
+        const titleLower = (matchedSagra?.title ?? "").toLowerCase();
+        const isBlocklisted = BLOCKLIST_TITLES.some((b: string) => titleLower.includes(b));
+
         // Check is_sagra classification FIRST — deactivate non-sagre
-        if (result.is_sagra === false) {
+        if (result.is_sagra === false || isBlocklisted) {
           await supabase.from("sagre").update({
             is_active: false,
             status: "classified_non_sagra",
@@ -414,6 +422,56 @@ async function runLLMPass(
 interface SagraForUnsplash {
   id: string;
   food_tags: string[] | null;
+  image_url: string | null;
+}
+
+// =============================================================================
+// Low-quality image URL detection — inline copy of isLowQualityUrl()
+// from src/lib/fallback-images.ts (Edge Functions cannot import from src/)
+// =============================================================================
+
+const BAD_IMAGE_PATTERNS: RegExp[] = [
+  // Tracking pixels and spacer GIFs
+  /spacer\.(gif|png)/i,
+  /pixel\.(gif|png)/i,
+  /1x1\.(gif|png|jpg)/i,
+  /blank\.(gif|png|jpg)/i,
+  /transparent\.(gif|png)/i,
+
+  // Common placeholder / default image filenames
+  /no[-_]?image/i,
+  /no[-_]?photo/i,
+  /no[-_]?pic/i,
+  /default[-_]?(image|img|photo|thumb)/i,
+  /placeholder/i,
+  /coming[-_]?soon/i,
+  /image[-_]?not[-_]?found/i,
+  /missing[-_]?(image|photo)/i,
+
+  // Site logos and branding (not event photos)
+  /\blogo[-_]?(sito|site|header|footer|main)?\b.*\.(png|jpg|svg|gif|webp)$/i,
+  /\bfavicon\b/i,
+  /\bicon[-_]?\d*\.(png|ico|svg)/i,
+
+  // WordPress placeholder patterns
+  /wp-content\/plugins\/.*placeholder/i,
+  /woocommerce-placeholder/i,
+
+  // Data URIs
+  /^data:image/i,
+
+  // Very small dimension indicators in URL
+  /[?&]w=([1-9]\d?|1[0-4]\d|150)(&|$)/,
+  /[?&]h=([1-9]\d?|1[0-4]\d|150)(&|$)/,
+  /-(\d{1,2}|1[0-4]\d|150)x(\d{1,2}|1[0-4]\d|150)\.\w+$/,
+];
+
+function isLowQualityUrl(url: string | null | undefined): boolean {
+  if (!url || url.trim() === "") return true;
+  for (const pattern of BAD_IMAGE_PATTERNS) {
+    if (pattern.test(url)) return true;
+  }
+  return false;
 }
 
 interface UnsplashPhoto {
@@ -487,19 +545,41 @@ async function runUnsplashPass(
   let assigned = 0;
 
   // Fetch all enriched sagre without images (up to UNSPLASH_LIMIT)
-  const { data: rows } = await supabase
+  // Query 1: sagre with NULL image_url
+  const { data: nullRows } = await supabase
     .from("sagre")
-    .select("id, food_tags")
+    .select("id, food_tags, image_url")
     .is("image_url", null)
     .eq("is_active", true)
     .eq("status", "enriched")
     .order("created_at", { ascending: true })
     .limit(UNSPLASH_LIMIT);
 
-  if (!rows?.length) return 0;
+  // Query 2: sagre with non-null image_url that may be low-quality
+  // We fetch ALL enriched sagre with images and filter client-side for bad URLs,
+  // since Supabase doesn't support regex filtering
+  const { data: imageRows } = await supabase
+    .from("sagre")
+    .select("id, food_tags, image_url")
+    .not("image_url", "is", null)
+    .eq("is_active", true)
+    .eq("status", "enriched")
+    .order("created_at", { ascending: true })
+    .limit(UNSPLASH_LIMIT);
 
-  const sagre = rows as SagraForUnsplash[];
-  console.log(`Unsplash pass: ${sagre.length} sagre without images`);
+  // Filter imageRows for low-quality URLs only (skip Unsplash URLs — those are already good)
+  const lowQualityRows = (imageRows ?? []).filter((row: SagraForUnsplash) => {
+    // Never replace Unsplash images (they're the fallback source!)
+    if (row.image_url && row.image_url.includes("images.unsplash.com")) return false;
+    return isLowQualityUrl(row.image_url);
+  });
+
+  const allRows = [...(nullRows ?? []), ...lowQualityRows].slice(0, UNSPLASH_LIMIT);
+
+  if (!allRows.length) return 0;
+
+  const sagre = allRows as SagraForUnsplash[];
+  console.log(`Unsplash pass: ${sagre.length} sagre need images (${(nullRows ?? []).length} null, ${lowQualityRows.length} low-quality)`);
 
   // Step 1: Group sagre by their primary food tag (first tag, or "default")
   const tagGroups = new Map<string, SagraForUnsplash[]>();

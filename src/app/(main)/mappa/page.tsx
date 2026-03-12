@@ -47,5 +47,5 @@ export default async function MappaPage({
 
   const sagre = await searchMapSagre(filters);
 
-  return <MappaClientPage sagre={sagre} />;
+  return <MappaClientPage sagre={sagre} searchLat={lat} searchLng={lng} />;
 }

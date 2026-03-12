@@ -1,20 +1,9 @@
 "use client";
 
-import { useQueryStates, parseAsString, parseAsInteger, parseAsBoolean } from "nuqs";
+import { useQueryStates } from "nuqs";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
-
-const filterParsers = {
-  provincia: parseAsString,
-  raggio: parseAsInteger.withDefault(30),
-  cucina: parseAsString,
-  gratis: parseAsBoolean,
-  da: parseAsString,
-  a: parseAsString,
-  lat: parseAsString,
-  lng: parseAsString,
-  cityName: parseAsString,
-};
+import { filterParsers } from "./filter-parsers";
 
 export function ActiveFilters() {
   const [filters, setFilters] = useQueryStates(filterParsers, {

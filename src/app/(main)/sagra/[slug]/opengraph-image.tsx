@@ -47,7 +47,7 @@ export default async function OGImage({
           width: "100%",
           height: "100%",
           padding: "60px",
-          background: "linear-gradient(135deg, #fef3c7, #ecfccb)",
+          background: "linear-gradient(135deg, #fdf2f0, #f0fdfb)",
         }}
       >
         <div
@@ -98,11 +98,11 @@ export default async function OGImage({
           style={{
             display: "flex",
             fontSize: 24,
-            color: "#d97706",
+            color: "#BF5540",
             fontWeight: 600,
           }}
         >
-          nemovia.vercel.app
+          nemovia.it
         </div>
       </div>
     ),

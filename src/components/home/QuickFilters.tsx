@@ -13,7 +13,7 @@ export function QuickFilters() {
     const searchParams = new URLSearchParams();
 
     if (value === "today") {
-      const today = new Date().toISOString().split("T")[0];
+      const today = new Date().toLocaleDateString("en-CA"); // yyyy-mm-dd local timezone
       searchParams.set(param, today);
       searchParams.set("a", today);
     } else {

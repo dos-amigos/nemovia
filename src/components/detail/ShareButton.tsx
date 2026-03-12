@@ -9,15 +9,21 @@ export default function ShareButton() {
   const [copied, setCopied] = useState(false);
 
   async function handleShare() {
+    // Prefer native share on mobile (shows share sheet with apps)
+    if (navigator.share) {
+      try {
+        await navigator.share({ url: window.location.href });
+        return;
+      } catch {
+        // User cancelled or share failed — fall through to clipboard
+      }
+    }
     try {
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback to Web Share API on mobile
-      if (navigator.share) {
-        await navigator.share({ url: window.location.href });
-      }
+      // Clipboard also failed — nothing we can do
     }
   }
 

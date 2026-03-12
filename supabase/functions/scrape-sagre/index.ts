@@ -295,19 +295,68 @@ function isPastYearEvent(
   return false;
 }
 
-// --- Section 2d: Image URL upgrade ---
-// Inline copy from src/lib/scraper/filters.ts (Deno cannot import from src/).
-// Keep in sync with the canonical source. Tests live at src/lib/scraper/__tests__/filters.test.ts
+// --- Section 2d: Image URL upgrade + low-quality detection ---
+// Inline copy from src/lib/scraper/filters.ts + src/lib/fallback-images.ts
+// (Deno cannot import from src/). Keep in sync with canonical sources.
+// Tests live at src/lib/scraper/__tests__/filters.test.ts
+
+const BAD_IMAGE_PATTERNS: RegExp[] = [
+  // Tracking pixels and spacer GIFs
+  /spacer\.(gif|png)/i,
+  /pixel\.(gif|png)/i,
+  /1x1\.(gif|png|jpg)/i,
+  /blank\.(gif|png|jpg)/i,
+  /transparent\.(gif|png)/i,
+
+  // Common placeholder / default image filenames
+  /no[-_]?image/i,
+  /no[-_]?photo/i,
+  /no[-_]?pic/i,
+  /default[-_]?(image|img|photo|thumb)/i,
+  /placeholder/i,
+  /coming[-_]?soon/i,
+  /image[-_]?not[-_]?found/i,
+  /missing[-_]?(image|photo)/i,
+
+  // Site logos and branding (not event photos)
+  /\blogo[-_]?(sito|site|header|footer|main)?\b.*\.(png|jpg|svg|gif|webp)$/i,
+  /\bfavicon\b/i,
+  /\bicon[-_]?\d*\.(png|ico|svg)/i,
+
+  // WordPress placeholder patterns
+  /wp-content\/plugins\/.*placeholder/i,
+  /woocommerce-placeholder/i,
+
+  // Data URIs
+  /^data:image/i,
+
+  // Very small dimension indicators in URL
+  /[?&]w=([1-9]\d?|1[0-4]\d|150)(&|$)/,
+  /[?&]h=([1-9]\d?|1[0-4]\d|150)(&|$)/,
+  /-(\d{1,2}|1[0-4]\d|150)x(\d{1,2}|1[0-4]\d|150)\.\w+$/,
+];
+
+function isLowQualityUrl(url: string | null | undefined): boolean {
+  if (!url || url.trim() === "") return true;
+  for (const pattern of BAD_IMAGE_PATTERNS) {
+    if (pattern.test(url)) return true;
+  }
+  return false;
+}
+
 function tryUpgradeImageUrl(
   imageUrl: string | null,
   sourceName: string
 ): string | null {
   if (!imageUrl || imageUrl === "") return null;
 
+  let upgraded: string;
+
   switch (sourceName) {
     case "sagritaly":
       // Strip WordPress thumbnail suffix: image-150x150.jpg -> image.jpg
-      return imageUrl.replace(/-\d+x\d+(\.\w+)$/, "$1");
+      upgraded = imageUrl.replace(/-\d+x\d+(\.\w+)$/, "$1");
+      break;
 
     case "solosagre":
       // Remove w, h, resize query params
@@ -316,14 +365,20 @@ function tryUpgradeImageUrl(
         url.searchParams.delete("w");
         url.searchParams.delete("h");
         url.searchParams.delete("resize");
-        return url.toString();
+        upgraded = url.toString();
       } catch {
-        return imageUrl;
+        upgraded = imageUrl;
       }
+      break;
 
     default:
-      return imageUrl;
+      upgraded = imageUrl;
   }
+
+  // After upgrading, check if the URL is a known bad pattern
+  if (isLowQualityUrl(upgraded)) return null;
+
+  return upgraded;
 }
 
 // --- Section 2e: Detail page content extraction ---

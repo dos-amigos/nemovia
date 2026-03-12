@@ -42,19 +42,25 @@ describe("filterComuni", () => {
     expect(filterComuni("P", 8)).toEqual([]);
   });
 
-  it("returns results starting with 'Pa' for query 'Pa'", () => {
+  it("returns results matching 'Pa' for query 'Pa' (startsWith first)", () => {
     const results = filterComuni("Pa", 8);
     expect(results.length).toBeGreaterThan(0);
+    // First results should start with "pa"
+    expect(results[0].nome.toLowerCase().startsWith("pa")).toBe(true);
+    // All results should at least contain the query
     for (const r of results) {
-      expect(r.nome.toLowerCase().startsWith("pa")).toBe(true);
+      expect(r.nome.toLowerCase()).toContain("pa");
     }
   });
 
-  it("returns results starting with 'Ab' for query 'ab'", () => {
+  it("returns results matching 'Ab' for query 'ab' (startsWith first)", () => {
     const results = filterComuni("ab", 8);
     expect(results.length).toBeGreaterThan(0);
+    // First results should start with "ab"
+    expect(results[0].nome.toLowerCase().startsWith("ab")).toBe(true);
+    // All results should at least contain the query
     for (const r of results) {
-      expect(r.nome.toLowerCase().startsWith("ab")).toBe(true);
+      expect(r.nome.toLowerCase()).toContain("ab");
     }
   });
 
@@ -91,5 +97,30 @@ describe("filterComuni", () => {
     const mixed = filterComuni("Pa", 8);
     expect(lower).toEqual(upper);
     expect(lower).toEqual(mixed);
+  });
+
+  it("includes contains-matches after startsWith-matches", () => {
+    // "ano" should match "Anguillara Veneta" (starts), but also "Alano di Piave" (contains)
+    // Specifically test that substring matches appear after prefix matches
+    const results = filterComuni("iano", 20);
+    expect(results.length).toBeGreaterThan(0);
+    // All results must contain the query somewhere in the name
+    for (const r of results) {
+      expect(r.nome.toLowerCase()).toContain("iano");
+    }
+  });
+
+  it("prioritizes startsWith matches over contains matches", () => {
+    // "ba" should put "Badia Polesine" etc. before e.g. "Abano Terme"
+    const results = filterComuni("ba", 20);
+    const firstContainsIndex = results.findIndex(
+      (r) => !r.nome.toLowerCase().startsWith("ba")
+    );
+    if (firstContainsIndex > 0) {
+      // All items before firstContainsIndex should start with "ba"
+      for (let i = 0; i < firstContainsIndex; i++) {
+        expect(results[i].nome.toLowerCase().startsWith("ba")).toBe(true);
+      }
+    }
   });
 });

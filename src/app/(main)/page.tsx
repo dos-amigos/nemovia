@@ -9,9 +9,8 @@ import { ScrollRowSection } from "@/components/home/ScrollRowSection";
 import { QuickFilters } from "@/components/home/QuickFilters";
 import { ProvinceSection } from "@/components/home/ProvinceSection";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Calendar, Ticket } from "lucide-react";
+import { Calendar, MapPin, Ticket } from "lucide-react";
 import { FoodIcon } from "@/lib/constants/food-icons";
-import { NemoviaIcon } from "@/components/brand/NemoviaIcon";
 import type { SagraCardData } from "@/lib/queries/types";
 
 export const metadata: Metadata = {
@@ -131,7 +130,7 @@ export default async function HomePage() {
             <ScrollRowSection
               key={row.name}
               title={`A ${row.name}`}
-              icon={<NemoviaIcon className="h-5 w-5 text-primary" />}
+              icon={<MapPin className="h-5 w-5 text-primary" />}
               sagre={row.sagre}
               viewAllHref={`/cerca?provincia=${row.name}`}
               delay={(delay += 0.05)}

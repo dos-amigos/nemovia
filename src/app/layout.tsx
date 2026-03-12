@@ -10,7 +10,7 @@ const geist = Geist({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://nemovia.vercel.app"
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://nemovia.it"
   ),
   title: {
     default: "Nemovia - Sagre del Veneto",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  maximumScale: 5,
   viewportFit: "cover",
 };
 

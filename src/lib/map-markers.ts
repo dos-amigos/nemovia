@@ -39,8 +39,8 @@ const MARKER_ICON_PATHS: Record<FoodCategory, string> = {
   /** Cake */
   dolci: `<path d="M3 20h18v-8H3v8z"/><path d="M5 12V6l2-2 2 2V6l2-2 2 2V6l2-2 2 2v6"/><path d="M7 20v-4M12 20v-4M17 20v-4"/>`,
 
-  /** Fork + knife (generic) */
-  altro: `<path d="M11 2v7a4 4 0 0 1-2 3.5V22h4v-9.5A4 4 0 0 1 11 9V2z"/><path d="M3 2v7c0 1.7 1.3 3 3 3v10h1V12c1.7 0 3-1.3 3-3V2"/><path d="M19 2l-1 9h-2l-1-9"/><path d="M17 11v11"/>`,
+  /** Fork + knife */
+  altro: `<path d="M3 2v7c0 1.7 1.3 3 3 3v10h1V12c1.7 0 3-1.3 3-3V2"/><path d="M5 2v6M7 2v6"/><path d="M17 2l-1 9h-2l-1-9"/><path d="M15 11v11"/>`,
 };
 
 /* -------------------------------------------------------------------------- */

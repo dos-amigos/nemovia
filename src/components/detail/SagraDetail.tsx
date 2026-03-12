@@ -8,7 +8,7 @@ import {
   UtensilsCrossed,
   Clock,
 } from "lucide-react";
-import { getFallbackImage } from "@/lib/fallback-images";
+import { getFallbackImage, isLowQualityUrl } from "@/lib/fallback-images";
 import { Badge } from "@/components/ui/badge";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { ScrollProgress } from "@/components/animations/ScrollProgress";
@@ -32,7 +32,11 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
   const lng = hasLocation ? sagra.location!.coordinates[0] : null;
 
   const description = sagra.source_description ?? sagra.enhanced_description ?? sagra.description;
-  const credit = parseImageCredit(sagra.image_credit);
+  const fallback = getFallbackImage(sagra.id, sagra.food_tags);
+  const hasGoodImage = sagra.image_url && !isLowQualityUrl(sagra.image_url);
+  const imageSrc = hasGoodImage ? sagra.image_url! : fallback;
+  // Only show Unsplash credit when we're actually displaying the pipeline image (not a fallback)
+  const credit = hasGoodImage ? parseImageCredit(sagra.image_credit) : null;
   const hasTags =
     (sagra.food_tags && sagra.food_tags.length > 0) ||
     (sagra.feature_tags && sagra.feature_tags.length > 0);
@@ -47,10 +51,12 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
           {/* Hero image with parallax (mobile only) */}
           <ParallaxHero className="relative -mx-4 -mt-4 h-64 w-[calc(100%+2rem)] overflow-hidden sm:-mx-6 sm:h-72 sm:w-[calc(100%+3rem)] lg:mx-0 lg:mt-0 lg:w-full lg:h-[28rem] lg:rounded-xl">
             <FadeImage
-              src={sagra.image_url || getFallbackImage(sagra.id, sagra.food_tags)}
+              src={imageSrc}
+              fallbackSrc={fallback}
               alt={sagra.title}
               fill
               className="object-cover"
+              sizes="(max-width: 1024px) 100vw, 50vw"
               priority
             />
             <BackButton />
@@ -109,7 +115,11 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
                 <MapPin className="mt-0.5 size-4 shrink-0" />
                 <span>
                   {sagra.location_text}
-                  {sagra.province && ` (${sagra.province})`}
+                  {sagra.province && (() => {
+                    const loc = sagra.location_text ?? "";
+                    if (loc.includes(`(${sagra.province})`) || loc.toLowerCase().includes(sagra.province.toLowerCase())) return null;
+                    return ` (${sagra.province})`;
+                  })()}
                 </span>
               </div>
 

@@ -100,7 +100,7 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
           </div>
         ))}
         {/* Right padding spacer */}
-        <div className="w-4 flex-shrink-0 sm:w-6 lg:w-8" aria-hidden />
+        <div className="w-4 flex-shrink-0 sm:w-6 lg:w-8" aria-hidden="true" />
       </div>
 
       {/* Desktop arrow buttons */}

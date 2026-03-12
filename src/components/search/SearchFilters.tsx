@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useQueryStates,
-  parseAsString,
-  parseAsInteger,
-  parseAsBoolean,
-} from "nuqs";
+import { useQueryStates } from "nuqs";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { VENETO_PROVINCES } from "@/lib/constants/veneto";
 import { FOOD_TAGS } from "@/lib/enrichment/llm";
@@ -32,18 +27,7 @@ import {
   Search,
 } from "lucide-react";
 import { useEffect, useCallback, useState, useRef, useMemo } from "react";
-
-const filterParsers = {
-  provincia: parseAsString,
-  raggio: parseAsInteger.withDefault(30),
-  cucina: parseAsString,
-  gratis: parseAsBoolean,
-  da: parseAsString,
-  a: parseAsString,
-  lat: parseAsString, // stored as string in URL, parsed to number by server
-  lng: parseAsString,
-  cityName: parseAsString,
-};
+import { filterParsers } from "./filter-parsers";
 
 export function SearchFilters() {
   const [filters, setFilters] = useQueryStates(filterParsers, {
@@ -66,6 +50,12 @@ export function SearchFilters() {
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const cityInputRef = useRef<HTMLInputElement>(null);
   const cityListRef = useRef<HTMLUListElement>(null);
+
+  // Local radius state for smooth dragging (only commits to URL on release)
+  const [localRaggio, setLocalRaggio] = useState(filters.raggio);
+  useEffect(() => {
+    setLocalRaggio(filters.raggio);
+  }, [filters.raggio]);
 
   const filteredCities = useMemo(() => filterComuni(cityQuery), [cityQuery]);
 
@@ -168,141 +158,149 @@ export function SearchFilters() {
 
   return (
     <div className="space-y-4">
-      {/* ---- City search + Geolocation row ---- */}
-      <div className="space-y-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-          {/* City autocomplete input */}
-          <div className="relative flex-1">
-            {hasGeo ? (
-              /* Active location chip */
-              <div className="flex h-9 items-center gap-2 rounded-md border border-accent/30 bg-accent/10 px-3">
-                <MapPinCheck className="h-4 w-4 shrink-0 text-accent" />
-                <span className="flex-1 truncate text-sm font-medium text-accent">
-                  {filters.cityName ?? "Posizione attiva"}
-                </span>
-                <button
-                  type="button"
-                  onClick={clearGeo}
-                  className="ml-1 rounded-full p-0.5 text-accent/60 transition-colors hover:bg-accent/20 hover:text-accent"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ) : (
-              /* City search input */
-              <>
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    ref={cityInputRef}
-                    type="text"
-                    value={cityQuery}
-                    onChange={(e) => setCityQuery(e.target.value)}
-                    onKeyDown={handleCityKeyDown}
-                    onFocus={() =>
-                      filteredCities.length > 0 && setCityOpen(true)
-                    }
-                    placeholder="Cerca citta..."
-                    autoComplete="off"
-                    role="combobox"
-                    aria-expanded={cityOpen}
-                    aria-haspopup="listbox"
-                    aria-autocomplete="list"
-                    className="h-9 w-full rounded-md border border-input bg-transparent pl-9 pr-3 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                  />
-                </div>
-
-                {/* Autocomplete dropdown */}
-                {cityOpen && filteredCities.length > 0 && (
-                  <ul
-                    ref={cityListRef}
-                    role="listbox"
-                    className="absolute left-0 right-0 z-50 mt-1 max-h-[200px] overflow-y-auto rounded-md border border-border bg-popover shadow-md"
+      {/* ---- City search + radius: Airbnb-style grouped card ---- */}
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+        <div className="flex flex-col gap-3">
+          {/* Row: city input + geolocation button */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+            {/* City autocomplete input */}
+            <div className="relative flex-1">
+              {hasGeo ? (
+                /* Active location chip */
+                <div className="flex h-10 items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-3">
+                  <MapPinCheck className="h-4 w-4 shrink-0 text-accent" />
+                  <span className="flex-1 truncate text-sm font-medium text-accent">
+                    {filters.cityName ?? "Posizione attiva"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={clearGeo}
+                    className="ml-1 rounded-full p-0.5 text-accent/60 transition-colors hover:bg-accent/20 hover:text-accent"
                   >
-                    {filteredCities.map((city, i) => (
-                      <li
-                        key={`${city.nome}-${city.provincia}`}
-                        role="option"
-                        aria-selected={i === highlightIndex}
-                        className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-sm transition-colors ${
-                          i === highlightIndex
-                            ? "bg-accent/15 text-foreground"
-                            : "text-foreground hover:bg-muted"
-                        }`}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          selectCity(city);
-                        }}
-                        onMouseEnter={() => setHighlightIndex(i)}
-                      >
-                        <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                        <span>
-                          {city.nome}{" "}
-                          <span className="text-muted-foreground">
-                            ({city.provincia})
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                /* City search input */
+                <>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      ref={cityInputRef}
+                      type="text"
+                      value={cityQuery}
+                      onChange={(e) => setCityQuery(e.target.value)}
+                      onKeyDown={handleCityKeyDown}
+                      onFocus={() =>
+                        filteredCities.length > 0 && setCityOpen(true)
+                      }
+                      placeholder="Cerca per città..."
+                      autoComplete="off"
+                      role="combobox"
+                      aria-expanded={cityOpen}
+                      aria-haspopup="listbox"
+                      aria-autocomplete="list"
+                      className="h-10 w-full rounded-lg border border-input bg-transparent pl-9 pr-3 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    />
+                  </div>
+
+                  {/* Autocomplete dropdown */}
+                  {cityOpen && filteredCities.length > 0 && (
+                    <ul
+                      ref={cityListRef}
+                      role="listbox"
+                      className="absolute left-0 right-0 z-50 mt-1 max-h-[240px] overflow-y-auto rounded-lg border border-border bg-popover shadow-lg"
+                    >
+                      {filteredCities.map((city, i) => (
+                        <li
+                          key={`${city.nome}-${city.provincia}`}
+                          role="option"
+                          aria-selected={i === highlightIndex}
+                          className={`flex cursor-pointer items-center gap-2.5 px-3 py-2.5 text-sm transition-colors ${
+                            i === highlightIndex
+                              ? "bg-accent/15 text-foreground"
+                              : "text-foreground hover:bg-muted"
+                          }`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            selectCity(city);
+                          }}
+                          onMouseEnter={() => setHighlightIndex(i)}
+                        >
+                          <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span>
+                            {city.nome}{" "}
+                            <span className="text-muted-foreground">
+                              ({city.provincia})
+                            </span>
                           </span>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Geolocation button */}
+            {!hasGeo && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={requestLocation}
+                disabled={loading}
+                className="h-10 shrink-0 whitespace-nowrap rounded-lg"
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Navigation className="h-4 w-4" />
                 )}
-              </>
+                {loading ? "Localizzazione..." : "Usa posizione"}
+              </Button>
             )}
           </div>
 
-          {/* Geolocation button (secondary, smaller) */}
-          {!hasGeo && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={requestLocation}
-              disabled={loading}
-              className="shrink-0 whitespace-nowrap"
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Navigation className="h-4 w-4" />
-              )}
-              {loading ? "Localizzazione..." : "Posizione"}
-            </Button>
+          {error && (
+            <p className="text-xs text-destructive">{error}</p>
+          )}
+
+          {/* ---- Radius slider (visible when geo is active) ---- */}
+          {hasGeo && (
+            <div className="space-y-3 pt-1">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-foreground">
+                  Raggio di ricerca
+                </label>
+                <span className="min-w-[4rem] rounded-full bg-primary/10 px-3 py-1 text-center text-sm font-semibold text-primary tabular-nums">
+                  {localRaggio} km
+                </span>
+              </div>
+              <Slider
+                min={5}
+                max={100}
+                step={5}
+                value={[localRaggio]}
+                onValueChange={([val]) => {
+                  if (val !== undefined) {
+                    setLocalRaggio(val);
+                  }
+                }}
+                onValueCommit={([val]) => {
+                  if (val !== undefined) {
+                    setFilters({ raggio: val });
+                  }
+                }}
+                className="w-full"
+              />
+              <div className="flex justify-between text-[10px] text-muted-foreground">
+                <span>5 km</span>
+                <span>50 km</span>
+                <span>100 km</span>
+              </div>
+            </div>
           )}
         </div>
-
-        {error && (
-          <p className="text-xs text-destructive">{error}</p>
-        )}
-
-        {/* ---- Radius slider (visible when geo is active) ---- */}
-        {hasGeo && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-muted-foreground">
-                Raggio di ricerca
-              </label>
-              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary tabular-nums">
-                {filters.raggio} km
-              </span>
-            </div>
-            <Slider
-              min={5}
-              max={100}
-              step={5}
-              value={[filters.raggio]}
-              onValueChange={([val]) => {
-                if (val !== undefined) {
-                  setFilters({ raggio: val });
-                }
-              }}
-              className="w-full"
-            />
-            <div className="flex justify-between text-[10px] text-muted-foreground">
-              <span>5 km</span>
-              <span>50 km</span>
-              <span>100 km</span>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ---- Filter grid ---- */}

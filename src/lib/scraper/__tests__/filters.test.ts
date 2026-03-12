@@ -6,6 +6,7 @@ import {
   isExcessiveDuration,
   isPastYearEvent,
   tryUpgradeImageUrl,
+  isLowQualityUrl,
 } from "../filters";
 
 describe("isNoiseTitle", () => {
@@ -431,8 +432,14 @@ describe("tryUpgradeImageUrl", () => {
 
   describe("unknown sources", () => {
     it("passes through unknown sources unchanged", () => {
-      const url = "https://example.com/image-150x150.jpg?w=100";
+      const url = "https://example.com/photos/event-festa-2026.jpg";
       expect(tryUpgradeImageUrl(url, "venetoinfesta")).toBe(url);
+    });
+
+    it("rejects low-quality URLs from unknown sources", () => {
+      expect(tryUpgradeImageUrl("https://example.com/noimage.jpg", "venetoinfesta")).toBeNull();
+      expect(tryUpgradeImageUrl("https://example.com/placeholder.png", "venetoinfesta")).toBeNull();
+      expect(tryUpgradeImageUrl("https://example.com/logo-site.jpg", "venetoinfesta")).toBeNull();
     });
   });
 
@@ -443,6 +450,130 @@ describe("tryUpgradeImageUrl", () => {
 
     it("returns null for empty string input", () => {
       expect(tryUpgradeImageUrl("", "sagritaly")).toBeNull();
+    });
+  });
+});
+
+// =============================================================================
+// isLowQualityUrl — low-quality / bad image URL detection
+// =============================================================================
+
+describe("isLowQualityUrl", () => {
+  describe("rejects null/empty/blank", () => {
+    it("returns true for null", () => {
+      expect(isLowQualityUrl(null)).toBe(true);
+    });
+
+    it("returns true for undefined", () => {
+      expect(isLowQualityUrl(undefined)).toBe(true);
+    });
+
+    it("returns true for empty string", () => {
+      expect(isLowQualityUrl("")).toBe(true);
+    });
+
+    it("returns true for whitespace-only string", () => {
+      expect(isLowQualityUrl("   ")).toBe(true);
+    });
+  });
+
+  describe("rejects tracking pixels and spacer GIFs", () => {
+    it("rejects spacer.gif", () => {
+      expect(isLowQualityUrl("https://example.com/spacer.gif")).toBe(true);
+    });
+
+    it("rejects pixel.png", () => {
+      expect(isLowQualityUrl("https://example.com/pixel.png")).toBe(true);
+    });
+
+    it("rejects 1x1.gif", () => {
+      expect(isLowQualityUrl("https://example.com/1x1.gif")).toBe(true);
+    });
+
+    it("rejects blank.jpg", () => {
+      expect(isLowQualityUrl("https://example.com/blank.jpg")).toBe(true);
+    });
+  });
+
+  describe("rejects placeholder / default images", () => {
+    it("rejects noimage.jpg", () => {
+      expect(isLowQualityUrl("https://example.com/noimage.jpg")).toBe(true);
+    });
+
+    it("rejects no-photo.png", () => {
+      expect(isLowQualityUrl("https://example.com/no-photo.png")).toBe(true);
+    });
+
+    it("rejects default-image.jpg", () => {
+      expect(isLowQualityUrl("https://example.com/default-image.jpg")).toBe(true);
+    });
+
+    it("rejects placeholder.jpg", () => {
+      expect(isLowQualityUrl("https://example.com/placeholder.jpg")).toBe(true);
+    });
+
+    it("rejects image-not-found.jpg", () => {
+      expect(isLowQualityUrl("https://example.com/image-not-found.jpg")).toBe(true);
+    });
+  });
+
+  describe("rejects site logos and branding", () => {
+    it("rejects logo.png", () => {
+      expect(isLowQualityUrl("https://example.com/logo.png")).toBe(true);
+    });
+
+    it("rejects logo-site.jpg", () => {
+      expect(isLowQualityUrl("https://example.com/logo-site.jpg")).toBe(true);
+    });
+
+    it("rejects favicon.ico", () => {
+      expect(isLowQualityUrl("https://example.com/favicon.ico")).toBe(true);
+    });
+  });
+
+  describe("rejects WordPress placeholders", () => {
+    it("rejects woocommerce-placeholder", () => {
+      expect(isLowQualityUrl("https://example.com/wp-content/uploads/woocommerce-placeholder.png")).toBe(true);
+    });
+  });
+
+  describe("rejects small dimension URLs", () => {
+    it("rejects URL with w=100 query param", () => {
+      expect(isLowQualityUrl("https://example.com/img.jpg?w=100")).toBe(true);
+    });
+
+    it("rejects URL with h=50 query param", () => {
+      expect(isLowQualityUrl("https://example.com/img.jpg?h=50")).toBe(true);
+    });
+
+    it("rejects URL with -80x80 suffix", () => {
+      expect(isLowQualityUrl("https://example.com/photo-80x80.jpg")).toBe(true);
+    });
+
+    it("rejects URL with -150x150 suffix", () => {
+      expect(isLowQualityUrl("https://example.com/photo-150x150.jpg")).toBe(true);
+    });
+  });
+
+  describe("accepts valid image URLs", () => {
+    it("accepts normal Unsplash URL", () => {
+      expect(isLowQualityUrl("https://images.unsplash.com/photo-123?w=800&h=500&fit=crop&q=80")).toBe(false);
+    });
+
+    it("accepts normal event photo URL", () => {
+      expect(isLowQualityUrl("https://example.com/photos/sagra-del-pesce-2026.jpg")).toBe(false);
+    });
+
+    it("accepts URL with large dimensions", () => {
+      expect(isLowQualityUrl("https://example.com/img.jpg?w=800")).toBe(false);
+    });
+
+    it("accepts URL with -800x600 suffix", () => {
+      expect(isLowQualityUrl("https://example.com/photo-800x600.jpg")).toBe(false);
+    });
+
+    it("accepts URL with -300x200 suffix (above threshold)", () => {
+      expect(isLowQualityUrl("https://example.com/photo-300x200.jpg")).toBe(false);
     });
   });
 });

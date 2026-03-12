@@ -112,10 +112,13 @@ export function tryUpgradeImageUrl(
 ): string | null {
   if (!imageUrl || imageUrl === "") return null;
 
+  let upgraded: string;
+
   switch (sourceName) {
     case "sagritaly":
       // Strip WordPress thumbnail suffix: image-150x150.jpg -> image.jpg
-      return imageUrl.replace(/-\d+x\d+(\.\w+)$/, "$1");
+      upgraded = imageUrl.replace(/-\d+x\d+(\.\w+)$/, "$1");
+      break;
 
     case "solosagre":
       // Remove w, h, resize query params
@@ -124,15 +127,37 @@ export function tryUpgradeImageUrl(
         url.searchParams.delete("w");
         url.searchParams.delete("h");
         url.searchParams.delete("resize");
-        return url.toString();
+        upgraded = url.toString();
       } catch {
-        return imageUrl;
+        upgraded = imageUrl;
       }
+      break;
 
     default:
-      return imageUrl;
+      upgraded = imageUrl;
   }
+
+  // After upgrading, check if the URL is a known bad pattern
+  if (isLowQualityUrl(upgraded)) return null;
+
+  return upgraded;
 }
+
+/**
+ * Known patterns that indicate a scraped image URL is NOT a real event photo.
+ * Covers: tracking pixels, spacer GIFs, default placeholders, site logos,
+ * WordPress placeholder images, data URIs, and URLs with very small dimensions.
+ *
+ * Returns `true` if the image URL should be REJECTED (treated as no image).
+ * Returns `true` for null/empty input.
+ *
+ * NOTE: Canonical implementation lives in src/lib/fallback-images.ts.
+ * This re-export uses the same logic for the scraping pipeline.
+ * The inline copy in supabase/functions/enrich-sagre/index.ts must be
+ * kept in sync manually (Deno import constraint).
+ */
+import { isLowQualityUrl } from "@/lib/fallback-images";
+export { isLowQualityUrl };
 
 /**
  * Detect calendar-spam date ranges (whole month or near-whole month).

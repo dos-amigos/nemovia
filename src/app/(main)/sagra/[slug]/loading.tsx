@@ -2,11 +2,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SagraDetailLoading() {
   return (
-    <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
+    <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 space-y-4 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
       {/* Left column: Image + Mini map skeletons */}
       <div className="space-y-4">
         {/* Image skeleton */}
-        <Skeleton className="h-48 lg:h-64 w-full rounded-xl" />
+        <Skeleton className="h-64 sm:h-72 lg:h-[28rem] w-full rounded-xl" />
 
         {/* Mini map skeleton */}
         <div className="space-y-2">

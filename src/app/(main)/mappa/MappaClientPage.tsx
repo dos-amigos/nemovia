@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type L from "leaflet";
 import MapViewDynamic from "@/components/map/MapView.dynamic";
 import LocationButton from "@/components/map/LocationButton";
@@ -9,10 +9,24 @@ import type { MapMarkerData } from "@/lib/queries/types";
 
 interface MappaClientPageProps {
   sagre: MapMarkerData[];
+  searchLat?: number;
+  searchLng?: number;
 }
 
-export default function MappaClientPage({ sagre }: MappaClientPageProps) {
+export default function MappaClientPage({ sagre, searchLat, searchLng }: MappaClientPageProps) {
   const [mapRef, setMapRef] = useState<L.Map | null>(null);
+  const lastFlyTo = useRef<string>("");
+
+  // Fly to searched city when lat/lng change
+  useEffect(() => {
+    if (mapRef && searchLat != null && searchLng != null) {
+      const key = `${searchLat},${searchLng}`;
+      if (key !== lastFlyTo.current) {
+        lastFlyTo.current = key;
+        mapRef.flyTo([searchLat, searchLng], 11);
+      }
+    }
+  }, [mapRef, searchLat, searchLng]);
 
   const handleLocate = useCallback(
     (lat: number, lng: number) => {
