@@ -3,6 +3,19 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Esperienza Completa
 status: executing
+last_updated: "2026-03-12T09:22:39.968Z"
+progress:
+  total_phases: 6
+  completed_phases: 6
+  total_plans: 13
+  completed_plans: 13
+---
+
+---
+gsd_state_version: 1.0
+milestone: v1.4
+milestone_name: Esperienza Completa
+status: executing
 stopped_at: "Completed 23-02-PLAN.md"
 last_updated: "2026-03-12T08:45:07Z"
 last_activity: 2026-03-12 -- Completed 23-02 Detail Page Scraping
