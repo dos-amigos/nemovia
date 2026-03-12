@@ -6,6 +6,7 @@ import {
   Euro,
   ExternalLink,
   UtensilsCrossed,
+  Clock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FadeIn } from "@/components/animations/FadeIn";
@@ -29,7 +30,7 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
   const lat = hasLocation ? sagra.location!.coordinates[1] : null;
   const lng = hasLocation ? sagra.location!.coordinates[0] : null;
 
-  const description = sagra.enhanced_description ?? sagra.description;
+  const description = sagra.source_description ?? sagra.enhanced_description ?? sagra.description;
   const credit = parseImageCredit(sagra.image_credit);
   const hasTags =
     (sagra.food_tags && sagra.food_tags.length > 0) ||
@@ -154,9 +155,39 @@ export default function SagraDetail({ sagra }: SagraDetailProps) {
             </ScrollReveal>
           )}
 
+          {/* Menu section */}
+          {sagra.menu_text && (
+            <ScrollReveal direction="up" delay={0.12}>
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <UtensilsCrossed className="size-4 text-primary" />
+                  Menu
+                </h2>
+                <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+                  {sagra.menu_text}
+                </p>
+              </div>
+            </ScrollReveal>
+          )}
+
+          {/* Orari section */}
+          {sagra.orari_text && (
+            <ScrollReveal direction="up" delay={0.14}>
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Clock className="size-4 text-primary" />
+                  Orari
+                </h2>
+                <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+                  {sagra.orari_text}
+                </p>
+              </div>
+            </ScrollReveal>
+          )}
+
           {/* Description section */}
           {description && (
-            <ScrollReveal direction="right" delay={0.15}>
+            <ScrollReveal direction="right" delay={0.16}>
               <div className="space-y-2">
                 <h2 className="text-lg font-semibold">Descrizione</h2>
                 <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
