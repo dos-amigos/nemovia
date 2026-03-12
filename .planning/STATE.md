@@ -3,38 +3,38 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Esperienza Completa
 status: executing
-stopped_at: "Completed 22-02-PLAN.md"
-last_updated: "2026-03-11T15:39:40Z"
-last_activity: 2026-03-11 -- Completed 22-02 City Search Autocomplete
+stopped_at: "Completed 23-01-PLAN.md"
+last_updated: "2026-03-12T08:44:39Z"
+last_activity: 2026-03-12 -- Completed 23-01 Data Model & Detail Page UI
 progress:
   total_phases: 6
-  completed_phases: 4
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
+  completed_phases: 5
+  total_plans: 13
+  completed_plans: 12
+  percent: 92
 ---
 
 # Project State: Nemovia v1.4
 
-**Last updated**: 2026-03-11
+**Last updated**: 2026-03-12
 **Current milestone**: v1.4 "Esperienza Completa"
 
 ## Project Reference
 
 **Core value**: Mostrare TUTTE le sagre del Veneto in un unico posto -- dove sono, quando sono, cosa offrono -- con un'esperienza mobile-first che nessun portale esistente offre.
 
-**Current focus**: Transform Nemovia from prototype to complete product through data pipeline restoration, Netflix-style discovery UI, and UX polish.
+**Current focus**: Transform Nemovia from prototype to complete product through data pipeline restoration, Netflix-style discovery UI, and UX polish. Phase 23 adds scraping completeness.
 
 ## Current Position
 
-**Phase**: 22 - City Search, Map Fixes & Food Icons (COMPLETE)
-**Plan**: 3/3 complete
-**Status**: Phase 22 complete. All v1.4 phases complete.
-**Progress**: 6/6 phases complete, 11/11 plans (100%)
+**Phase**: 23 - Scraping Completeness (IN PROGRESS)
+**Plan**: 1/2 complete
+**Status**: Plan 01 complete (data model + detail page UI). Plan 02 (scraper detail extraction) next.
+**Progress**: 12/13 plans complete (92%)
 
 ```
-v1.4 Progress: [██████████] 100%
-Phase 22:      [==================================================] 100%
+v1.4 Progress: [█████████░] 92%
+Phase 23:      [=========================                         ] 50%
 ```
 
 ## Performance Metrics
@@ -60,6 +60,13 @@ Phase 22:      [==================================================] 100%
 ## Accumulated Context
 
 ### Recent Decisions
+
+**23-01 Data Model & Detail Page UI (2026-03-12)**
+- **Decision**: Inline Menu/Orari sections instead of separate components -- small sections with no reuse needed
+- **Decision**: Description priority: source_description > enhanced_description > description for progressive quality enrichment
+- **Decision**: whitespace-pre-line on menu/orari text to preserve multiline source formatting
+- **Pattern**: Conditional detail sections: ScrollReveal-wrapped, icon-headed, truthy-gated
+- **Pattern**: Progressive description priority chain for multi-source content
 
 **22-02 City Search Autocomplete (2026-03-11)**
 - **Decision**: Custom glass-styled CitySearch component instead of Shadcn Combobox UI -- hero requires transparent/glass aesthetic incompatible with standard popover styling
@@ -241,9 +248,9 @@ cat .planning/REQUIREMENTS.md
 **Current milestone**: v1.4 "Esperienza Completa"
 **Milestone goal**: Transform Nemovia from prototype to complete product -- Netflix scroll rows, hero photographico, city search con raggio, full-width layout, logo, footer, e fix critici su dati e UX.
 
-**Phase 22 status**: COMPLETE (3/3 plans). 22-01 Food Icons, 22-02 City Search, 22-03 Map Filter Sync all complete.
+**Phase 23 status**: IN PROGRESS (1/2 plans). 23-01 Data Model & Detail Page UI complete. 23-02 Scraper Detail Extraction next.
 
-**Next action**: v1.4 milestone complete. Tag and archive, or proceed to Phase 23 (Scraping) if planned.
+**Next action**: Execute Phase 23 Plan 02 (scraper detail extraction to populate source_description, menu_text, orari_text columns).
 
 ---
 

@@ -37,7 +37,7 @@ Requirements for v1.4 "Esperienza Completa". Each maps to roadmap phases.
 
 ### Scraping
 
-- [ ] **SCRAPE-01**: Source sites scraped for complete info (menu, orari, descriptions) where available
+- [x] **SCRAPE-01**: Source sites scraped for complete info (menu, orari, descriptions) where available
 - [x] **SCRAPE-02**: Investigate and add new scraper sources if needed to reach 100+ active events
 
 ## v2 Requirements
@@ -90,7 +90,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HOME-02 | Phase 22 | Complete |
 | MAP-01 | Phase 22 | Complete |
 | MAP-02 | Phase 22 | Complete |
-| SCRAPE-01 | Phase 23 | Pending |
+| SCRAPE-01 | Phase 23 | Complete |
 
 **Coverage:**
 - v1 requirements: 15 total

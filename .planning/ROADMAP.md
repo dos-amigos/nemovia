@@ -194,7 +194,7 @@ Plans:
 3. Sagre with detailed descriptions show richer content than generic LLM summaries
 4. Source attribution links remain functional and direct users to original event pages
 
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 23-01-PLAN.md — Schema migration + types + detail page UI for menu, orari, source description
@@ -228,4 +228,4 @@ Plans:
 | 20. Layout & Branding | v1.4 | 2/2 | Complete | 2026-03-11 |
 | 21. Netflix Rows Homepage | v1.4 | 1/1 | Complete | 2026-03-11 |
 | 22. City Search & Map Fixes | v1.4 | 3/3 | Complete | 2026-03-11 |
-| 23. Scraping Completeness | v1.4 | 0/2 | Not started | - |
+| 23. Scraping Completeness | 1/2 | In Progress|  | - |
