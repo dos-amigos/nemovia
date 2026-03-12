@@ -25,6 +25,7 @@ const filterParsers = {
   a: parseAsString,
   lat: parseAsString, // stored as string in URL, parsed to number by server
   lng: parseAsString,
+  cityName: parseAsString,
 };
 
 export function SearchFilters() {
@@ -56,6 +57,7 @@ export function SearchFilters() {
       a: null,
       lat: null,
       lng: null,
+      cityName: null,
     });
   }, [setFilters]);
 
@@ -76,10 +78,10 @@ export function SearchFilters() {
             variant="outline"
             size="sm"
             className="text-accent border-accent/30 bg-accent/10"
-            onClick={() => setFilters({ lat: null, lng: null, raggio: null })}
+            onClick={() => setFilters({ lat: null, lng: null, raggio: null, cityName: null })}
           >
             <MapPinCheck className="h-4 w-4" />
-            Posizione attiva
+            {filters.cityName ?? "Posizione attiva"}
           </Button>
         ) : (
           <Button

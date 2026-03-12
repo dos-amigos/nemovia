@@ -13,6 +13,7 @@ const filterParsers = {
   a: parseAsString,
   lat: parseAsString,
   lng: parseAsString,
+  cityName: parseAsString,
 };
 
 export function ActiveFilters() {
@@ -69,10 +70,13 @@ export function ActiveFilters() {
   }
 
   if (hasGeo) {
+    const geoLabel = filters.cityName
+      ? `${filters.cityName} (${filters.raggio} km)`
+      : `Vicino a me (${filters.raggio} km)`;
     badges.push({
       key: "geo",
-      label: `Vicino a me (${filters.raggio} km)`,
-      onRemove: () => setFilters({ lat: null, lng: null, raggio: null }),
+      label: geoLabel,
+      onRemove: () => setFilters({ lat: null, lng: null, raggio: null, cityName: null }),
     });
   }
 

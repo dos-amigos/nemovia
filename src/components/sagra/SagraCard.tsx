@@ -80,8 +80,8 @@ export function SagraCard({ sagra }: SagraCardProps) {
         )}
 
         {/* Food type icon positioned bottom-right */}
-        <div className="absolute bottom-2 right-2 rounded-full bg-black/40 p-1 backdrop-blur-sm">
-          <FoodIcon foodTags={sagra.food_tags} className="h-4 w-4 text-white/90" />
+        <div className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/60 backdrop-blur-sm">
+          <FoodIcon foodTags={sagra.food_tags} className="h-4 w-4" themed />
         </div>
       </m.div>
     </Link>

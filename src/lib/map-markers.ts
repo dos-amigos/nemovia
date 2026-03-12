@@ -1,7 +1,7 @@
 /**
  * Themed Leaflet map markers for sagra food categories.
  *
- * Each marker is a colored teardrop pin with a small white food icon inside.
+ * Each marker is a colored teardrop pin with a white food icon inside.
  * Uses L.divIcon with inline SVG for maximum performance (no extra HTTP requests).
  * Icons are cached per category so each divIcon is created only once.
  */
@@ -15,8 +15,6 @@ import {
 
 /* -------------------------------------------------------------------------- */
 /*  Simplified SVG icon paths (white, stroke-only, viewBox 0 0 24 24)         */
-/*  These are simplified versions of the food-icons.tsx paths, optimised for  */
-/*  rendering at ~14px inside a map marker pin.                               */
 /* -------------------------------------------------------------------------- */
 
 const MARKER_ICON_PATHS: Record<FoodCategory, string> = {
@@ -46,28 +44,29 @@ const MARKER_ICON_PATHS: Record<FoodCategory, string> = {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  SVG marker template                                                       */
+/*  SVG marker template — 40x56 pin with large icon inside                    */
 /* -------------------------------------------------------------------------- */
 
 /**
  * Builds a self-contained SVG string for a teardrop map pin with an icon.
- * The pin is 30x42 px with rounded top and pointed bottom.
+ * The pin is 40x56 px with rounded top and pointed bottom.
+ * Icon is scaled large (0.83) so it's clearly visible at map zoom levels.
  */
 function buildMarkerSvg(color: string, iconPaths: string): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="42" viewBox="0 0 30 42">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="56" viewBox="0 0 40 56">
   <!-- Drop shadow -->
   <defs>
     <filter id="s" x="-20%" y="-10%" width="140%" height="130%">
-      <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.3"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.3"/>
     </filter>
   </defs>
   <!-- Teardrop pin shape -->
-  <path d="M15 41 C15 41 3 25 3 15 A12 12 0 1 1 27 15 C27 25 15 41 15 41Z"
-        fill="${color}" stroke="white" stroke-width="1.5" filter="url(#s)"/>
+  <path d="M20 54 C20 54 4 34 4 20 A16 16 0 1 1 36 20 C36 34 20 54 20 54Z"
+        fill="${color}" stroke="white" stroke-width="2" filter="url(#s)"/>
   <!-- White food icon centered in the circle part of the pin -->
-  <g transform="translate(8,6) scale(0.58)">
+  <g transform="translate(10,10) scale(0.83)">
     <svg viewBox="0 0 24 24" width="24" height="24"
-         fill="none" stroke="white" stroke-width="2"
+         fill="none" stroke="white" stroke-width="2.2"
          stroke-linecap="round" stroke-linejoin="round">
       ${iconPaths}
     </svg>
@@ -79,9 +78,9 @@ function buildMarkerSvg(color: string, iconPaths: string): string {
 /*  Icon cache & public API                                                   */
 /* -------------------------------------------------------------------------- */
 
-const MARKER_SIZE: [number, number] = [30, 42];
-const ICON_ANCHOR: [number, number] = [15, 42]; // bottom-center of pin
-const POPUP_ANCHOR: [number, number] = [0, -42]; // top-center of pin
+const MARKER_SIZE: [number, number] = [40, 56];
+const ICON_ANCHOR: [number, number] = [20, 56]; // bottom-center of pin
+const POPUP_ANCHOR: [number, number] = [0, -56]; // top-center of pin
 
 /** Cache: one L.DivIcon per food category */
 const iconCache = new Map<FoodCategory, L.DivIcon>();

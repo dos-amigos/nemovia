@@ -39,7 +39,9 @@ export function CitySearch() {
   function selectCity(city: VenetoComune) {
     setOpen(false);
     setQuery("");
-    router.push(`/cerca?lat=${city.lat}&lng=${city.lng}&raggio=30`);
+    router.push(
+      `/cerca?cityName=${encodeURIComponent(`${city.nome} (${city.provincia})`)}&lat=${city.lat}&lng=${city.lng}&raggio=30`
+    );
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {

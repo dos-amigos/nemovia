@@ -7,6 +7,19 @@
 :root {
   --radius: 0.625rem;
 
+  /*
+   * Brand color — change these 3 values to reskin the entire site.
+   * Current: terracotta/warm brown-red matching the NemoVia logo.
+   */
+  --brand-l: 0.537;
+  --brand-c: 0.157;
+  --brand-h: 25.5;
+
+  /* Accent color components — teal */
+  --accent-l: 0.600;
+  --accent-c: 0.155;
+  --accent-h: 185;
+
   /* Background and Foreground -- cool neutral base */
   --background: oklch(0.985 0.005 260);
   --foreground: oklch(0.145 0.015 260);
@@ -17,8 +30,8 @@
   --popover: oklch(0.995 0.002 260);
   --popover-foreground: oklch(0.145 0.015 260);
 
-  /* Primary -- warm coral/vermillion */
-  --primary: oklch(0.637 0.237 25.5);
+  /* Primary — derived from brand color */
+  --primary: oklch(var(--brand-l) var(--brand-c) var(--brand-h));
   --primary-foreground: oklch(0.985 0.005 260);
 
   /* Secondary -- light cool gray */
@@ -29,8 +42,8 @@
   --muted: oklch(0.960 0.008 260);
   --muted-foreground: oklch(0.556 0.015 260);
 
-  /* Accent -- teal */
-  --accent: oklch(0.600 0.155 185);
+  /* Accent — derived from accent color */
+  --accent: oklch(var(--accent-l) var(--accent-c) var(--accent-h));
   --accent-foreground: oklch(0.985 0.005 260);
 
   /* Destructive -- true red */
@@ -40,11 +53,11 @@
   /* Borders -- cool gray */
   --border: oklch(0.905 0.008 260);
   --input: oklch(0.905 0.008 260);
-  --ring: oklch(0.637 0.237 25.5);
+  --ring: oklch(var(--brand-l) var(--brand-c) var(--brand-h));
 
   /* Charts */
-  --chart-1: oklch(0.637 0.237 25.5);
-  --chart-2: oklch(0.600 0.155 185);
+  --chart-1: oklch(var(--brand-l) var(--brand-c) var(--brand-h));
+  --chart-2: oklch(var(--accent-l) var(--accent-c) var(--accent-h));
   --chart-3: oklch(0.700 0.150 85);
   --chart-4: oklch(0.650 0.200 330);
   --chart-5: oklch(0.700 0.180 145);
@@ -52,12 +65,12 @@
   /* Sidebar */
   --sidebar: oklch(0.985 0.005 260);
   --sidebar-foreground: oklch(0.145 0.015 260);
-  --sidebar-primary: oklch(0.637 0.237 25.5);
+  --sidebar-primary: oklch(var(--brand-l) var(--brand-c) var(--brand-h));
   --sidebar-primary-foreground: oklch(0.985 0.005 260);
   --sidebar-accent: oklch(0.960 0.008 260);
   --sidebar-accent-foreground: oklch(0.205 0.015 260);
   --sidebar-border: oklch(0.905 0.008 260);
-  --sidebar-ring: oklch(0.637 0.237 25.5);
+  --sidebar-ring: oklch(var(--brand-l) var(--brand-c) var(--brand-h));
 }
 
 @theme inline {
@@ -151,15 +164,15 @@
   }
   .mesh-gradient-hero {
     background:
-      radial-gradient(ellipse 80% 60% at 10% 15%, oklch(0.637 0.237 25.5 / 0.20), transparent 70%),
-      radial-gradient(ellipse 60% 80% at 90% 80%, oklch(0.600 0.155 185 / 0.18), transparent 65%),
-      radial-gradient(ellipse 40% 40% at 50% 40%, oklch(0.637 0.237 25.5 / 0.10), transparent 55%),
+      radial-gradient(ellipse 80% 60% at 10% 15%, oklch(var(--brand-l) var(--brand-c) var(--brand-h) / 0.20), transparent 70%),
+      radial-gradient(ellipse 60% 80% at 90% 80%, oklch(var(--accent-l) var(--accent-c) var(--accent-h) / 0.18), transparent 65%),
+      radial-gradient(ellipse 40% 40% at 50% 40%, oklch(var(--brand-l) var(--brand-c) var(--brand-h) / 0.10), transparent 55%),
       oklch(0.985 0.005 260);
   }
   .mesh-gradient-page {
     background:
-      radial-gradient(ellipse 70% 50% at 5% 10%, oklch(0.637 0.237 25.5 / 0.10), transparent 60%),
-      radial-gradient(ellipse 50% 70% at 95% 90%, oklch(0.600 0.155 185 / 0.08), transparent 55%);
+      radial-gradient(ellipse 70% 50% at 5% 10%, oklch(var(--brand-l) var(--brand-c) var(--brand-h) / 0.10), transparent 60%),
+      radial-gradient(ellipse 50% 70% at 95% 90%, oklch(var(--accent-l) var(--accent-c) var(--accent-h) / 0.08), transparent 55%);
   }
 }
 
