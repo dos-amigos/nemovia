@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Esperienza Completa
 status: executing
-stopped_at: "Completed 23-01-PLAN.md"
-last_updated: "2026-03-12T08:44:39Z"
-last_activity: 2026-03-12 -- Completed 23-01 Data Model & Detail Page UI
+stopped_at: "Completed 23-02-PLAN.md"
+last_updated: "2026-03-12T08:45:07Z"
+last_activity: 2026-03-12 -- Completed 23-02 Detail Page Scraping
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 13
-  completed_plans: 12
-  percent: 92
+  completed_plans: 13
+  percent: 100
 ---
 
 # Project State: Nemovia v1.4
@@ -27,14 +27,14 @@ progress:
 
 ## Current Position
 
-**Phase**: 23 - Scraping Completeness (IN PROGRESS)
-**Plan**: 1/2 complete
-**Status**: Plan 01 complete (data model + detail page UI). Plan 02 (scraper detail extraction) next.
-**Progress**: 12/13 plans complete (92%)
+**Phase**: 23 - Scraping Completeness (COMPLETE)
+**Plan**: 2/2 complete
+**Status**: Phase 23 complete. All v1.4 phases complete (18-23).
+**Progress**: 13/13 plans complete (100%)
 
 ```
-v1.4 Progress: [█████████░] 92%
-Phase 23:      [=========================                         ] 50%
+v1.4 Progress: [██████████] 100%
+Phase 23:      [==================================================] 100%
 ```
 
 ## Performance Metrics
@@ -60,6 +60,16 @@ Phase 23:      [=========================                         ] 50%
 ## Accumulated Context
 
 ### Recent Decisions
+
+**23-02 Detail Page Scraping (2026-03-12)**
+- **Decision**: Source-specific Cheerio extractors over generic heuristics for higher accuracy per source
+- **Decision**: 10-page cap per source per run to stay within Edge Function timeout budget (~35s added per source)
+- **Decision**: Combined new+backfill strategy: newly inserted events get priority, remaining budget fills gaps
+- **Decision**: NULL-only update pattern: never overwrite existing detail content (preserves curated/LLM content)
+- **Decision**: Sagritaly and solosagre get stub extractors with TODO comments (sites unreachable during research)
+- **Pattern**: Detail extractor: function extractXxxDetail($: cheerio.CheerioAPI): DetailContent
+- **Pattern**: Backfill query: active events with source_url but NULL source_description
+- **Pattern**: upsertEvent returns { result, id } for post-insert processing
 
 **23-01 Data Model & Detail Page UI (2026-03-12)**
 - **Decision**: Inline Menu/Orari sections instead of separate components -- small sections with no reuse needed
@@ -198,7 +208,7 @@ Phase 23:      [=========================                         ] 50%
 
 ### Blockers
 
-**None** -- All v1.4 phases complete (18-22).
+**None** -- All v1.4 phases complete (18-23).
 
 ### Technical Notes
 
@@ -248,9 +258,9 @@ cat .planning/REQUIREMENTS.md
 **Current milestone**: v1.4 "Esperienza Completa"
 **Milestone goal**: Transform Nemovia from prototype to complete product -- Netflix scroll rows, hero photographico, city search con raggio, full-width layout, logo, footer, e fix critici su dati e UX.
 
-**Phase 23 status**: IN PROGRESS (1/2 plans). 23-01 Data Model & Detail Page UI complete. 23-02 Scraper Detail Extraction next.
+**Phase 23 status**: COMPLETE (2/2 plans). 23-01 Data Model & Detail Page UI, 23-02 Detail Page Scraping.
 
-**Next action**: Execute Phase 23 Plan 02 (scraper detail extraction to populate source_description, menu_text, orari_text columns).
+**Next action**: All v1.4 phases complete (18-23, 13 plans). Tag and archive v1.4, or plan next milestone.
 
 ---
 
