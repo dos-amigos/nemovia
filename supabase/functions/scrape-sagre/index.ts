@@ -326,6 +326,237 @@ function tryUpgradeImageUrl(
   }
 }
 
+// --- Section 2e: Detail page content extraction ---
+// Extracts description, menu, and orari from individual event detail pages.
+
+interface DetailContent {
+  description: string | null;
+  menu: string | null;
+  orari: string | null;
+}
+
+function extractAssosagreDetail($: cheerio.CheerioAPI): DetailContent {
+  const bodyText = $("body").text().replace(/\s+/g, " ").trim();
+
+  // Menu: match food category headers and their content
+  let menu: string | null = null;
+  const menuMatch = bodyText.match(
+    /((?:Primi|Antipasti|Secondi|Contorni|Dolci|Grigliate|Bevande)[\s\S]*?)(?=Apertura|Prenotaz|Info|Contatt|$)/i
+  );
+  if (menuMatch) {
+    menu = menuMatch[1].trim().slice(0, 2000) || null;
+  }
+
+  // Orari: match opening hours patterns
+  let orari: string | null = null;
+  const orariMatch = bodyText.match(
+    /((?:Apertura\s+ore|Orari|Orario)[\s\S]*?)(?=\n\n|Prenotaz|Menu|Info|$)/i
+  );
+  if (orariMatch) {
+    orari = orariMatch[1].trim().slice(0, 500) || null;
+  }
+
+  // Description: match event intro patterns
+  let description: string | null = null;
+  const descMatch = bodyText.match(
+    /((?:La sagra|L'evento|Vi aspettiamo|Torna|Edizione)[\s\S]*?)(?=Primi:|Apertura|Menu|Info|$)/i
+  );
+  if (descMatch) {
+    description = descMatch[1].trim().slice(0, 1000) || null;
+  }
+
+  return { description, menu, orari };
+}
+
+function extractVenetoInFestaDetail($: cheerio.CheerioAPI): DetailContent {
+  // Description: longest text node from paragraphs and table cells
+  let description: string | null = null;
+  const textNodes: string[] = [];
+  $("div p, div td").each((_i: number, el: cheerio.Element) => {
+    const text = $(el).text().trim();
+    if (text.length > 50) {
+      textNodes.push(text);
+    }
+  });
+  if (textNodes.length > 0) {
+    textNodes.sort((a, b) => b.length - a.length);
+    description = textNodes[0].slice(0, 1000);
+  }
+
+  // Orari: find td cells with time patterns and relevant keywords
+  let orari: string | null = null;
+  $("td").each((_i: number, el: cheerio.Element) => {
+    if (orari) return; // take first match
+    const text = $(el).text().trim();
+    if (/\b\d{1,2}:\d{2}\b/.test(text) && /dalle|ore|apertura/i.test(text)) {
+      orari = text.slice(0, 500);
+    }
+  });
+
+  // Menu: venetoinfesta embeds food info in description, not structured separately
+  return { description, menu: null, orari };
+}
+
+function extractItinerariDetail($: cheerio.CheerioAPI): DetailContent {
+  // Description: from .FullNews div, fallback to .entry-content
+  let description: string | null = null;
+  const fullNewsText = $("div.FullNews").first().text().trim();
+  if (fullNewsText) {
+    description = fullNewsText.slice(0, 1000);
+  } else {
+    const entryText = $("div.entry-content").first().text().trim();
+    if (entryText) {
+      description = entryText.slice(0, 1000);
+    }
+  }
+
+  // Menu: look for <ul> lists inside .FullNews
+  let menu: string | null = null;
+  const menuUl = $("div.FullNews ul").first();
+  if (menuUl.length > 0) {
+    const items: string[] = [];
+    menuUl.find("li").each((_i: number, el: cheerio.Element) => {
+      items.push($(el).text().trim());
+    });
+    if (items.length > 0) {
+      menu = items.join("\n").slice(0, 2000);
+    }
+  }
+
+  // Orari: look for time patterns in the page text
+  let orari: string | null = null;
+  const pageText = $("body").text();
+  const orariMatch = pageText.match(
+    /(?:ore|dalle|apertura)\s*:?\s*\d{1,2}[.:]\d{2}/i
+  );
+  if (orariMatch) {
+    // Extract the surrounding context (up to 200 chars around the match)
+    const idx = pageText.indexOf(orariMatch[0]);
+    const start = Math.max(0, idx - 50);
+    const end = Math.min(pageText.length, idx + orariMatch[0].length + 150);
+    orari = pageText.slice(start, end).replace(/\s+/g, " ").trim().slice(0, 500);
+  }
+
+  return { description, menu, orari };
+}
+
+// TODO: Verify selectors when sagritaly.com is reachable
+function extractSagritalyDetail($: cheerio.CheerioAPI): DetailContent {
+  let description: string | null = null;
+  const entryText = $(".entry-content").first().text().trim();
+  if (entryText) {
+    description = entryText.slice(0, 1000);
+  }
+  return { description, menu: null, orari: null };
+}
+
+// TODO: Verify selectors when solosagre.it detail pages are accessible
+function extractSolosagreDetail($: cheerio.CheerioAPI): DetailContent {
+  let description: string | null = null;
+  const articleText = $("article").first().text().trim();
+  if (articleText) {
+    description = articleText.slice(0, 1000);
+  } else {
+    const entryText = $(".entry-content").first().text().trim();
+    if (entryText) {
+      description = entryText.slice(0, 1000);
+    }
+  }
+  return { description, menu: null, orari: null };
+}
+
+function extractDetailContent($: cheerio.CheerioAPI, sourceName: string): DetailContent {
+  switch (sourceName) {
+    case "assosagre": return extractAssosagreDetail($);
+    case "venetoinfesta": return extractVenetoInFestaDetail($);
+    case "itinerarinelgusto": return extractItinerariDetail($);
+    case "sagritaly": return extractSagritalyDetail($);
+    case "solosagre": return extractSolosagreDetail($);
+    default: return { description: null, menu: null, orari: null };
+  }
+}
+
+// --- Section 2f: Detail page scraping orchestration ---
+
+async function scrapeDetailPages(
+  supabase: SupabaseClient,
+  sourceName: string,
+  eventUrls: Array<{ id: string; url: string }>
+): Promise<{ scraped: number; updated: number }> {
+  console.log(`[scrapeDetailPages] ${sourceName}: processing ${eventUrls.length} URLs (max 10)`);
+
+  let scraped = 0;
+  let updated = 0;
+  const MAX_DETAIL_PAGES = 10;
+
+  for (const { id, url } of eventUrls.slice(0, MAX_DETAIL_PAGES)) {
+    const html = await fetchWithTimeout(url, 10_000);
+    if (!html) continue;
+    scraped++;
+
+    const $ = cheerio.load(html);
+    const detail = extractDetailContent($, sourceName);
+
+    // Only update if we extracted at least one non-empty field
+    const updates: Record<string, string | undefined> = {};
+    if (detail.description) updates.source_description = detail.description;
+    if (detail.menu) updates.menu_text = detail.menu;
+    if (detail.orari) updates.orari_text = detail.orari;
+
+    if (Object.keys(updates).length > 0) {
+      // Only update fields that are currently NULL (don't overwrite existing content)
+      const { data: existing } = await supabase
+        .from("sagre")
+        .select("source_description, menu_text, orari_text")
+        .eq("id", id)
+        .single();
+
+      const finalUpdates: Record<string, string> = {};
+      if (updates.source_description && !existing?.source_description) {
+        finalUpdates.source_description = updates.source_description;
+      }
+      if (updates.menu_text && !existing?.menu_text) {
+        finalUpdates.menu_text = updates.menu_text;
+      }
+      if (updates.orari_text && !existing?.orari_text) {
+        finalUpdates.orari_text = updates.orari_text;
+      }
+
+      if (Object.keys(finalUpdates).length > 0) {
+        await supabase.from("sagre").update({
+          ...finalUpdates,
+          updated_at: new Date().toISOString(),
+        }).eq("id", id);
+        updated++;
+      }
+    }
+
+    // Politeness delay between detail page fetches
+    await new Promise(r => setTimeout(r, 1500));
+  }
+
+  return { scraped, updated };
+}
+
+async function getEventsNeedingDetails(
+  supabase: SupabaseClient,
+  sourceName: string,
+  limit: number = 10
+): Promise<Array<{ id: string; url: string }>> {
+  const { data } = await supabase
+    .from("sagre")
+    .select("id, source_url")
+    .eq("is_active", true)
+    .not("source_url", "is", null)
+    .is("source_description", null)
+    .contains("sources", [sourceName])
+    .limit(limit);
+
+  return (data ?? [])
+    .filter((r: { source_url: string | null }) => r.source_url != null)
+    .map((r: { id: string; source_url: string }) => ({ id: r.id, url: r.source_url }));
+}
+
 // --- Section 3: HTTP fetch helper ---
 async function fetchWithTimeout(url: string, timeoutMs = 10_000): Promise<string | null> {
   const controller = new AbortController();
@@ -594,7 +825,7 @@ async function upsertEvent(
   supabase: SupabaseClient,
   event: NormalizedEvent,
   sourceName: string
-): Promise<"inserted" | "merged" | "skipped"> {
+): Promise<{ result: "inserted" | "merged" | "skipped"; id?: string }> {
   // 1. Find duplicate
   const { data: dupes } = await supabase.rpc("find_duplicate_sagra", {
     p_normalized_title: event.normalizedTitle,
@@ -607,7 +838,7 @@ async function upsertEvent(
 
   if (existing) {
     // Already tracked by this source — skip
-    if (existing.sources?.includes(sourceName)) return "skipped";
+    if (existing.sources?.includes(sourceName)) return { result: "skipped" };
 
     // Enrich missing fields + add provenance
     await supabase.from("sagre").update({
@@ -617,11 +848,11 @@ async function upsertEvent(
       sources:    [...(existing.sources ?? []), sourceName],
       updated_at: new Date().toISOString(),
     }).eq("id", existing.id);
-    return "merged";
+    return { result: "merged", id: existing.id };
   }
 
   // Insert new record
-  const { error } = await supabase.from("sagre").insert({
+  const { data: insertData, error } = await supabase.from("sagre").insert({
     title:         event.title,
     slug:          event.slug,
     location_text: event.city,
@@ -635,12 +866,12 @@ async function upsertEvent(
     is_active:     true,
     status:        "pending_geocode",
     content_hash:  event.contentHash,
-  });
+  }).select("id").single();
 
   if (error) {
     // Slug conflict: regenerate with timestamp suffix
     if (error.code === "23505") {
-      await supabase.from("sagre").insert({
+      const { data: retryData } = await supabase.from("sagre").insert({
         title:         event.title,
         slug:          event.slug + "-" + Date.now().toString(36),
         location_text: event.city,
@@ -654,10 +885,11 @@ async function upsertEvent(
         is_active:     true,
         status:        "pending_geocode",
         content_hash:  event.contentHash + Date.now().toString(36),
-      });
+      }).select("id").single();
+      return { result: "inserted", id: retryData?.id };
     }
   }
-  return "inserted";
+  return { result: "inserted", id: insertData?.id };
 }
 
 async function logRun(
@@ -690,6 +922,8 @@ async function scrapeSource(supabase: SupabaseClient, source: ScraperSource): Pr
   let eventsMerged = 0;
 
   try {
+    const newEventUrls: Array<{ id: string; url: string }> = [];
+
     for (let page = 1; page <= source.max_pages; page++) {
       const url = buildPageUrl(source, page);
       const html = await fetchWithTimeout(url);
@@ -726,10 +960,15 @@ async function scrapeSource(supabase: SupabaseClient, source: ScraperSource): Pr
         if (isExcessiveDuration(normalized.startDate, normalized.endDate, 7)) continue;
         if (isPastYearEvent(normalized.startDate, normalized.endDate)) continue;
 
-        const result = await upsertEvent(supabase, normalized, source.name);
+        const { result, id: eventId } = await upsertEvent(supabase, normalized, source.name);
 
         eventsFound++;
-        if (result === "inserted") eventsInserted++;
+        if (result === "inserted") {
+          eventsInserted++;
+          if (eventId && normalized.url) {
+            newEventUrls.push({ id: eventId, url: normalized.url });
+          }
+        }
         else if (result === "merged") eventsMerged++;
       }
 
@@ -737,6 +976,17 @@ async function scrapeSource(supabase: SupabaseClient, source: ScraperSource): Pr
       if (page < source.max_pages) {
         await new Promise((r) => setTimeout(r, 1500));
       }
+    }
+
+    // Detail page scraping: process newly inserted events + backfill existing
+    const backfillUrls = await getEventsNeedingDetails(
+      supabase, source.name, Math.max(0, 10 - newEventUrls.length)
+    );
+    const allDetailUrls = [...newEventUrls, ...backfillUrls].slice(0, 10);
+
+    if (allDetailUrls.length > 0) {
+      const { scraped, updated } = await scrapeDetailPages(supabase, source.name, allDetailUrls);
+      console.log(`[scrapeSource] ${source.name}: detail pages scraped=${scraped}, updated=${updated}`);
     }
 
     // Log success
