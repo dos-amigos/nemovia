@@ -22,11 +22,14 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
     });
   };
 
-  // --- Pointer drag (mouse + touch) ---
-  // No setPointerCapture — it was eating clicks on mobile
+  // --- Desktop-only pointer drag (mouse only, NOT touch) ---
+  // setPointerCapture only for mouse so desktop drag works properly
+  // Touch uses native CSS scroll-snap instead
   const onPointerDown = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType === "touch") return; // let CSS snap handle mobile
     const el = scrollRef.current;
     if (!el) return;
+    el.setPointerCapture(e.pointerId);
     drag.current = { active: true, startX: e.clientX, scrollLeft: el.scrollLeft, totalDelta: 0 };
   }, []);
 
@@ -36,7 +39,6 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
     if (!el) return;
     const dx = e.clientX - drag.current.startX;
     drag.current.totalDelta = Math.abs(dx);
-    // Only start visual drag after small threshold to avoid jitter on taps
     if (drag.current.totalDelta > 5) {
       setIsDragging(true);
       el.scrollLeft = drag.current.scrollLeft - dx;
@@ -46,7 +48,7 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
   const onPointerUp = useCallback(() => {
     if (!drag.current.active) return;
     drag.current.active = false;
-    // No magnetic snap — scroll stops where finger/mouse releases
+    // Desktop: no snap, scroll stops where mouse releases
     setTimeout(() => {
       setIsDragging(false);
       drag.current.totalDelta = 0;
@@ -55,17 +57,18 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
 
   return (
     <div className="group relative">
+      {/* Mobile: CSS snap-x + native touch scroll. Desktop: JS drag + arrows, no snap */}
       <div
         ref={scrollRef}
         role="region"
         tabIndex={0}
         aria-label={ariaLabel}
-        className={`scrollbar-hide flex gap-3 overflow-x-auto snap-x snap-mandatory lg:snap-none pb-2 pl-4 sm:pl-6 lg:pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] ${isDragging ? "cursor-grabbing select-none" : "cursor-grab"}`}
+        className={`scrollbar-hide flex gap-3 overflow-x-auto snap-x snap-mandatory lg:snap-none pb-2 pl-4 sm:pl-6 lg:pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] scroll-pl-4 sm:scroll-pl-6 lg:scroll-pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] ${isDragging ? "cursor-grabbing select-none" : "lg:cursor-grab"}`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        style={{ touchAction: "pan-y" }}
+        style={{ touchAction: "pan-x pan-y" }}
       >
         {sagre.map((sagra) => (
           <div

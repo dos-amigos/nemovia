@@ -18,9 +18,9 @@ export function TopNav() {
   return (
     <>
       {/* Mobile top bar — logo only */}
-      <div className="sticky top-0 z-50 flex h-12 items-center justify-center glass-nav border-b border-white/15 lg:hidden">
+      <div className="sticky top-0 z-50 flex h-14 items-center justify-center glass-nav border-b border-white/15 lg:hidden">
         <Link href="/" className="flex items-center rounded focus-visible:ring-[3px] focus-visible:ring-ring/50">
-          <Logo className="h-10 w-auto" />
+          <Logo className="h-12 w-auto" />
         </Link>
       </div>
 

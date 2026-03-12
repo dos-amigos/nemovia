@@ -170,6 +170,19 @@
 - **Fix applicato**: Aggiunto `snap-x snap-mandatory lg:snap-none` al container, `snap-start` alle card
 - **Stato**: FIXATO
 
+### BUG-008: Drag desktop rotto + padding sparito + logo mobile piccolo
+- **Repro**: Desktop→drag non funziona. Mobile→card attaccate ai bordi. Logo mobile piccolo.
+- **Causa 1**: Rimosso `setPointerCapture` per tutti i pointer, ma serve per mouse (desktop drag)
+- **Causa 2**: `snap-mandatory` ignora `pl-4` — serviva `scroll-pl-4` per scroll-padding
+- **Causa 3**: Logo h-10 troppo piccolo su mobile
+- **Fix applicato**:
+  - `setPointerCapture` solo per `pointerType === "mouse"`, touch usa CSS snap nativo
+  - Aggiunto `scroll-pl-4 sm:scroll-pl-6` per rispettare padding con snap
+  - `touchAction: "pan-x pan-y"` per non bloccare scroll nativo mobile
+  - Cursor grab solo su desktop (`lg:cursor-grab`)
+  - Logo mobile: h-10→h-12, barra h-12→h-14
+- **Stato**: FIXATO
+
 ### BUG-003: Immagini a bassa risoluzione ancora visibili
 - **Repro**: Alcune sagre mostrano immagini pixelate/piccole (es. "Fior Di Pasqua" Cittadella)
 - **Fix applicato**: Rafforzato `isLowQualityUrl()` con nuovi pattern:
