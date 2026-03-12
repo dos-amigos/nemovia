@@ -15,10 +15,11 @@ const LLM_LIMIT = 200;      // max sagre to enrich per invocation (25 batches of
 const SLEEP_MS = 1100;      // 1.1s between Nominatim calls (policy: 1 req/sec)
 const VENETO_VIEWBOX = "10.62,44.79,13.10,46.68"; // Nominatim viewbox: lon_min,lat_min,lon_max,lat_max
 
-// Pass 3: Unsplash image assignment
+// Pass 3: Unsplash image assignment (batch-by-tag strategy)
 const UNSPLASH_ACCESS_KEY = Deno.env.get("UNSPLASH_ACCESS_KEY");
-const UNSPLASH_LIMIT = 30;      // max images per run (within 50 req/hr demo tier)
+const UNSPLASH_LIMIT = 200;     // max sagre to process per run (batch strategy uses ~9-10 API calls total)
 const UNSPLASH_SLEEP_MS = 2000;  // 2s between calls (courtesy + safety margin)
+const UNSPLASH_PER_PAGE = 30;    // max results per Unsplash API call (API max is 30)
 
 // Inline copy of TAG_QUERIES from src/lib/unsplash.ts
 // Edge Functions cannot import from the Next.js src/ directory.
@@ -403,12 +404,75 @@ async function runLLMPass(
 }
 
 // =============================================================================
-// Pass 3: Unsplash image assignment — enriched with null image_url → image assigned
+// Pass 3: Unsplash image assignment — batch-by-tag strategy
+// Instead of 1 API call per sagra (N calls), groups sagre by food tag and
+// fetches photos once per tag (~9-10 calls), then distributes from the pool.
+// This allows assigning images to 100-200+ sagre using only ~10 API calls,
+// well within the 50 req/hr demo tier limit.
 // =============================================================================
 
 interface SagraForUnsplash {
   id: string;
   food_tags: string[] | null;
+}
+
+interface UnsplashPhoto {
+  urls: { raw: string };
+  user: { name: string; links: { html: string } };
+  links: { download_location: string };
+}
+
+/**
+ * Fetch photos from Unsplash for a given query string.
+ * Returns the photo array and whether the rate limit is critically low.
+ */
+async function fetchUnsplashPhotos(
+  query: string,
+  perPage: number = UNSPLASH_PER_PAGE
+): Promise<{ photos: UnsplashPhoto[]; rateLimitLow: boolean; error: boolean }> {
+  const params = new URLSearchParams({
+    query,
+    orientation: "landscape",
+    per_page: String(perPage),
+    content_filter: "high",
+  });
+
+  const resp = await fetch(
+    `https://api.unsplash.com/search/photos?${params}`,
+    {
+      headers: {
+        "Authorization": `Client-ID ${UNSPLASH_ACCESS_KEY}`,
+        "Accept-Version": "v1",
+      },
+    }
+  );
+
+  if (!resp.ok) {
+    console.error(`Unsplash API error: HTTP ${resp.status} for query: ${query}`);
+    return { photos: [], rateLimitLow: resp.status === 403, error: true };
+  }
+
+  const remaining = parseInt(resp.headers.get("X-Ratelimit-Remaining") ?? "50", 10);
+  const rateLimitLow = remaining < 5;
+  if (rateLimitLow) {
+    console.log(`Unsplash rate limit low (${remaining} remaining) after query: ${query}`);
+  }
+
+  const data = await resp.json();
+  return { photos: (data.results ?? []) as UnsplashPhoto[], rateLimitLow, error: false };
+}
+
+/**
+ * Pick a photo from a pool, using a hash of the sagra ID for deterministic variety.
+ * Returns a different photo for each sagra even when they share the same tag.
+ */
+function pickPhotoForSagra(photos: UnsplashPhoto[], sagraId: string): UnsplashPhoto {
+  // Simple hash for deterministic distribution across the pool
+  let hash = 0;
+  for (let i = 0; i < sagraId.length; i++) {
+    hash = ((hash << 5) - hash + sagraId.charCodeAt(i)) | 0;
+  }
+  return photos[Math.abs(hash) % photos.length];
 }
 
 async function runUnsplashPass(
@@ -422,6 +486,7 @@ async function runUnsplashPass(
 
   let assigned = 0;
 
+  // Fetch all enriched sagre without images (up to UNSPLASH_LIMIT)
   const { data: rows } = await supabase
     .from("sagre")
     .select("id, food_tags")
@@ -433,60 +498,81 @@ async function runUnsplashPass(
 
   if (!rows?.length) return 0;
 
-  for (const sagra of rows as SagraForUnsplash[]) {
-    // Determine search query from first food tag, fallback to default
+  const sagre = rows as SagraForUnsplash[];
+  console.log(`Unsplash pass: ${sagre.length} sagre without images`);
+
+  // Step 1: Group sagre by their primary food tag (first tag, or "default")
+  const tagGroups = new Map<string, SagraForUnsplash[]>();
+  for (const sagra of sagre) {
     const firstTag = sagra.food_tags?.[0];
-    const query = (firstTag && TAG_QUERIES[firstTag]) || DEFAULT_UNSPLASH_QUERY;
+    const tagKey = (firstTag && TAG_QUERIES[firstTag]) ? firstTag : "__default__";
+    const group = tagGroups.get(tagKey) ?? [];
+    group.push(sagra);
+    tagGroups.set(tagKey, group);
+  }
 
-    try {
-      const params = new URLSearchParams({
-        query,
-        orientation: "landscape",
-        per_page: "10",
-        content_filter: "high",
-      });
+  console.log(`Unsplash pass: ${tagGroups.size} unique tag groups to fetch`);
 
-      const resp = await fetch(
-        `https://api.unsplash.com/search/photos?${params}`,
-        {
-          headers: {
-            "Authorization": `Client-ID ${UNSPLASH_ACCESS_KEY}`,
-            "Accept-Version": "v1",
-          },
+  // Step 2: For each unique tag, fetch photos once and distribute to all matching sagre
+  // Photo cache: reuse across tags to avoid re-fetching the default query
+  const photoCache = new Map<string, UnsplashPhoto[]>();
+
+  for (const [tagKey, groupSagre] of tagGroups) {
+    const query = tagKey === "__default__"
+      ? DEFAULT_UNSPLASH_QUERY
+      : TAG_QUERIES[tagKey] ?? DEFAULT_UNSPLASH_QUERY;
+
+    // Check if we already have photos for this query (e.g. multiple tags mapping to same query)
+    let photos = photoCache.get(query);
+    if (!photos) {
+      try {
+        const result = await fetchUnsplashPhotos(query);
+
+        if (result.error && result.rateLimitLow) {
+          // Rate limited — stop the entire pass
+          console.log("Unsplash rate limit hit, stopping pass");
+          break;
         }
-      );
 
-      // On non-OK response (especially 403 rate limit), stop immediately
-      if (!resp.ok) {
-        console.error(`Unsplash API error: HTTP ${resp.status}`);
-        break;
-      }
+        if (result.error) {
+          // Non-rate-limit error — skip this tag group, try next
+          await sleep(UNSPLASH_SLEEP_MS);
+          continue;
+        }
 
-      // Check rate limit remaining — stop early to preserve budget
-      const remaining = parseInt(resp.headers.get("X-Ratelimit-Remaining") ?? "50", 10);
-      if (remaining < 5) {
-        console.log(`Unsplash rate limit low (${remaining} remaining), stopping early`);
-        break;
-      }
+        photos = result.photos;
+        photoCache.set(query, photos);
 
-      const data = await resp.json();
-      const photos = data.results ?? [];
-      if (photos.length === 0) {
-        console.log(`No Unsplash results for query: ${query}`);
+        if (photos.length === 0) {
+          console.log(`No Unsplash results for query: ${query}`);
+          await sleep(UNSPLASH_SLEEP_MS);
+          continue;
+        }
+
+        // Track whether we should stop after this group
+        const shouldStopAfterGroup = result.rateLimitLow;
+        if (shouldStopAfterGroup) {
+          console.log("Rate limit low — will assign photos for this group then stop");
+        }
+
+        // Courtesy delay between API calls
+        await sleep(UNSPLASH_SLEEP_MS);
+      } catch (err) {
+        console.error(`Unsplash fetch error for tag ${tagKey}:`, err);
         await sleep(UNSPLASH_SLEEP_MS);
         continue;
       }
+    }
 
-      // Pick random photo from top 5 results for variety
-      const photo = photos[Math.floor(Math.random() * Math.min(photos.length, 5))];
+    if (!photos || photos.length === 0) continue;
 
-      // Construct optimized image URL
+    // Step 3: Assign a photo to each sagra in this group (no additional API calls)
+    for (const sagra of groupSagre) {
+      const photo = pickPhotoForSagra(photos, sagra.id);
+
       const imageUrl = `${photo.urls.raw}&w=800&h=500&fit=crop&q=80`;
-
-      // Store credit in "Name|profile_url" format with UTM attribution
       const imageCredit = `${photo.user.name}|${photo.user.links.html}?utm_source=nemovia&utm_medium=referral`;
 
-      // Update sagra with Unsplash image and credit
       await supabase.from("sagre").update({
         image_url: imageUrl,
         image_credit: imageCredit,
@@ -497,15 +583,12 @@ async function runUnsplashPass(
 
       // Fire download tracking (Unsplash API requirement) — fire and forget
       fetch(`${photo.links.download_location}?client_id=${UNSPLASH_ACCESS_KEY}`).catch(() => {});
-
-    } catch (err) {
-      console.error(`Unsplash fetch error for sagra ${sagra.id}:`, err);
     }
 
-    // Rate limit: 2s between API calls
-    await sleep(UNSPLASH_SLEEP_MS);
+    console.log(`Assigned ${groupSagre.length} images for tag: ${tagKey} (query: ${query})`);
   }
 
+  console.log(`Unsplash pass complete: ${assigned} images assigned`);
   return assigned;
 }
 
