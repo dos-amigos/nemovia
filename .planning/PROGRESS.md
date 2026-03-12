@@ -139,7 +139,7 @@
 - [ ] Verificare che i food_tags coprano abbastanza sagre per riempire la row
 
 ### Fase 4: Miglioramenti Pipeline (futuri, non prioritari)
-- [ ] Applicare migration 016 al DB remoto (find_nearby_sagre RPC + location column)
+- [x] Applicare migration 016 al DB remoto — FATTO (sessione 2026-03-12)
 - [ ] Aumentare copertura immagini (maggior parte sagre ancora senza immagine)
 - [ ] Valutare LLM (GPT-4o-mini) per parsing HTML ambiguo come alternativa a Cheerio
 - [ ] Valutare Apify ($49/mese) come backup se Graph API ha limitazioni eccessive
@@ -194,15 +194,17 @@
 
 ## Log Sessioni
 
-### 2026-03-12 — Sessione iniziale
+### 2026-03-12 — Sessione planning + bugfix
 - Discusso Tavily vs Cheerio: Tavily utile per discovery, non sostituto
 - Discusso scraping FB/IG: Graph API unica via legale
 - Discusso opzione "solo link" vs dati strutturati: Graph API dà tutti i campi necessari
 - Discusso Apify ($49/mese): non giustificato adesso, solo se le opzioni free non bastano
-- Creato questo file PROGRESS.md come riferimento assoluto
-- Fix filtri sidebar: `lg:grid-cols-4` → `lg:grid-cols-1`
-- Identificati 4 bug aperti (BUG-001 a BUG-004)
-- **Codice scritto**: solo fix filtri sidebar
+- Creato PROGRESS.md come riferimento assoluto
+- **Commit 49a9f83**: Fix filtri sidebar (lg:grid-cols-1), filtri mappa (variant topbar), marker icon centering
+- **Commit ebd83e5**: Logo mobile, ScrollRow click fix, low-quality image filtering rafforzato
+- Utente ha applicato migration 016 in Supabase SQL Editor
+- 6 bug identificati e tutti FIXATI (BUG-001 a BUG-006)
+- Pianificata Fase 3: sezione "Sagre dell'orto" in homepage
 
 ---
 
