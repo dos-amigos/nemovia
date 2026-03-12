@@ -86,13 +86,30 @@ const BAD_IMAGE_PATTERNS: RegExp[] = [
   /wp-content\/plugins\/.*placeholder/i,
   /woocommerce-placeholder/i,
 
+  // Thumbnail / small image indicators in path
+  /[/_-](thumb|thumbnail|small|mini|micro|tiny|icon)[/_.-]/i,
+  /\/thumbs?\//i,
+  /\/thumbnails?\//i,
+  /\/miniature?\//i,
+
   // Data URIs (shouldn't be in DB but just in case)
   /^data:image/i,
 
-  // Very small dimension indicators in URL (e.g., ?w=50, -50x50)
-  /[?&]w=([1-9]\d?|1[0-4]\d|150)(&|$)/,  // width <= 150 in query param
-  /[?&]h=([1-9]\d?|1[0-4]\d|150)(&|$)/,   // height <= 150 in query param
-  /-(\d{1,2}|1[0-4]\d|150)x(\d{1,2}|1[0-4]\d|150)\.\w+$/,  // WxH suffix <= 150x150
+  // Dimension indicators in URL — width or height <= 400px
+  // Query params: ?w=300, ?width=200, ?h=150
+  /[?&]w(idth)?=([1-9]\d{0,1}|[1-3]\d{2}|400)(&|$)/,
+  /[?&]h(eight)?=([1-9]\d{0,1}|[1-3]\d{2}|400)(&|$)/,
+  // WordPress-style suffix: -300x200.jpg, -150x150.png
+  /-(\d{1,2}|[1-3]\d{2}|400)x(\d{1,2}|[1-3]\d{2}|400)\.\w+$/,
+  // Resize services: /resize/300/200, =s150, =w300
+  /\/resize\/([1-3]\d{2}|[1-9]\d?)\//i,
+  /[=]s([1-3]\d{2}|[1-9]\d?)(&|$)/,
+
+  // Known low-quality source site patterns (Italian sagre sites)
+  /eventiesagre\.it\/.*\/immagini\/thumb/i,
+  /assosagre\.it\/.*\/thumb/i,
+  /sagritaly\.it\/.*_small/i,
+  /solosagre\.com\/.*\/s\//i,
 ];
 
 /**

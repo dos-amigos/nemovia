@@ -131,7 +131,14 @@
 
 ---
 
-### Fase 3: Miglioramenti Pipeline (futuri, non prioritari)
+### Fase 3: Sezione "Sagre Vegetariane" in Homepage
+- [ ] Nuova ScrollRow dedicata alle sagre vegetariane/ortofrutticole
+  - Filtrare sagre con food_tags: carciofo, broccolo, zucca, verdura, asparago, radicchio, fagiolo, ecc.
+  - Titolo: "Sagre dell'orto" o "Sagre vegetariane" (da decidere)
+  - Stessa logica delle altre food rows ma con filtro multiplo su tag verdura/orto
+- [ ] Verificare che i food_tags coprano abbastanza sagre per riempire la row
+
+### Fase 4: Miglioramenti Pipeline (futuri, non prioritari)
 - [ ] Applicare migration 016 al DB remoto (find_nearby_sagre RPC + location column)
 - [ ] Aumentare copertura immagini (maggior parte sagre ancora senza immagine)
 - [ ] Valutare LLM (GPT-4o-mini) per parsing HTML ambiguo come alternativa a Cheerio
@@ -147,28 +154,36 @@
 ### BUG-001: Ricerca città+raggio restituisce 0 risultati
 - **Repro**: Cerca "Verona", raggio 100km → 0 risultati
 - **Causa**: Migration 016 (`find_nearby_sagre` RPC con colonna location) NON applicata al DB remoto
-- **Fix**: Applicare `supabase/migrations/016_nearby_add_location.sql` al DB Supabase remoto
-- **Stato**: DA FARE
+- **Fix**: Utente ha applicato migration 016 manualmente in Supabase SQL Editor
+- **Stato**: FIXATO
 
 ### BUG-002: Click su sagra in homepage non naviga alla pagina dettaglio
-- **Repro**: Homepage → click su card sagra → non succede nulla
-- **Causa probabile**: `setPointerCapture` nello ScrollRow intercetta il click, oppure threshold drag troppo basso (10px)
-- **File**: `src/components/home/ScrollRow.tsx`
-- **Stato**: DA INVESTIGARE
+- **Repro**: Homepage → click/tap su card sagra → non succede nulla
+- **Causa**: `setPointerCapture` nello ScrollRow intercettava tutti i pointer events inclusi i tap
+- **Fix applicato**: Rimosso `setPointerCapture`, rimosso snap magnetico (viola regola utente), drag inizia solo dopo 5px di movimento
+- **Stato**: FIXATO
 
 ### BUG-003: Immagini a bassa risoluzione ancora visibili
-- **Repro**: Alcune sagre mostrano immagini pixelate/piccole inaccettabili
-- **Difesa esistente**: 3 livelli (scrape/enrich/display) + `isLowQualityUrl()` check
-- **Causa probabile**: `isLowQualityUrl()` non cattura tutti i pattern di URL bassa qualità
-- **File**: `src/lib/fallback-images.ts`
-- **Stato**: DA INVESTIGARE
+- **Repro**: Alcune sagre mostrano immagini pixelate/piccole (es. "Fior Di Pasqua" Cittadella)
+- **Fix applicato**: Rafforzato `isLowQualityUrl()` con nuovi pattern:
+  - Thumbnail/small/mini/micro keywords nel path
+  - Dimensioni URL <= 400px (era 150px) — query params e suffissi WordPress
+  - Resize services (/resize/, =s150, =w300)
+  - Pattern specifici per siti italiani (eventiesagre, assosagre, sagritaly, solosagre)
+- **Stato**: FIXATO
 
 ### BUG-004: Filtri /cerca sidebar — campi attaccati su desktop
 - **Repro**: Desktop → /cerca → filtri nella sidebar sinistra tutti compressi in griglia
 - **Fix applicato**: Cambiato `lg:grid-cols-4` → `lg:grid-cols-1` in SearchFilters.tsx
 - **Stato**: FIXATO
 
-### BUG-005: Filtri /mappa — campi tutti full-width, troppo lunghi
+### BUG-005: Logo non visibile su mobile nella TopNav
+- **Repro**: Mobile → logo non si vede nella barra di navigazione
+- **Causa**: TopNav aveva `hidden lg:block` — completamente invisibile su mobile
+- **Fix applicato**: Aggiunta barra mobile (h-12) con logo centrato (h-10), glass-nav, visibile solo sotto lg
+- **Stato**: FIXATO
+
+### BUG-006: Filtri /mappa — campi tutti full-width, troppo lunghi
 - **Repro**: Desktop → /mappa → filtri sopra la mappa tutti impilati full-width
 - **Fix applicato**: Aggiunta prop `variant` a SearchFilters ("sidebar" | "topbar")
   - Topbar: città a sx (w-64) + filtri in griglia 5 colonne a dx, tutto su una riga

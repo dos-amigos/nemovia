@@ -23,12 +23,11 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
   };
 
   // --- Pointer drag (mouse + touch) ---
+  // No setPointerCapture — it was eating clicks on mobile
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     const el = scrollRef.current;
     if (!el) return;
-    el.setPointerCapture(e.pointerId);
     drag.current = { active: true, startX: e.clientX, scrollLeft: el.scrollLeft, totalDelta: 0 };
-    setIsDragging(true);
   }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
@@ -37,38 +36,25 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
     if (!el) return;
     const dx = e.clientX - drag.current.startX;
     drag.current.totalDelta = Math.abs(dx);
-    el.scrollLeft = drag.current.scrollLeft - dx;
+    // Only start visual drag after small threshold to avoid jitter on taps
+    if (drag.current.totalDelta > 5) {
+      setIsDragging(true);
+      el.scrollLeft = drag.current.scrollLeft - dx;
+    }
   }, []);
 
   const onPointerUp = useCallback(() => {
     if (!drag.current.active) return;
     drag.current.active = false;
-    // Reset totalDelta after a short delay so onClickCapture can still read it
+    // No magnetic snap — scroll stops where finger/mouse releases
     setTimeout(() => {
       setIsDragging(false);
       drag.current.totalDelta = 0;
     }, 100);
-
-    // Magnetic snap: align nearest card after release
-    const el = scrollRef.current;
-    if (!el || !el.firstElementChild) return;
-
-    const firstCard = el.firstElementChild as HTMLElement;
-    const cardWidth = firstCard.offsetWidth;
-    const gap = 12; // gap-3 = 12px
-    const cardPlusGap = cardWidth + gap;
-
-    // Find nearest card index
-    const nearestIndex = Math.round(el.scrollLeft / cardPlusGap);
-    const snapPosition = nearestIndex * cardPlusGap;
-
-    // Smooth scroll to snap position
-    el.scrollTo({ left: snapPosition, behavior: "smooth" });
   }, []);
 
   return (
     <div className="group relative">
-      {/* Scrollable container — snap only on touch (mobile), not desktop */}
       <div
         ref={scrollRef}
         role="region"
@@ -88,8 +74,6 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
             draggable={false}
             onDragStart={(e) => e.preventDefault()}
             onClickCapture={(e) => {
-              // Only prevent click if significant drag occurred (>10px)
-              // This allows normal clicks while still preventing accidental clicks during scrolling
               if (drag.current.totalDelta > 10) {
                 e.preventDefault();
                 e.stopPropagation();
