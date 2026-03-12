@@ -65,7 +65,7 @@ Full details: [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
 - [x] **Phase 19: Image Quality Foundation** - Unsplash fallbacks for cards + photo hero (completed 2026-03-11)
 - [x] **Phase 20: Layout & Branding** - Full-width layout, custom logo, complete footer (completed 2026-03-11)
 - [x] **Phase 21: Netflix Rows Homepage** - Horizontal scroll rows with smart categorization (completed 2026-03-11)
-- [x] **Phase 22: City Search & Map Fixes** - Autocomplete search bar, radius slider, fix map bugs (completed 2026-03-11)
+- [x] **Phase 22: City Search & Map Fixes** - Autocomplete search bar, radius slider, fix map bugs (completed 2026-03-11)
 - [ ] **Phase 23: Scraping Completeness** - Extract complete info from sources
 
 ## Phase Details
@@ -194,7 +194,11 @@ Plans:
 3. Sagre with detailed descriptions show richer content than generic LLM summaries
 4. Source attribution links remain functional and direct users to original event pages
 
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 23-01-PLAN.md — Schema migration + types + detail page UI for menu, orari, source description
+- [ ] 23-02-PLAN.md — Edge Function detail page scraping with source-specific extractors and backfill
 
 ---
 
@@ -223,5 +227,5 @@ Plans:
 | 19. Image Quality Foundation | v1.4 | 2/2 | Complete | 2026-03-11 |
 | 20. Layout & Branding | v1.4 | 2/2 | Complete | 2026-03-11 |
 | 21. Netflix Rows Homepage | v1.4 | 1/1 | Complete | 2026-03-11 |
-| 22. City Search & Map Fixes | 3/3 | Complete   | 2026-03-11 | - |
-| 23. Scraping Completeness | v1.4 | 0/? | Not started | - |
+| 22. City Search & Map Fixes | v1.4 | 3/3 | Complete | 2026-03-11 |
+| 23. Scraping Completeness | v1.4 | 0/2 | Not started | - |
