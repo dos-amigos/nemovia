@@ -170,6 +170,7 @@ function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
    - "Baccalà" e "Stoccafisso" vanno in "Pesce".
    - "Asparago", "Radicchio", "Broccolo", "Carciofo", "Fagiolo" vanno in "Verdura".
    - "Zucca" ha il suo tag dedicato "Zucca" (NON "Verdura").
+   - USA "Verdura" SOLO se il nome contiene un ortaggio specifico (asparago, radicchio, bisi, broccolo, carciofo, fagiolo, funghi). NON classificare come "Verdura" sagre generiche stagionali (es. "Festa di Primavera", "Sagra Paesana") — usa "Prodotti Tipici".
    - "Gnocchi" vanno in "Prodotti Tipici".
    - Se il cibo principale non rientra chiaramente in nessuna categoria specifica, usa "Prodotti Tipici".
 3. feature_tags: array con i tag caratteristici (max 2) scelti SOLO da: ${FEATURE_TAGS.join(", ")}
