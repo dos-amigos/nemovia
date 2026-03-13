@@ -275,25 +275,25 @@ const ICONS: Record<
     </svg>
   ),
 
-  /** Steaming bowl — generic food icon, clearly readable at 16px */
+  /** Fork + knife — generic sagra icon for unknown food type, bold strokes for 16px */
   altro: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.5}
+      strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      {/* Bowl */}
-      <path d="M3 14h18" />
-      <path d="M4 14c0 4 3.6 7 8 7s8-3 8-7" />
-      {/* Steam wisps */}
-      <path d="M8 10c0-1.5.8-2.5 0-4" />
-      <path d="M12 9c0-1.5.8-2.5 0-4" />
-      <path d="M16 10c0-1.5.8-2.5 0-4" />
+      {/* Fork — 3 tines + handle */}
+      <path d="M7 2v6c0 1.1.9 2 2 2h0" />
+      <path d="M7 10v12" />
+      <path d="M5 2v4" />
+      <path d="M9 2v4" />
+      {/* Knife — blade + handle */}
+      <path d="M17 2c-1 0-2.5 1-2.5 4s1.5 4 2.5 4v12" />
     </svg>
   ),
 };

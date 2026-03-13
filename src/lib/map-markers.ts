@@ -42,8 +42,8 @@ const MARKER_ICON_PATHS: Record<FoodCategory, string> = {
   /** Ferris wheel */
   giostre: `<circle cx="12" cy="10" r="7"/><circle cx="12" cy="10" r="1.5" fill="white"/><path d="M12 3v3M12 14v3M5 10h3M17 10h3"/><path d="M7 21l5-4 5 4"/>`,
 
-  /** Steaming bowl */
-  altro: `<path d="M3 14h18"/><path d="M4 14c0 4 3.6 7 8 7s8-3 8-7"/><path d="M8 10c0-1.5.8-2.5 0-4"/><path d="M12 9c0-1.5.8-2.5 0-4"/><path d="M16 10c0-1.5.8-2.5 0-4"/>`,
+  /** Fork + knife */
+  altro: `<path d="M7 2v6c0 1.1.9 2 2 2h0"/><path d="M7 10v12"/><path d="M5 2v4"/><path d="M9 2v4"/><path d="M17 2c-1 0-2.5 1-2.5 4s1.5 4 2.5 4v12"/>`,
 };
 
 /* -------------------------------------------------------------------------- */
