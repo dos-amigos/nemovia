@@ -87,14 +87,20 @@ export async function getWeekendSagre(limit = 12): Promise<SagraCardData[]> {
 export async function getActiveSagre(limit = 80): Promise<SagraCardData[]> {
   try {
     const supabase = await createClient();
-    const today = new Date().toISOString().split("T")[0];
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    // Include sagre with null end_date that started within the last 14 days
+    // (many multi-day sagre don't have explicit end dates from scrapers)
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
 
     const { data, error } = await supabase
       .from("sagre")
       .select(SAGRA_CARD_FIELDS)
       .eq("is_active", true)
       .not("province", "is", null)
-      .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${today})`)
+      .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${twoWeeksAgo})`)
       .order("start_date", { ascending: true })
       .limit(limit);
 
@@ -139,13 +145,16 @@ export async function searchSagre(
 
       let results = (data as SagraCardData[]) ?? [];
       const today = new Date().toISOString().split("T")[0];
+      const twoWeeksAgoRpc = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0];
 
-      // Default: hide past events
+      // Default: hide past events (include null end_date if started within 14 days)
       if (!da) {
         results = results.filter(
           (s) =>
             (s.end_date != null && s.end_date >= today) ||
-            (s.end_date == null && s.start_date != null && s.start_date >= today)
+            (s.end_date == null && s.start_date != null && s.start_date >= twoWeeksAgoRpc)
         );
       }
 
@@ -174,7 +183,11 @@ export async function searchSagre(
     }
 
     // Standard query with chained filters
-    const today = new Date().toISOString().split("T")[0];
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
 
     let query = supabase
       .from("sagre")
@@ -186,8 +199,8 @@ export async function searchSagre(
     if (da) {
       query = query.gte("end_date", da);
     } else {
-      // Default: hide past events (end_date >= today, or single-day with start_date >= today)
-      query = query.or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${today})`);
+      // Default: hide past events. Include sagre with null end_date started within 14 days
+      query = query.or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${twoWeeksAgo})`);
     }
     if (a) {
       query = query.lte("start_date", a);
@@ -227,14 +240,18 @@ export async function searchSagre(
 export async function getProvinceCounts(): Promise<ProvinceCount[]> {
   try {
     const supabase = await createClient();
-    const today = new Date().toISOString().split("T")[0];
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    const twoWeeksAgoPc = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
 
     const { data, error } = await supabase
       .from("sagre")
       .select("province, title")
       .eq("is_active", true)
       .not("province", "is", null)
-      .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${today})`);
+      .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${twoWeeksAgoPc})`);
 
     if (error) {
       console.error("getProvinceCounts error:", error.message);
@@ -286,15 +303,18 @@ export async function searchMapSagre(
 
       let results = (data ?? []) as Array<Record<string, unknown>>;
       const today = new Date().toISOString().split("T")[0];
+      const twoWeeksAgoMap = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0];
 
-      // Default: hide past events
+      // Default: hide past events (include null end_date if started within 14 days)
       if (!da) {
         results = results.filter(
           (s) =>
             (s.end_date != null && (s.end_date as string) >= today) ||
             (s.end_date == null &&
               s.start_date != null &&
-              (s.start_date as string) >= today)
+              (s.start_date as string) >= twoWeeksAgoMap)
         );
       }
 
@@ -333,7 +353,11 @@ export async function searchMapSagre(
     }
 
     // Standard query with chained filters
-    const today = new Date().toISOString().split("T")[0];
+    const now2 = new Date();
+    const today = now2.toISOString().split("T")[0];
+    const twoWeeksAgoStd = new Date(now2.getTime() - 14 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
 
     let query = supabase
       .from("sagre")
@@ -345,9 +369,9 @@ export async function searchMapSagre(
     if (da) {
       query = query.gte("end_date", da);
     } else {
-      // Default: hide past events
+      // Default: hide past events (include null end_date if started within 14 days)
       query = query.or(
-        `end_date.gte.${today},and(end_date.is.null,start_date.gte.${today})`
+        `end_date.gte.${today},and(end_date.is.null,start_date.gte.${twoWeeksAgoStd})`
       );
     }
     if (a) {
@@ -392,15 +416,18 @@ export async function searchMapSagre(
 export async function getMapSagre(): Promise<MapMarkerData[]> {
   try {
     const supabase = await createClient();
-
-    const today = new Date().toISOString().split("T")[0];
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    const twoWeeksAgoMs = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
 
     const { data, error } = await supabase
       .from("sagre")
       .select(MAP_MARKER_FIELDS)
       .eq("is_active", true)
       .not("location", "is", null)
-      .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${today})`);
+      .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${twoWeeksAgoMs})`);
 
     if (error) {
       console.error("getMapSagre error:", error.message);

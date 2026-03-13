@@ -11,8 +11,14 @@ import { ProvinceSection } from "@/components/home/ProvinceSection";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Calendar, MapPin, Ticket } from "lucide-react";
 import { FoodIcon } from "@/lib/constants/food-icons";
+import { VENETO_PROVINCES } from "@/lib/constants/veneto";
 import type { SagraCardData } from "@/lib/queries/types";
 import { fetchCityVideos, fetchFoodVideos } from "@/lib/hero-videos";
+
+/** Map 2-letter code → full name for display */
+const CODE_TO_NAME: Record<string, string> = Object.fromEntries(
+  VENETO_PROVINCES.map((p) => [p.code, p.name]),
+);
 
 export const metadata: Metadata = {
   title: "Home",
@@ -59,7 +65,7 @@ export default async function HomePage() {
 
   // Province rows: up to 3, dedup within province rows only
   const provinceShown = new Set<string>();
-  const provinceRows: { name: string; sagre: SagraCardData[] }[] = [];
+  const provinceRows: { code: string; name: string; sagre: SagraCardData[] }[] = [];
   for (const pc of provinceCounts) {
     if (provinceRows.length >= MAX_PROVINCE_ROWS) break;
     const sagre = allActive
@@ -67,7 +73,7 @@ export default async function HomePage() {
       .slice(0, 12);
     if (sagre.length >= MIN_ROW) {
       for (const s of sagre) provinceShown.add(s.id);
-      provinceRows.push({ name: pc.province, sagre });
+      provinceRows.push({ code: pc.province, name: CODE_TO_NAME[pc.province] ?? pc.province, sagre });
     }
   }
 
@@ -142,7 +148,7 @@ export default async function HomePage() {
               title={`A ${row.name}`}
               icon={<MapPin className="h-5 w-5 text-primary" />}
               sagre={row.sagre}
-              viewAllHref={`/cerca?provincia=${row.name}`}
+              viewAllHref={`/cerca?provincia=${row.code}`}
               delay={(delay += 0.05)}
             />
           ))}

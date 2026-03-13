@@ -10,10 +10,11 @@
 import { GoogleGenAI } from "npm:@google/genai@1";
 import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
 
-const GEOCODE_LIMIT = 30;   // max rows to geocode per invocation (fits 50s timeout: 30s geocoding + 15s LLM + 5s overhead)
-const LLM_LIMIT = 200;      // max sagre to enrich per invocation (25 batches of 8)
+const GEOCODE_LIMIT = 30;   // max rows to geocode per loop iteration
+const LLM_LIMIT = 200;      // max sagre to enrich per loop iteration (25 batches of 8)
 const SLEEP_MS = 1100;      // 1.1s between Nominatim calls (policy: 1 req/sec)
 const VENETO_VIEWBOX = "10.62,44.79,13.10,46.68"; // Nominatim viewbox: lon_min,lat_min,lon_max,lat_max
+const TIME_BUDGET_MS = 120_000; // 120s time budget for the full pipeline (leaves 30s margin on 150s timeout)
 
 // Pass 3: Unsplash image assignment (batch-by-tag strategy)
 const UNSPLASH_ACCESS_KEY = Deno.env.get("UNSPLASH_ACCESS_KEY");
@@ -24,16 +25,16 @@ const UNSPLASH_PER_PAGE = 30;    // max results per Unsplash API call (API max i
 // Inline copy of TAG_QUERIES from src/lib/unsplash.ts
 // Edge Functions cannot import from the Next.js src/ directory.
 const TAG_QUERIES: Record<string, string> = {
-  "Pesce": "italian seafood festival",
-  "Carne": "italian meat grill festival",
-  "Vino": "italian wine festival",
-  "Formaggi": "italian cheese market",
-  "Funghi": "mushroom food festival",
-  "Radicchio": "italian vegetable market",
-  "Dolci": "italian dessert pastry",
-  "Pane": "italian focaccia bread bakery",
-  "Verdura": "italian vegetable market garden",
-  "Prodotti Tipici": "italian food market",
+  "Pesce": "fresh seafood platter Mediterranean",
+  "Carne": "grilled meat outdoor Italian barbecue",
+  "Vino": "wine glass pouring vineyard sunset",
+  "Formaggi": "Italian cheese board rustic",
+  "Funghi": "porcini mushroom Italian dish",
+  "Radicchio": "radicchio red chicory Italian salad",
+  "Dolci": "Italian pastry dessert table",
+  "Pane": "Italian focaccia flatbread rustic",
+  "Verdura": "fresh vegetables Italian garden market",
+  "Prodotti Tipici": "Italian food market outdoor rustic",
 };
 const DEFAULT_UNSPLASH_QUERY = "italian sagra food festival";
 
@@ -122,7 +123,7 @@ function isValidItalyCoord(lat: number, lon: number): boolean {
 // Deno Edge Functions cannot import from the Next.js src/ directory.
 // =============================================================================
 
-const FOOD_TAGS = ["Pesce", "Carne", "Vino", "Formaggi", "Funghi", "Radicchio", "Dolci", "Pane", "Verdura", "Prodotti Tipici"] as const;
+const FOOD_TAGS = ["Pesce", "Carne", "Vino", "Formaggi", "Funghi", "Radicchio", "Zucca", "Dolci", "Pane", "Verdura", "Prodotti Tipici"] as const;
 const FEATURE_TAGS = ["Gratis", "Musica", "Artigianato", "Bambini", "Tradizionale", "Giostre"] as const;
 type FoodTag = typeof FOOD_TAGS[number];
 type FeatureTag = typeof FEATURE_TAGS[number];
@@ -176,13 +177,20 @@ function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
 3. feature_tags: array con i tag caratteristici (max 2) scelti SOLO da: ${FEATURE_TAGS.join(", ")}
    - "Giostre": usa SOLO per sagre/fiere grandi con luna park, giostre, attrazioni da fiera (es. Antica Fiera del Tresto, Antica Fiera del Soco). NON per sagre piccole o normali.
 4. enhanced_description: descrizione coinvolgente in italiano, max ${MAX_DESC_CHARS} caratteri, che menzioni il cibo principale e l'atmosfera
-5. unsplash_query: 2-3 parole IN INGLESE per cercare una BELLA foto su Unsplash. Deve evocare il CIBO/TEMA dell'evento in modo appetitoso e fotogenico. REGOLE IMPORTANTI:
-   - VINO: usa "wine glass pouring", "red wine chalice vineyard", "wine tasting sunset". MAI bottiglie, MAI etichette, MAI cantine industriali.
-   - OLIO: usa "olive oil pouring golden", "fresh olives harvest", "Italian olive grove". MAI macchinari, MAI depositi, MAI fabbriche.
-   - CARNE: usa "grilled meat outdoor", "barbecue Italian festival". MAI carne cruda, MAI macelleria.
-   - PINZA/FOCACCIA: usa "focaccia bread Italian rustic". MAI torte, MAI dolci.
-   - GENERALE: cerca foto con luce calda, ambientazione rustica/all'aperto, piatti serviti. MAI foto industriali, MAI stock generici, MAI "italian sagra".
-   Esempi: "pumpkin soup autumn" per Sagra della Zucca, "grilled sausage festival" per Sagra della Salsiccia.
+5. unsplash_query: 2-4 parole IN INGLESE per Unsplash. REGOLA FONDAMENTALE: la parola chiave dopo "Sagra del/della/delle" o "Festa del/della/delle" È IL SOGGETTO DELLA FOTO. Traduci QUEL soggetto in inglese e cerca QUELLO.
+   Esempi corretti:
+   - "Festa dell'Olio" → "olive oil pouring bread" (olio = olive oil)
+   - "Festa della Primavera" → "spring blossoms countryside" (primavera = spring)
+   - "Sagra del Pesce" → "fresh seafood platter" (pesce = seafood)
+   - "Festa della Zucca" → "pumpkin soup autumn" (zucca = pumpkin)
+   - "Fior di Pasqua" → "Easter spring flowers Italian" (Pasqua = Easter)
+   - "Sagra della Pinza" → "Italian focaccia flatbread" (pinza veneta = focaccia, NON dolce)
+   - "Sagra del Vino" → "wine glass pouring vineyard" (MAI bottiglie)
+   - "Sagra degli Asparagi" → "fresh green asparagus dish"
+   - "Sagra dei Funghi" → "porcini mushroom Italian dish"
+   - "Sagra della Carne" → "grilled meat outdoor barbecue"
+   - "Festa del Radicchio" → "radicchio red chicory Italian"
+   ERRORI VIETATI: MAI mettere cibi/temi NON presenti nel titolo. "Olio" NON è miele. "Pinza" NON è formaggio. "Pasqua" NON è cannoli. Se non sai cosa cercare, usa "Italian food festival outdoor".
 
 EVENTI:
 ${JSON.stringify(batch)}
@@ -279,9 +287,12 @@ async function runGeocodePass(
           if (isValidItalyCoord(lat, lon)) {
             // Extract province from addressdetails if available
             const addr = results[0].address ?? {};
-            const province = normalizeProvinceCode(addr.county ?? addr.province ?? addr.state_district ?? null);
+            const rawProvince = addr.county ?? addr.province ?? addr.state_district ?? null;
+            const province = normalizeProvinceCode(rawProvince);
 
-            if (isVenetoProvince(province)) {
+            // normalizeProvinceCode only maps Veneto provinces,
+            // so non-null result = definitely Veneto
+            if (province) {
               // Veneto sagra — geocode and continue to LLM enrichment
               await supabase.from("sagre").update({
                 location: `SRID=4326;POINT(${lon} ${lat})`,  // PostGIS WKT: LON LAT order
@@ -292,10 +303,10 @@ async function runGeocodePass(
               geocoded++;
             } else {
               // Non-Veneto sagra — deactivate it
-              console.log(`Non-Veneto sagra deactivated: ${sagra.id} (province: ${province})`);
+              console.log(`Non-Veneto sagra deactivated: ${sagra.id} (raw province: ${rawProvince})`);
               await supabase.from("sagre").update({
                 location: `SRID=4326;POINT(${lon} ${lat})`,
-                province: province,
+                province: rawProvince,
                 is_active: false,
                 status: "geocode_failed",
                 updated_at: new Date().toISOString(),
@@ -357,7 +368,13 @@ async function runLLMPass(
 
   const batches = chunkBatch(rows as SagraForLLM[], BATCH_SIZE);
 
-  for (const batch of batches) {
+  let retries = 0;
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+
+    // Rate limit: 15 RPM on Gemini free tier → wait 4.5s between calls
+    if (i > 0) await sleep(4500);
+
     try {
       const prompt = buildEnrichmentPrompt(batch);
 
@@ -426,8 +443,18 @@ async function runLLMPass(
         enriched++;
       }
     } catch (err) {
-      console.error("LLM batch enrichment error:", err);
-      // Continue with next batch — partial enrichment is acceptable
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error("LLM batch enrichment error:", errMsg);
+
+      // If rate limited (429), wait 60s and retry (max 3 retries)
+      if ((errMsg.includes("429") || errMsg.includes("quota") || errMsg.includes("exceeded")) && retries < 3) {
+        retries++;
+        console.log(`Rate limited by Gemini (retry ${retries}/3), waiting 60s...`);
+        await sleep(60_000);
+        i--; // retry same batch
+        continue;
+      }
+      // Other errors: skip batch, continue
     }
   }
 
@@ -668,7 +695,7 @@ async function runUnsplashPass(
         // Courtesy delay between API calls
         await sleep(UNSPLASH_SLEEP_MS);
       } catch (err) {
-        console.error(`Unsplash fetch error for tag ${tagKey}:`, err);
+        console.error(`Unsplash fetch error for query ${query}:`, err);
         await sleep(UNSPLASH_SLEEP_MS);
         continue;
       }
@@ -706,8 +733,10 @@ async function runUnsplashPass(
 // Entry point — fire-and-forget pattern: return 200 immediately
 // =============================================================================
 
-Deno.serve(async (_req) => {
+Deno.serve(async (req) => {
   const startedAt = Date.now();
+  const url = new URL(req.url);
+  const resetMode = url.searchParams.get("reset"); // "all" | "images" | null
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -716,11 +745,33 @@ Deno.serve(async (_req) => {
 
   const ai = new GoogleGenAI({ apiKey: Deno.env.get("GEMINI_API_KEY")! });
 
+  // Handle reset modes BEFORE starting the pipeline
+  if (resetMode === "all") {
+    // Re-enrich everything: set all enriched sagre back to pending_llm
+    const { count } = await supabase
+      .from("sagre")
+      .update({ status: "pending_llm", updated_at: new Date().toISOString() })
+      .eq("status", "enriched")
+      .eq("is_active", true)
+      .select("id", { count: "exact", head: true });
+    console.log(`Reset ${count ?? 0} sagre to pending_llm for re-enrichment`);
+  } else if (resetMode === "images") {
+    // Re-fetch images only: null out Unsplash images so Pass 3 re-assigns them
+    const { count } = await supabase
+      .from("sagre")
+      .update({ image_url: null, image_credit: null, updated_at: new Date().toISOString() })
+      .eq("is_active", true)
+      .eq("status", "enriched")
+      .like("image_url", "%images.unsplash.com%")
+      .select("id", { count: "exact", head: true });
+    console.log(`Reset ${count ?? 0} Unsplash images for re-assignment`);
+  }
+
   // Fire-and-forget: return 200 immediately, work continues in background
   EdgeRuntime.waitUntil(runEnrichmentPipeline(supabase, ai, startedAt));
 
   return new Response(
-    JSON.stringify({ status: "started", timestamp: new Date().toISOString() }),
+    JSON.stringify({ status: "started", reset: resetMode, timestamp: new Date().toISOString() }),
     { status: 200, headers: { "Content-Type": "application/json" } }
   );
 });
@@ -733,24 +784,55 @@ async function runEnrichmentPipeline(
   let geocoded = 0;
   let geocodeFailed = 0;
   let llmEnriched = 0;
-  let llmClassified = 0; // non-sagra events deactivated
+  let llmClassified = 0;
   let unsplashAssigned = 0;
   let errorMessage: string | null = null;
+  let loops = 0;
+
+  const elapsed = () => Date.now() - startedAt;
+  const hasTimeBudget = () => elapsed() < TIME_BUDGET_MS;
 
   try {
-    // Pass 1: Geocoding — status: pending_geocode -> pending_llm (or geocode_failed)
-    const geocodeResult = await runGeocodePass(supabase);
-    geocoded = geocodeResult.geocoded;
-    geocodeFailed = geocodeResult.failed;
+    // LOOP until no more work or time budget exceeded
+    while (hasTimeBudget()) {
+      loops++;
+      let didWork = false;
 
-    // Pass 2: LLM enrichment — status: pending_llm | geocode_failed -> enriched (or classified_non_sagra)
-    const llmResult = await runLLMPass(supabase, ai);
-    llmEnriched = llmResult.enriched;
-    llmClassified = llmResult.classified;
+      // Pass 1: Geocoding (rate-limited by Nominatim, ~33s per 30 rows)
+      if (hasTimeBudget()) {
+        const r = await runGeocodePass(supabase);
+        geocoded += r.geocoded;
+        geocodeFailed += r.failed;
+        if (r.geocoded + r.failed > 0) didWork = true;
+      }
 
-    // Pass 3: Unsplash image assignment — enriched with null image_url -> image assigned
-    const unsplashResult = await runUnsplashPass(supabase);
-    unsplashAssigned = unsplashResult;
+      // Pass 2: LLM enrichment (processes up to 200 per iteration)
+      if (hasTimeBudget()) {
+        const r = await runLLMPass(supabase, ai);
+        llmEnriched += r.enriched;
+        llmClassified += r.classified;
+        if (r.enriched + r.classified > 0) didWork = true;
+      }
+
+      // Pass 3: Unsplash image assignment
+      if (hasTimeBudget()) {
+        const r = await runUnsplashPass(supabase);
+        unsplashAssigned += r;
+        if (r > 0) didWork = true;
+      }
+
+      // If no pass did any work, all queues are empty → done
+      if (!didWork) {
+        console.log(`All queues empty after ${loops} loop(s), stopping`);
+        break;
+      }
+
+      console.log(`Loop ${loops} complete (${elapsed()}ms elapsed): geo=${geocoded}, llm=${llmEnriched}, img=${unsplashAssigned}`);
+    }
+
+    if (!hasTimeBudget()) {
+      console.log(`Time budget exhausted after ${loops} loop(s) (${elapsed()}ms). Remaining work will be picked up by next cron invocation.`);
+    }
   } catch (err) {
     errorMessage = err instanceof Error ? err.message : String(err);
     console.error("Enrichment pipeline error:", errorMessage);
@@ -761,11 +843,11 @@ async function runEnrichmentPipeline(
     geocoded_count: geocoded,
     geocode_failed: geocodeFailed,
     llm_count: llmEnriched,
-    skipped_count: llmClassified, // repurpose skipped_count for classified non-sagre
+    skipped_count: llmClassified,
     error_message: errorMessage,
-    duration_ms: Date.now() - startedAt,
+    duration_ms: elapsed(),
     completed_at: new Date().toISOString(),
   });
 
-  console.log(`Enrichment complete: geocoded=${geocoded}, geocode_failed=${geocodeFailed}, llm_enriched=${llmEnriched}, classified_non_sagra=${llmClassified}, unsplash_assigned=${unsplashAssigned}, error=${errorMessage}`);
+  console.log(`Enrichment complete (${loops} loops, ${elapsed()}ms): geocoded=${geocoded}, geocode_failed=${geocodeFailed}, llm_enriched=${llmEnriched}, classified_non_sagra=${llmClassified}, unsplash_assigned=${unsplashAssigned}`);
 }

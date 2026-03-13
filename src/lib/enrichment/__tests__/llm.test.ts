@@ -131,8 +131,8 @@ describe("constants", () => {
     expect(BATCH_SIZE).toBeGreaterThanOrEqual(5);
     expect(BATCH_SIZE).toBeLessThanOrEqual(10);
   });
-  it("FOOD_TAGS has 8 entries", () => {
-    expect(FOOD_TAGS).toHaveLength(8);
+  it("FOOD_TAGS has 11 entries", () => {
+    expect(FOOD_TAGS).toHaveLength(11);
   });
   it("FEATURE_TAGS has 6 entries", () => {
     expect(FEATURE_TAGS).toHaveLength(6);

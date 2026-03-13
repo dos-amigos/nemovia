@@ -11,10 +11,11 @@ import { formatDateRange } from "@/lib/utils";
 import { VENETO_PROVINCES } from "@/lib/constants/veneto";
 import type { SagraCardData } from "@/lib/queries/types";
 
-/** Map full province name -> 2-letter code for dedup check */
-const PROVINCE_CODES: Record<string, string> = Object.fromEntries(
-  VENETO_PROVINCES.map((p) => [p.name, p.code]),
-);
+/** Map province value (code or full name) -> 2-letter code */
+const PROVINCE_CODES: Record<string, string> = Object.fromEntries([
+  ...VENETO_PROVINCES.map((p) => [p.name, p.code]),
+  ...VENETO_PROVINCES.map((p) => [p.code, p.code]),
+]);
 
 interface SagraCardProps {
   sagra: SagraCardData;

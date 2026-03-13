@@ -12,7 +12,10 @@ export const FOOD_TAGS = [
   "Formaggi",
   "Funghi",
   "Radicchio",
+  "Zucca",
   "Dolci",
+  "Pane",
+  "Verdura",
   "Prodotti Tipici",
 ] as const;
 
