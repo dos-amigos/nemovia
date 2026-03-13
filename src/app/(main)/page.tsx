@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Calendar, MapPin, Ticket } from "lucide-react";
 import { FoodIcon } from "@/lib/constants/food-icons";
 import type { SagraCardData } from "@/lib/queries/types";
-import { fetchCityVideos } from "@/lib/hero-videos";
+import { fetchCityVideos, fetchFoodVideos } from "@/lib/hero-videos";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -34,12 +34,13 @@ const MAX_PROVINCE_ROWS = 3;
 const MAX_FOOD_ROWS = 4;
 
 export default async function HomePage() {
-  const [weekendSagre, allActive, provinceCounts, cityVideos] =
+  const [weekendSagre, allActive, provinceCounts, cityVideos, foodApiVideos] =
     await Promise.all([
       getWeekendSagre(20),
       getActiveSagre(120),
       getProvinceCounts(),
       fetchCityVideos(2), // Fetch 2 Veneto city center videos
+      fetchFoodVideos(3), // Fetch 3 food-themed videos (wine, beer, grilling)
     ]);
 
   const hasAnyData = weekendSagre.length > 0 || allActive.length > 0;
@@ -96,7 +97,7 @@ export default async function HomePage() {
 
   return (
     <div>
-      <HeroSection cityVideos={cityVideos} />
+      <HeroSection cityVideos={cityVideos} foodApiVideos={foodApiVideos} />
 
       {/* Quick filters right after hero */}
       <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">

@@ -16,35 +16,41 @@ function shuffleAndTake(arr: HeroVideo[], n: number): HeroVideo[] {
 }
 
 /**
- * Build a mixed playlist: food videos + city center videos, interleaved.
- * Guarantees at least 1 city video if available, never more than 2 food in a row.
+ * Build a mixed playlist: local food + API food + city center videos, interleaved.
+ * Spreads city/API videos evenly between local food videos for variety.
  */
 function buildMixedPlaylist(
-  foodVideos: HeroVideo[],
+  localFoods: HeroVideo[],
   cityVideos: HeroVideo[],
+  foodApiVideos: HeroVideo[],
   total: number,
 ): HeroVideo[] {
-  const foods = shuffleAndTake(foodVideos, total);
-  if (cityVideos.length === 0) return foods.slice(0, total);
+  const foods = shuffleAndTake(localFoods, total);
+  const extras = [...cityVideos, ...foodApiVideos];
 
-  // Take enough food videos to fill the remaining slots
-  const foodCount = total - cityVideos.length;
+  if (extras.length === 0) return foods.slice(0, total);
+
+  // Shuffle extras (city + food-api) together for variety
+  const shuffledExtras = shuffleAndTake(extras, extras.length);
+
+  // Take enough local food videos to fill remaining slots
+  const foodCount = total - shuffledExtras.length;
   const selectedFoods = foods.slice(0, Math.max(foodCount, 0));
 
-  // Interleave: food, food, city, food, city, ... (spread city videos evenly)
+  // Interleave: food, extra, food, extra, ... (spread extras evenly)
   const result: HeroVideo[] = [];
   let fIdx = 0;
-  let cIdx = 0;
-  const gap = Math.max(1, Math.floor(total / (cityVideos.length + 1)));
+  let eIdx = 0;
+  const gap = Math.max(1, Math.floor(total / (shuffledExtras.length + 1)));
 
   for (let i = 0; i < total; i++) {
-    // Insert a city video at evenly spaced positions
-    if (cIdx < cityVideos.length && i > 0 && i % gap === 0) {
-      result.push(cityVideos[cIdx++]);
+    // Insert an extra video at evenly spaced positions
+    if (eIdx < shuffledExtras.length && i > 0 && i % gap === 0) {
+      result.push(shuffledExtras[eIdx++]);
     } else if (fIdx < selectedFoods.length) {
       result.push(selectedFoods[fIdx++]);
-    } else if (cIdx < cityVideos.length) {
-      result.push(cityVideos[cIdx++]);
+    } else if (eIdx < shuffledExtras.length) {
+      result.push(shuffledExtras[eIdx++]);
     }
   }
 
@@ -56,22 +62,24 @@ function buildMixedPlaylist(
   return result.slice(0, total);
 }
 
-const PLAYLIST_SIZE = 4;
+const PLAYLIST_SIZE = 6;
 
 interface HeroSectionProps {
   /** Veneto city center videos fetched server-side from Pexels */
   cityVideos?: HeroVideo[];
+  /** Food-themed videos (wine, beer, grilling) fetched server-side from Pexels */
+  foodApiVideos?: HeroVideo[];
 }
 
-export function HeroSection({ cityVideos = [] }: HeroSectionProps) {
+export function HeroSection({ cityVideos = [], foodApiVideos = [] }: HeroSectionProps) {
   const [playlist, setPlaylist] = useState<HeroVideo[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Build a mixed playlist of food + city videos on mount
+  // Build a mixed playlist of local food + API food + city videos on mount
   useEffect(() => {
-    setPlaylist(buildMixedPlaylist(HERO_VIDEOS, cityVideos, PLAYLIST_SIZE));
-  }, [cityVideos]);
+    setPlaylist(buildMixedPlaylist(HERO_VIDEOS, cityVideos, foodApiVideos, PLAYLIST_SIZE));
+  }, [cityVideos, foodApiVideos]);
 
   const video = playlist[currentIdx] ?? null;
 

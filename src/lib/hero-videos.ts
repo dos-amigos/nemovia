@@ -11,8 +11,8 @@ export interface HeroVideo {
   photographer: string;
   /** Link to the original video on Pexels */
   pexelsUrl: string;
-  /** "food" = curated food/sagra videos, "city" = Veneto city centers */
-  type: "food" | "city";
+  /** "food" = curated local videos, "city" = Veneto cities, "food-api" = Pexels food API */
+  type: "food" | "city" | "food-api";
 }
 
 /**
@@ -20,12 +20,6 @@ export interface HeroVideo {
  * All videos are landscape, 720p, 5-24s, under 5MB each.
  */
 export const HERO_VIDEOS: HeroVideo[] = [
-  {
-    src: "/videos/hero-1.mp4",
-    photographer: "Nazim Zafri",
-    pexelsUrl: "https://www.pexels.com/video/3525952/",
-    type: "food",
-  },
   {
     src: "/videos/hero-3.mp4",
     photographer: "cottonbro studio",
@@ -76,6 +70,17 @@ export const VENETO_CITY_QUERIES = [
   "Chioggia fishing boats canal",
   "Burano colorful houses Venice",
   "Asolo hilltop village Veneto",
+] as const;
+
+// =============================================================================
+// Food-themed video queries for Pexels API
+// Italian/Mediterranean food preparation — wine, beer, grilling
+// =============================================================================
+
+export const FOOD_VIDEO_QUERIES = [
+  "pouring red wine rustic Italian",
+  "draft beer tap outdoor festival",
+  "grilling meat outdoor barbecue",
 ] as const;
 
 interface PexelsVideoFile {
@@ -203,6 +208,70 @@ export async function fetchCityVideos(count: number): Promise<HeroVideo[]> {
           photographer: video.user.name,
           pexelsUrl: video.url,
           type: "city",
+        };
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  return results
+    .filter(
+      (r): r is PromiseFulfilledResult<HeroVideo> =>
+        r.status === "fulfilled" && r.value !== null,
+    )
+    .map((r) => r.value);
+}
+
+/**
+ * Fetch food-themed videos from Pexels (wine, beer, grilling).
+ * Uses FOOD_VIDEO_QUERIES for Italian/Mediterranean food content.
+ */
+export async function fetchFoodVideos(count: number): Promise<HeroVideo[]> {
+  const apiKey = process.env.PEXELS_API_KEY;
+  if (!apiKey) return [];
+
+  // Shuffle queries and take `count` of them
+  const shuffled = [...FOOD_VIDEO_QUERIES]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, count);
+
+  const results = await Promise.allSettled(
+    shuffled.map(async (query): Promise<HeroVideo | null> => {
+      const url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=3&size=small&orientation=landscape`;
+
+      try {
+        const res = await fetch(url, {
+          headers: { Authorization: apiKey! },
+          next: { revalidate: 86400 },
+        });
+
+        if (!res.ok) return null;
+
+        const data: PexelsSearchResponse = await res.json();
+        if (data.videos.length === 0) return null;
+
+        const video =
+          data.videos[Math.floor(Math.random() * data.videos.length)];
+
+        const hdFile = video.video_files.find(
+          (f) =>
+            f.quality === "hd" &&
+            f.file_type === "video/mp4" &&
+            f.width <= 1280,
+        );
+        const sdFile = video.video_files.find(
+          (f) => f.quality === "sd" && f.file_type === "video/mp4",
+        );
+
+        const file = hdFile ?? sdFile;
+        if (!file?.link) return null;
+
+        return {
+          src: file.link,
+          photographer: video.user.name,
+          pexelsUrl: video.url,
+          type: "food-api",
         };
       } catch {
         return null;
