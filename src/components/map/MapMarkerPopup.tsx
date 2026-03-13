@@ -17,7 +17,7 @@ export default function MapMarkerPopup({ sagra }: MapMarkerPopupProps) {
     : getFallbackImage(sagra.id, sagra.food_tags);
 
   return (
-    <div className="w-[240px] overflow-hidden -m-[13px] -mt-[13px]">
+    <div className="w-[240px] overflow-hidden">
       {/* Hero image */}
       <div className="relative h-[120px] w-full overflow-hidden">
         <img
@@ -40,7 +40,7 @@ export default function MapMarkerPopup({ sagra }: MapMarkerPopupProps) {
       </div>
 
       {/* Content */}
-      <div className="space-y-1.5 p-3">
+      <div className="space-y-2 p-3">
         <h3 className="text-sm font-bold leading-tight line-clamp-2">{sagra.title}</h3>
 
         <div className="flex items-center gap-1 text-xs text-muted-foreground">

@@ -14,9 +14,10 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const drag = useRef({ active: false, startX: 0, scrollLeft: 0, totalDelta: 0, pointerId: 0, captured: false });
+  const isSnapping = useRef(false);
 
   // Detect fine pointer (mouse/trackpad) — ONLY enable JS drag on desktop.
-  // Mobile: ZERO JS handlers. Pure CSS scroll-snap + native touch.
+  // Mobile: native touch scroll, no JS handlers.
   const [hasFinePointer, setHasFinePointer] = useState(false);
   useEffect(() => {
     const mql = window.matchMedia("(pointer: fine)");
@@ -26,36 +27,96 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
     return () => mql.removeEventListener("change", handler);
   }, []);
 
-  const scroll = (direction: "left" | "right") => {
-    scrollRef.current?.scrollBy({
-      left: direction === "left" ? -300 : 300,
-      behavior: "smooth",
-    });
-  };
-
-  /** Magnetic snap: after drag release, smoothly align nearest card to left edge */
+  /** Magnetic snap: smoothly align nearest card to left edge of visible area */
   const snapToNearest = useCallback(() => {
     const el = scrollRef.current;
-    if (!el) return;
-    const scrollPadding = parseInt(getComputedStyle(el).scrollPaddingLeft) || 0;
-    const scrollPos = el.scrollLeft;
-    const children = el.children;
+    if (!el || isSnapping.current) return;
 
-    let bestSnapPoint = scrollPos;
+    const containerLeft = el.getBoundingClientRect().left;
+    const paddingLeft = parseFloat(getComputedStyle(el).paddingLeft) || 0;
+    const targetLeft = containerLeft + paddingLeft;
+
+    const children = Array.from(el.children);
+    // Exclude the last child (right padding spacer)
+    const cards = children.slice(0, -1);
+
+    let bestOffset = 0;
     let bestDist = Infinity;
 
-    // Find the card whose snap point is closest to current scroll position
-    for (let i = 0; i < children.length - 1; i++) { // -1 to skip right spacer
-      const card = children[i] as HTMLElement;
-      const snapPoint = card.offsetLeft - scrollPadding;
-      const dist = Math.abs(snapPoint - scrollPos);
+    for (const child of cards) {
+      const cardLeft = (child as HTMLElement).getBoundingClientRect().left;
+      const offset = cardLeft - targetLeft;
+      const dist = Math.abs(offset);
       if (dist < bestDist) {
         bestDist = dist;
-        bestSnapPoint = snapPoint;
+        bestOffset = offset;
       }
     }
 
-    el.scrollTo({ left: bestSnapPoint, behavior: "smooth" });
+    // Already aligned — skip
+    if (bestDist < 2) return;
+
+    isSnapping.current = true;
+    el.scrollTo({ left: el.scrollLeft + bestOffset, behavior: "smooth" });
+    setTimeout(() => { isSnapping.current = false; }, 400);
+  }, []);
+
+  // Scroll-end snap for ALL devices: after scroll momentum stops, align to nearest card.
+  // No CSS snap needed — pure JS gives smooth native scroll + guaranteed alignment.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const onScroll = () => {
+      // Don't interfere while actively dragging or already snapping
+      if (drag.current.active || isSnapping.current) return;
+      clearTimeout(timer);
+      timer = setTimeout(snapToNearest, 150);
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      clearTimeout(timer);
+    };
+  }, [snapToNearest]);
+
+  /** Scroll arrows: jump to next/previous card position */
+  const scrollToCard = useCallback((direction: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const containerLeft = el.getBoundingClientRect().left;
+    const paddingLeft = parseFloat(getComputedStyle(el).paddingLeft) || 0;
+    const targetLeft = containerLeft + paddingLeft;
+    const cards = Array.from(el.children).slice(0, -1);
+
+    if (direction === "right") {
+      // Find first card whose left edge is to the right of the current view
+      for (const child of cards) {
+        const cardLeft = (child as HTMLElement).getBoundingClientRect().left;
+        if (cardLeft > targetLeft + 10) {
+          const offset = cardLeft - targetLeft;
+          isSnapping.current = true;
+          el.scrollTo({ left: el.scrollLeft + offset, behavior: "smooth" });
+          setTimeout(() => { isSnapping.current = false; }, 400);
+          return;
+        }
+      }
+    } else {
+      // Find last card whose left edge is to the left of the current view
+      for (let i = cards.length - 1; i >= 0; i--) {
+        const cardLeft = (cards[i] as HTMLElement).getBoundingClientRect().left;
+        if (cardLeft < targetLeft - 10) {
+          const offset = cardLeft - targetLeft;
+          isSnapping.current = true;
+          el.scrollTo({ left: el.scrollLeft + offset, behavior: "smooth" });
+          setTimeout(() => { isSnapping.current = false; }, 400);
+          return;
+        }
+      }
+    }
   }, []);
 
   // Desktop-only pointer drag (mouse only)
@@ -89,7 +150,7 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
     if (!drag.current.active) return;
     drag.current.active = false;
 
-    // Magnetic snap to nearest card on the left
+    // Magnetic snap to nearest card on release
     if (drag.current.totalDelta > 5) {
       snapToNearest();
     }
@@ -103,13 +164,15 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
 
   return (
     <div className="group relative">
-      {/* Mobile: pure CSS snap-x + native touch. Desktop: JS drag + magnetic snap + arrows. */}
+      {/* No CSS scroll-snap — pure JS snap after scroll end for ALL devices.
+          Mobile: smooth native touch scroll + JS alignment at end.
+          Desktop: JS drag + magnetic snap + arrows. */}
       <div
         ref={scrollRef}
         role="region"
         tabIndex={0}
         aria-label={ariaLabel}
-        className={`scrollbar-hide flex gap-3 overflow-x-auto overscroll-x-contain snap-x snap-mandatory lg:snap-none pb-2 pl-4 sm:pl-6 lg:pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] scroll-pl-4 sm:scroll-pl-6 lg:scroll-pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] ${isDragging ? "cursor-grabbing select-none" : "lg:cursor-grab"}`}
+        className={`scrollbar-hide flex gap-3 overflow-x-auto overscroll-x-contain pb-2 pl-4 sm:pl-6 lg:pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] ${isDragging ? "cursor-grabbing select-none" : "lg:cursor-grab"}`}
         {...(hasFinePointer ? {
           onPointerDown,
           onPointerMove,
@@ -120,7 +183,7 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
         {sagre.map((sagra) => (
           <div
             key={sagra.id}
-            className="w-[75vw] flex-shrink-0 snap-start sm:w-[45vw] lg:w-[280px]"
+            className="w-[75vw] flex-shrink-0 sm:w-[45vw] lg:w-[280px]"
             draggable={false}
             onDragStart={(e) => e.preventDefault()}
             {...(hasFinePointer ? {
@@ -143,7 +206,7 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
       <div className="pointer-events-none absolute inset-y-0 left-0 right-0 hidden lg:block">
         <button
           type="button"
-          onClick={() => scroll("left")}
+          onClick={() => scrollToCard("left")}
           aria-label="Scorri a sinistra"
           className="pointer-events-auto absolute left-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-background/80 shadow-md backdrop-blur-sm opacity-70 hover:opacity-100 transition-opacity"
         >
@@ -151,7 +214,7 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
         </button>
         <button
           type="button"
-          onClick={() => scroll("right")}
+          onClick={() => scrollToCard("right")}
           aria-label="Scorri a destra"
           className="pointer-events-auto absolute right-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-background/80 shadow-md backdrop-blur-sm opacity-70 hover:opacity-100 transition-opacity"
         >
