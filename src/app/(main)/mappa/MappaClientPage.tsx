@@ -45,10 +45,14 @@ export default function MappaClientPage({ sagre, searchLat, searchLng }: MappaCl
           <SearchFilters variant="topbar" />
         </div>
       </div>
-      {/* Map fills remaining space */}
-      <div className="relative flex-1">
-        <MapViewDynamic sagre={sagre} onMapReady={setMapRef} />
-        <LocationButton onLocate={handleLocate} />
+      {/* Map fills remaining space — contained to header width with rounded corners */}
+      <div className="flex-1 overflow-hidden">
+        <div className="mx-auto h-full max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+          <div className="relative h-full overflow-hidden rounded-xl">
+            <MapViewDynamic sagre={sagre} onMapReady={setMapRef} />
+            <LocationButton onLocate={handleLocate} />
+          </div>
+        </div>
       </div>
     </div>
   );

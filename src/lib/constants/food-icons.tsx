@@ -21,10 +21,12 @@ export type FoodCategory =
 const TAG_TO_CATEGORY: Record<string, FoodCategory> = {
   Carne: "carne",
   Pesce: "pesce",
-  Zucca: "zucca",
+  Zucca: "verdura",
   Gnocchi: "gnocco",
   Funghi: "verdura",
   Radicchio: "verdura",
+  Verdura: "verdura",
+  Pane: "altro",
   Vino: "vino",
   Dolci: "dolci",
   Formaggi: "altro",

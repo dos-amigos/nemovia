@@ -31,6 +31,8 @@ const TAG_QUERIES: Record<string, string> = {
   "Funghi": "mushroom food festival",
   "Radicchio": "italian vegetable market",
   "Dolci": "italian dessert pastry",
+  "Pane": "italian focaccia bread bakery",
+  "Verdura": "italian vegetable market garden",
   "Prodotti Tipici": "italian food market",
 };
 const DEFAULT_UNSPLASH_QUERY = "italian sagra food festival";
@@ -120,7 +122,7 @@ function isValidItalyCoord(lat: number, lon: number): boolean {
 // Deno Edge Functions cannot import from the Next.js src/ directory.
 // =============================================================================
 
-const FOOD_TAGS = ["Pesce", "Carne", "Vino", "Formaggi", "Funghi", "Radicchio", "Dolci", "Prodotti Tipici"] as const;
+const FOOD_TAGS = ["Pesce", "Carne", "Vino", "Formaggi", "Funghi", "Radicchio", "Dolci", "Pane", "Verdura", "Prodotti Tipici"] as const;
 const FEATURE_TAGS = ["Gratis", "Musica", "Artigianato", "Bambini", "Tradizionale"] as const;
 type FoodTag = typeof FOOD_TAGS[number];
 type FeatureTag = typeof FEATURE_TAGS[number];
@@ -159,12 +161,20 @@ function chunkBatch<T>(items: T[], size: number): T[][] {
  * Includes is_sagra classification instruction (DQ-07/DQ-08).
  */
 function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
-  return `Sei un esperto di sagre italiane. Per ogni evento nella lista JSON, genera:
+  return `Sei un esperto di sagre italiane e gastronomia veneta. Per ogni evento nella lista JSON, genera:
 1. is_sagra: true se l'evento e una sagra, festa del cibo, o fiera gastronomica. false se e antiquariato, mostra, mercato generico, concerto, evento sportivo, o altro evento non gastronomico. Se l'evento ha una componente gastronomica significativa (cibo, degustazione, prodotti tipici), classificalo come sagra anche se ha altri elementi (musica, artigianato).
 2. food_tags: array con i tag alimentari pertinenti (max 3) scelti SOLO da: ${FOOD_TAGS.join(", ")}
+   ATTENZIONE alla gastronomia veneta:
+   - "Pinza" e "Pinzin" veneti sono FOCACCE/PANE, NON dolci! Usa tag "Pane".
+   - "Polenta" va in "Prodotti Tipici" o "Carne" se servita con carne.
+   - "Baccalà" e "Stoccafisso" vanno in "Pesce".
+   - "Asparago", "Radicchio", "Broccolo", "Carciofo", "Fagiolo" vanno in "Verdura".
+   - "Zucca" va in "Verdura".
+   - "Gnocchi" vanno in "Prodotti Tipici".
+   - Se il cibo principale non rientra chiaramente in nessuna categoria specifica, usa "Prodotti Tipici".
 3. feature_tags: array con i tag caratteristici (max 2) scelti SOLO da: ${FEATURE_TAGS.join(", ")}
 4. enhanced_description: descrizione coinvolgente in italiano, max ${MAX_DESC_CHARS} caratteri, che menzioni il cibo principale e l'atmosfera
-5. unsplash_query: 2-3 parole IN INGLESE per cercare una foto pertinente su Unsplash. Deve descrivere il CIBO SPECIFICO dell'evento, non generico. Esempi: "olive oil food" per Festa dell'Olio, "grilled sausage festival" per Sagra della Salsiccia, "pumpkin soup autumn" per Sagra della Zucca, "wine tasting vineyard" per Festa del Vino. MAI usare "italian sagra" o termini generici.
+5. unsplash_query: 2-3 parole IN INGLESE per cercare una foto pertinente su Unsplash. Deve descrivere il CIBO SPECIFICO dell'evento, non generico. Esempi: "olive oil food" per Festa dell'Olio, "grilled sausage festival" per Sagra della Salsiccia, "pumpkin soup autumn" per Sagra della Zucca, "wine tasting vineyard" per Festa del Vino, "focaccia bread Italian" per Sagra della Pinza. MAI usare "italian sagra" o termini generici.
 
 EVENTI:
 ${JSON.stringify(batch)}
