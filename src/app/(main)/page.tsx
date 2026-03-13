@@ -116,6 +116,7 @@ export default async function HomePage() {
             sagre={weekendSagre}
             viewAllHref="/cerca"
             delay={(delay += 0.05)}
+            minItems={1}
           />
           <ScrollRowSection
             title="Gratis"

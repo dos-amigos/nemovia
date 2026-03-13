@@ -36,11 +36,11 @@ const MARKER_ICON_PATHS: Record<FoodCategory, string> = {
   /** Wine glass */
   vino: `<path d="M8 2h8M12 2v20M9 22h6"/><path d="M7 6c0 4.4 2.2 8 5 8s5-3.6 5-8c0-1.1-.2-2-.6-3H7.6c-.4 1-.6 1.9-.6 3z"/>`,
 
-  /** Cake */
-  dolci: `<path d="M3 20h18v-8H3v8z"/><path d="M5 12V6l2-2 2 2V6l2-2 2 2V6l2-2 2 2v6"/><path d="M7 20v-4M12 20v-4M17 20v-4"/>`,
+  /** Cupcake */
+  dolci: `<circle cx="12" cy="5" r="1.5" fill="white"/><path d="M12 6.5v1"/><path d="M6 13c0-4 2.5-5.5 6-5.5s6 1.5 6 5.5"/><path d="M6 13c1 1 2 1.5 3 .5s2-.5 3 .5 2 .5 3-.5 2-.5 3 .5"/><path d="M7 15l1.5 6h7L17 15"/>`,
 
   /** Fork + knife */
-  altro: `<path d="M3 2v7c0 1.7 1.3 3 3 3v10h1V12c1.7 0 3-1.3 3-3V2"/><path d="M5 2v6M7 2v6"/><path d="M17 2l-1 9h-2l-1-9"/><path d="M15 11v11"/>`,
+  altro: `<path d="M7 3v5c0 1.4 1.1 2.5 2.5 2.5h0V21"/><path d="M5.5 3v4M7 3v4M8.5 3v4"/><path d="M17 3c-1.5 2-2 4-2 6.5h0c.7.5 1.5.8 2 .8V21"/><path d="M17 3c1 1.5 1.5 3.5 1.5 6.5h-3.5"/>`,
 };
 
 /* -------------------------------------------------------------------------- */
@@ -64,7 +64,7 @@ function buildMarkerSvg(color: string, iconPaths: string): string {
   <path d="M20 54 C20 54 4 34 4 20 A16 16 0 1 1 36 20 C36 34 20 54 20 54Z"
         fill="${color}" stroke="white" stroke-width="2" filter="url(#s)"/>
   <!-- White food icon centered in the circle part of the pin -->
-  <g transform="translate(10,8) scale(0.83)">
+  <g transform="translate(10,10) scale(0.83)">
     <svg viewBox="0 0 24 24" width="24" height="24"
          fill="none" stroke="white" stroke-width="2.2"
          stroke-linecap="round" stroke-linejoin="round">

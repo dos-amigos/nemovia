@@ -215,9 +215,80 @@
   - Sidebar: layout verticale invariato
 - **Stato**: FIXATO
 
+### BUG-009: Drag va a scatti su smartphone + click sagra non naviga (REGRESSIONE)
+- **Repro**: Mobile → swipe ScrollRow a scatti, tap su card non naviga
+- **Causa**: `snap-always` (scroll-snap-stop: always) forza lo stop su ogni card, rendendo lo scroll a scatti. Peggio: anche un minimo movimento del dito durante il tap viene trattato come scroll, cancellando l'evento click.
+- **Fix applicato**: Rimosso `snap-always` dalle card, mantenuto `snap-start` per allineamento morbido
+- **Stato**: FIXATO
+
+### BUG-010: Icona "altro" (forchetta+coltello) illeggibile a dimensioni piccole
+- **Repro**: Card sagra "Festa dei Sapori e delle Tradizioni" ha icona astratta non riconoscibile
+- **Causa**: Il coltello SVG era troppo sottile e astratto a 16px
+- **Fix applicato**: Redesign icona "altro" con forchetta+coltello più leggibili (linee parallele forchetta, lama curva coltello)
+- **Stato**: FIXATO
+
+### BUG-011: Icona dolci sembra un edificio, non una torta
+- **Repro**: Card con tag "Dolci" mostra icona rettangolare con zigzag (sembra palazzo)
+- **Causa**: SVG torta con base rettangolare + candele zigzag = illeggibile a 16px
+- **Fix applicato**: Redesign come cupcake con ciliegina, frosting dome, e wrapper conico. Aggiornato anche map-markers.ts
+- **Stato**: FIXATO
+
+### BUG-012: "Questo weekend" non visibile come prima row
+- **Repro**: Homepage non mostra row "Questo weekend" quando < 3 sagre nel weekend
+- **Causa**: ScrollRowSection ha MIN_ROW_ITEMS=3 hardcoded, nasconde la sezione con < 3 risultati
+- **Fix applicato**: Aggiunta prop `minItems` a ScrollRowSection, passato `minItems={1}` per la row "Questo weekend"
+- **Stato**: FIXATO
+
+### BUG-013: Pin mappa — icona food troppo in alto nel pin
+- **Repro**: Mappa → marker pin teardrop con icona food spostata verso l'alto, non centrata nel cerchio
+- **Causa**: `translate(10,8)` metteva l'icona troppo in alto nel cerchio (centro cerchio a y=20)
+- **Fix applicato**: Cambiato `translate(10,8)` → `translate(10,10)` per centratura verticale
+- **Stato**: FIXATO
+
+### BUG-014: Progress bar scroll non necessaria nella pagina dettaglio
+- **Repro**: Pagina dettaglio sagra mostra barra progress in alto — articoli troppo corti per giustificarla
+- **Fix applicato**: Rimosso `<ScrollProgress />` da SagraDetail.tsx
+- **Stato**: FIXATO
+
+### BUG-015: Immagini Unsplash non pertinenti (es. cetrioli per Festa dell'Olio)
+- **Repro**: Sagre con immagini fallback non pertinenti al cibo specifico
+- **Causa**: Pass 3 (Unsplash) cercava per tag generico (es. "italian food market") anziché per cibo specifico
+- **Fix applicato**:
+  - Aggiunto campo `unsplash_query` al prompt Gemini (Pass 2) — genera query specifiche in inglese (es. "olive oil food")
+  - Nuova colonna `unsplash_query` nel DB (migration 017)
+  - Pass 3 ora usa query LLM-generated quando disponibile, fallback a TAG_QUERIES
+- **Stato**: FIXATO (richiede migration 017 + deploy edge function)
+
+### BUG-016: Header troppo compatto, logo senza padding
+- **Repro**: TopNav con logo attaccato ai bordi, barra poco spaziosa
+- **Fix applicato**: Mobile h-14→h-16 con padding px-3 py-2. Desktop h-14→h-18 con padding px-2 py-3
+- **Stato**: FIXATO
+
+### BUG-017: Logo colore terracotta — utente vuole bordeaux acceso
+- **Repro**: Logo PNG terracotta (#bd5342) non piace all'utente
+- **Fix applicato**:
+  - Colori SVG aggiornati: #bd5342→#9B1B30, #662b25→#5C0E28, #8b5a51→#7A2840
+  - Logo.tsx ora usa SVG (unoptimized) invece di PNG
+  - Brand CSS variables aggiornate: oklch(0.42 0.19 358) bordeaux
+  - Colore "altro" food icon aggiornato a #9B1B30
+- **Stato**: FIXATO
+
 ---
 
 ## Log Sessioni
+
+### 2026-03-13 — 10 bugfix + Unsplash image relevance con Gemini
+- 10 bug/richieste dell'utente — tutti risolti in una sessione
+- **ScrollRow**: rimosso `snap-always` (causa scatti mobile + click non funzionanti)
+- **Icone food**: redesign cupcake (dolci) + forchetta/coltello più leggibili (altro)
+- **Homepage**: "Questo weekend" sempre visibile (minItems=1)
+- **Mappa**: pin icon centrata verticalmente (translate 8→10)
+- **Dettaglio**: rimossa progress bar scroll
+- **Unsplash**: Gemini genera query specifiche per immagini più pertinenti (migration 017)
+- **Header**: più spazioso, padding aumentato
+- **Logo**: SVG con palette bordeaux (#9B1B30), brand CSS variables aggiornate
+- **DA FARE**: Applicare migration 017 al DB remoto + deploy edge function enrich-sagre
+- File modificati: ScrollRow.tsx, food-icons.tsx, map-markers.ts, ScrollRowSection.tsx, page.tsx, SagraDetail.tsx, TopNav.tsx, Logo.tsx, globals.css, logo-nemo-via.svg, enrich-sagre/index.ts
 
 ### 2026-03-12 — Sessione planning + bugfix
 - Discusso Tavily vs Cheerio: Tavily utile per discovery, non sostituto

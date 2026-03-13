@@ -87,7 +87,7 @@ export const CATEGORY_COLORS: Record<FoodCategory, string> = {
   verdura: "#16A34A",
   gnocco: "#CA8A04",
   dolci: "#DB2777",
-  altro: "#C1512D",
+  altro: "#9B1B30",
 };
 
 /** Get themed color for a set of food tags */
@@ -205,7 +205,7 @@ const ICONS: Record<
     </svg>
   ),
 
-  /** Cake / birthday cake */
+  /** Cupcake with frosting swirl */
   dolci: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
@@ -217,13 +217,19 @@ const ICONS: Record<
       className={className}
       aria-hidden="true"
     >
-      <path d="M3 20h18v-8H3v8z" />
-      <path d="M5 12V6l2-2 2 2V6l2-2 2 2V6l2-2 2 2v6" />
-      <path d="M7 20v-4M12 20v-4M17 20v-4" />
+      {/* Cherry on top */}
+      <circle cx="12" cy="5" r="1.5" fill="currentColor" />
+      <path d="M12 6.5v1" />
+      {/* Frosting dome */}
+      <path d="M6 13c0-4 2.5-5.5 6-5.5s6 1.5 6 5.5" />
+      {/* Frosting waves */}
+      <path d="M6 13c1 1 2 1.5 3 .5s2-.5 3 .5 2 .5 3-.5 2-.5 3 .5" />
+      {/* Cup/wrapper */}
+      <path d="M7 15l1.5 6h7L17 15" />
     </svg>
   ),
 
-  /** Fork and knife */
+  /** Crossed fork and knife */
   altro: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
@@ -236,11 +242,11 @@ const ICONS: Record<
       aria-hidden="true"
     >
       {/* Fork */}
-      <path d="M3 2v7c0 1.7 1.3 3 3 3v10h1V12c1.7 0 3-1.3 3-3V2" />
-      <path d="M5 2v6M7 2v6" />
+      <path d="M7 3v5c0 1.4 1.1 2.5 2.5 2.5h0V21" />
+      <path d="M5.5 3v4M7 3v4M8.5 3v4" />
       {/* Knife */}
-      <path d="M17 2l-1 9h-2l-1-9" />
-      <path d="M15 11v11" />
+      <path d="M17 3c-1.5 2-2 4-2 6.5h0c.7.5 1.5.8 2 .8V21" />
+      <path d="M17 3c1 1.5 1.5 3.5 1.5 6.5h-3.5" />
     </svg>
   ),
 };

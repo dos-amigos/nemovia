@@ -11,6 +11,8 @@ interface ScrollRowSectionProps {
   sagre: SagraCardData[];
   viewAllHref?: string;
   delay?: number;
+  /** Override minimum items to show this row (defaults to 3) */
+  minItems?: number;
 }
 
 export function ScrollRowSection({
@@ -19,8 +21,9 @@ export function ScrollRowSection({
   sagre,
   viewAllHref,
   delay = 0,
+  minItems = MIN_ROW_ITEMS,
 }: ScrollRowSectionProps) {
-  if (sagre.length < MIN_ROW_ITEMS) return null;
+  if (sagre.length < minItems) return null;
 
   return (
     <FadeIn delay={delay}>

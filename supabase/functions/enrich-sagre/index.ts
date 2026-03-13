@@ -164,11 +164,12 @@ function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
 2. food_tags: array con i tag alimentari pertinenti (max 3) scelti SOLO da: ${FOOD_TAGS.join(", ")}
 3. feature_tags: array con i tag caratteristici (max 2) scelti SOLO da: ${FEATURE_TAGS.join(", ")}
 4. enhanced_description: descrizione coinvolgente in italiano, max ${MAX_DESC_CHARS} caratteri, che menzioni il cibo principale e l'atmosfera
+5. unsplash_query: 2-3 parole IN INGLESE per cercare una foto pertinente su Unsplash. Deve descrivere il CIBO SPECIFICO dell'evento, non generico. Esempi: "olive oil food" per Festa dell'Olio, "grilled sausage festival" per Sagra della Salsiccia, "pumpkin soup autumn" per Sagra della Zucca, "wine tasting vineyard" per Festa del Vino. MAI usare "italian sagra" o termini generici.
 
 EVENTI:
 ${JSON.stringify(batch)}
 
-Rispondi con un array JSON, un oggetto per ogni evento con: id, is_sagra, food_tags, feature_tags, enhanced_description.`;
+Rispondi con un array JSON, un oggetto per ogni evento con: id, is_sagra, food_tags, feature_tags, enhanced_description, unsplash_query.`;
 }
 
 const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
@@ -195,6 +196,7 @@ interface EnrichmentResult {
   food_tags: string[];
   feature_tags: string[];
   enhanced_description: string;
+  unsplash_query?: string;
 }
 
 // =============================================================================
@@ -356,8 +358,9 @@ async function runLLMPass(
                 food_tags: { type: "ARRAY", items: { type: "STRING" } },
                 feature_tags: { type: "ARRAY", items: { type: "STRING" } },
                 enhanced_description: { type: "STRING" },
+                unsplash_query: { type: "STRING" },
               },
-              required: ["id", "is_sagra", "food_tags", "feature_tags", "enhanced_description"],
+              required: ["id", "is_sagra", "food_tags", "feature_tags", "enhanced_description", "unsplash_query"],
             },
           },
         },
@@ -391,11 +394,13 @@ async function runLLMPass(
         const food_tags = validateTags(result.food_tags ?? [], FOOD_TAGS).slice(0, 3);
         const feature_tags = validateTags(result.feature_tags ?? [], FEATURE_TAGS).slice(0, 2);
         const enhanced_description = truncateDescription(result.enhanced_description ?? "");
+        const unsplash_query = (result.unsplash_query ?? "").slice(0, 60) || null;
 
         await supabase.from("sagre").update({
           food_tags,
           feature_tags,
           enhanced_description,
+          unsplash_query,
           status: "enriched",
           updated_at: new Date().toISOString(),
         }).eq("id", result.id);
@@ -423,6 +428,7 @@ interface SagraForUnsplash {
   id: string;
   food_tags: string[] | null;
   image_url: string | null;
+  unsplash_query: string | null;
 }
 
 // =============================================================================
@@ -548,7 +554,7 @@ async function runUnsplashPass(
   // Query 1: sagre with NULL image_url
   const { data: nullRows } = await supabase
     .from("sagre")
-    .select("id, food_tags, image_url")
+    .select("id, food_tags, image_url, unsplash_query")
     .is("image_url", null)
     .eq("is_active", true)
     .eq("status", "enriched")
@@ -560,7 +566,7 @@ async function runUnsplashPass(
   // since Supabase doesn't support regex filtering
   const { data: imageRows } = await supabase
     .from("sagre")
-    .select("id, food_tags, image_url")
+    .select("id, food_tags, image_url, unsplash_query")
     .not("image_url", "is", null)
     .eq("is_active", true)
     .eq("status", "enriched")
@@ -581,26 +587,32 @@ async function runUnsplashPass(
   const sagre = allRows as SagraForUnsplash[];
   console.log(`Unsplash pass: ${sagre.length} sagre need images (${(nullRows ?? []).length} null, ${lowQualityRows.length} low-quality)`);
 
-  // Step 1: Group sagre by their primary food tag (first tag, or "default")
-  const tagGroups = new Map<string, SagraForUnsplash[]>();
+  // Step 1: Group sagre by Unsplash search query
+  // Priority: LLM-generated unsplash_query > TAG_QUERIES by food tag > default
+  const queryGroups = new Map<string, SagraForUnsplash[]>();
   for (const sagra of sagre) {
-    const firstTag = sagra.food_tags?.[0];
-    const tagKey = (firstTag && TAG_QUERIES[firstTag]) ? firstTag : "__default__";
-    const group = tagGroups.get(tagKey) ?? [];
+    let queryKey: string;
+    if (sagra.unsplash_query) {
+      // Use Gemini-generated query (most specific)
+      queryKey = sagra.unsplash_query.trim().toLowerCase();
+    } else {
+      // Fallback: use TAG_QUERIES mapping
+      const firstTag = sagra.food_tags?.[0];
+      queryKey = (firstTag && TAG_QUERIES[firstTag]) ? TAG_QUERIES[firstTag] : DEFAULT_UNSPLASH_QUERY;
+    }
+    const group = queryGroups.get(queryKey) ?? [];
     group.push(sagra);
-    tagGroups.set(tagKey, group);
+    queryGroups.set(queryKey, group);
   }
 
-  console.log(`Unsplash pass: ${tagGroups.size} unique tag groups to fetch`);
+  console.log(`Unsplash pass: ${queryGroups.size} unique query groups to fetch`);
 
-  // Step 2: For each unique tag, fetch photos once and distribute to all matching sagre
-  // Photo cache: reuse across tags to avoid re-fetching the default query
+  // Step 2: For each unique query, fetch photos once and distribute to all matching sagre
+  // Photo cache: reuse across queries to avoid re-fetching
   const photoCache = new Map<string, UnsplashPhoto[]>();
 
-  for (const [tagKey, groupSagre] of tagGroups) {
-    const query = tagKey === "__default__"
-      ? DEFAULT_UNSPLASH_QUERY
-      : TAG_QUERIES[tagKey] ?? DEFAULT_UNSPLASH_QUERY;
+  for (const [queryKey, groupSagre] of queryGroups) {
+    const query = queryKey;
 
     // Check if we already have photos for this query (e.g. multiple tags mapping to same query)
     let photos = photoCache.get(query);
@@ -665,7 +677,7 @@ async function runUnsplashPass(
       fetch(`${photo.links.download_location}?client_id=${UNSPLASH_ACCESS_KEY}`).catch(() => {});
     }
 
-    console.log(`Assigned ${groupSagre.length} images for tag: ${tagKey} (query: ${query})`);
+    console.log(`Assigned ${groupSagre.length} images for query: ${queryKey}`);
   }
 
   console.log(`Unsplash pass complete: ${assigned} images assigned`);

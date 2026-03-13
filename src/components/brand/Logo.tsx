@@ -5,17 +5,18 @@ interface LogoProps {
 }
 
 /**
- * Nemovia logo using the custom PNG asset.
+ * Nemovia logo using the custom SVG asset (bordeaux color palette).
  * Globe + fork pin icon with "NemoVia APP DELLE SAGRE DEL VENETO" wordmark.
  */
 export function Logo({ className }: LogoProps) {
   return (
     <Image
-      src="/logo-nemo-via.png"
+      src="/logo-nemo-via.svg"
       alt="NemoVia - App delle sagre del Veneto"
-      width={280}
-      height={90}
+      width={520}
+      height={200}
       className={className}
+      unoptimized
       priority
     />
   );

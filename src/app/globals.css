@@ -9,11 +9,11 @@
 
   /*
    * Brand color — change these 3 values to reskin the entire site.
-   * Current: terracotta/warm brown-red matching the NemoVia logo.
+   * Current: vivid bordeaux matching the NemoVia logo.
    */
-  --brand-l: 0.537;
-  --brand-c: 0.157;
-  --brand-h: 25.5;
+  --brand-l: 0.42;
+  --brand-c: 0.19;
+  --brand-h: 358;
 
   /* Accent color components — teal */
   --accent-l: 0.600;

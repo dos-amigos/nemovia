@@ -11,7 +11,6 @@ import {
 import { getFallbackImage, isLowQualityUrl } from "@/lib/fallback-images";
 import { Badge } from "@/components/ui/badge";
 import { FadeIn } from "@/components/animations/FadeIn";
-import { ScrollProgress } from "@/components/animations/ScrollProgress";
 import { ParallaxHero } from "@/components/animations/ParallaxHero";
 import { ScrollReveal } from "@/components/animations/ScrollReveal";
 import { formatDateRange } from "@/lib/utils";
@@ -44,7 +43,6 @@ export default function SagraDetail({ sagra, videoUrl }: SagraDetailProps) {
 
   return (
     <>
-      <ScrollProgress />
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
       <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
         {/* LEFT column: Hero image + Mini map */}

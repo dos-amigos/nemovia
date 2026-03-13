@@ -73,7 +73,7 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
         {sagre.map((sagra) => (
           <div
             key={sagra.id}
-            className="w-[75vw] flex-shrink-0 snap-start snap-always sm:w-[45vw] lg:w-[280px]"
+            className="w-[75vw] flex-shrink-0 snap-start sm:w-[45vw] lg:w-[280px]"
             draggable={false}
             onDragStart={(e) => e.preventDefault()}
             onClickCapture={(e) => {
