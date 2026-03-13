@@ -15,24 +15,90 @@ function shuffleAndTake(arr: HeroVideo[], n: number): HeroVideo[] {
   return copy.slice(0, n);
 }
 
+/**
+ * Build a mixed playlist: food videos + city center videos, interleaved.
+ * Guarantees at least 1 city video if available, never more than 2 food in a row.
+ */
+function buildMixedPlaylist(
+  foodVideos: HeroVideo[],
+  cityVideos: HeroVideo[],
+  total: number,
+): HeroVideo[] {
+  const foods = shuffleAndTake(foodVideos, total);
+  if (cityVideos.length === 0) return foods.slice(0, total);
+
+  // Take enough food videos to fill the remaining slots
+  const foodCount = total - cityVideos.length;
+  const selectedFoods = foods.slice(0, Math.max(foodCount, 0));
+
+  // Interleave: food, food, city, food, city, ... (spread city videos evenly)
+  const result: HeroVideo[] = [];
+  let fIdx = 0;
+  let cIdx = 0;
+  const gap = Math.max(1, Math.floor(total / (cityVideos.length + 1)));
+
+  for (let i = 0; i < total; i++) {
+    // Insert a city video at evenly spaced positions
+    if (cIdx < cityVideos.length && i > 0 && i % gap === 0) {
+      result.push(cityVideos[cIdx++]);
+    } else if (fIdx < selectedFoods.length) {
+      result.push(selectedFoods[fIdx++]);
+    } else if (cIdx < cityVideos.length) {
+      result.push(cityVideos[cIdx++]);
+    }
+  }
+
+  // Fill any remaining slots
+  while (result.length < total && fIdx < foods.length) {
+    result.push(foods[fIdx++]);
+  }
+
+  return result.slice(0, total);
+}
+
 const PLAYLIST_SIZE = 4;
 
-export function HeroSection() {
+interface HeroSectionProps {
+  /** Veneto city center videos fetched server-side from Pexels */
+  cityVideos?: HeroVideo[];
+}
+
+export function HeroSection({ cityVideos = [] }: HeroSectionProps) {
   const [playlist, setPlaylist] = useState<HeroVideo[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Build a random playlist of 4 videos on mount
+  // Build a mixed playlist of food + city videos on mount
   useEffect(() => {
-    setPlaylist(shuffleAndTake(HERO_VIDEOS, PLAYLIST_SIZE));
-  }, []);
+    setPlaylist(buildMixedPlaylist(HERO_VIDEOS, cityVideos, PLAYLIST_SIZE));
+  }, [cityVideos]);
 
   const video = playlist[currentIdx] ?? null;
 
-  // When a video ends, advance to next in playlist (loop back to 0)
-  const handleEnded = useCallback(() => {
+  // When a video ends (or errors), advance to next in playlist (loop back to 0)
+  const advanceVideo = useCallback(() => {
     setCurrentIdx((prev) => (prev + 1) % playlist.length);
   }, [playlist.length]);
+
+  // Preload next video so there's no gap between transitions
+  useEffect(() => {
+    if (playlist.length < 2) return;
+    const nextIdx = (currentIdx + 1) % playlist.length;
+    const nextSrc = playlist[nextIdx]?.src;
+    if (!nextSrc) return;
+
+    // Use a hidden video element to preload — more reliable than <link preload> for video
+    const preloader = document.createElement("video");
+    preloader.src = nextSrc;
+    preloader.preload = "auto";
+    preloader.muted = true;
+    preloader.load();
+
+    return () => {
+      preloader.src = "";
+      preloader.load(); // release resources
+    };
+  }, [currentIdx, playlist]);
 
   // Play video when it changes
   useEffect(() => {
@@ -53,7 +119,8 @@ export function HeroSection() {
             autoPlay
             muted
             playsInline
-            onEnded={handleEnded}
+            onEnded={advanceVideo}
+            onError={advanceVideo}
             className="absolute inset-0 h-full w-full object-cover"
           />
         )}

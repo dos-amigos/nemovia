@@ -22,6 +22,7 @@ export const FEATURE_TAGS = [
   "Artigianato",
   "Bambini",
   "Tradizionale",
+  "Giostre",
 ] as const;
 
 export type FoodTag = typeof FOOD_TAGS[number];
@@ -94,6 +95,7 @@ export function buildEnrichmentPrompt(batch: SagraForEnrichment[]): string {
 1. is_sagra: true se l'evento e una sagra, festa del cibo, o fiera gastronomica. false se e antiquariato, mostra, mercato generico, concerto, evento sportivo, o altro evento non gastronomico. Se l'evento ha una componente gastronomica significativa (cibo, degustazione, prodotti tipici), classificalo come sagra anche se ha altri elementi (musica, artigianato).
 2. food_tags: array con i tag alimentari pertinenti (max 3) scelti SOLO da: ${FOOD_TAGS.join(", ")}
 3. feature_tags: array con i tag caratteristici (max 2) scelti SOLO da: ${FEATURE_TAGS.join(", ")}
+   - "Giostre": usa SOLO per sagre/fiere grandi con luna park, giostre, attrazioni da fiera (es. Antica Fiera del Tresto, Antica Fiera del Soco). NON per sagre piccole o normali.
 4. enhanced_description: descrizione coinvolgente in italiano, max ${MAX_DESC_CHARS} caratteri, che menzioni il cibo principale e l'atmosfera
 
 EVENTI:

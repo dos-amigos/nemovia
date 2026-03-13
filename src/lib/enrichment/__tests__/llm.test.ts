@@ -134,7 +134,7 @@ describe("constants", () => {
   it("FOOD_TAGS has 8 entries", () => {
     expect(FOOD_TAGS).toHaveLength(8);
   });
-  it("FEATURE_TAGS has 5 entries", () => {
-    expect(FEATURE_TAGS).toHaveLength(5);
+  it("FEATURE_TAGS has 6 entries", () => {
+    expect(FEATURE_TAGS).toHaveLength(6);
   });
 });

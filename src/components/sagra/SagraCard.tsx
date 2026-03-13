@@ -51,7 +51,7 @@ export function SagraCard({ sagra, distanceKm }: SagraCardProps) {
         />
 
         {/* Dark gradient overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 via-40% to-transparent" />
 
         {/* Text content at bottom */}
         <div className="absolute bottom-0 left-0 right-0 p-3">

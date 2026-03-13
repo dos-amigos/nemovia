@@ -11,7 +11,7 @@
 - **Framework**: Next.js 15, Tailwind v4, Shadcn/UI
 - **Database**: Supabase (PostGIS + pg_trgm)
 - **Scraping attuale**: Cheerio in Supabase Edge Functions (scrape-sagre, enrich-sagre)
-- **Fonti attive (6)**: assosagre, venetoinfesta, solosagre, sagritaly, eventiesagre, itinerarinelgusto
+- **Fonti attive (9)**: assosagre, venetoinfesta, solosagre, sagritaly, eventiesagre, itinerarinelgusto + custom: sagretoday, trovasagre, sagriamo
 - **Pipeline**: pg_cron — scrape 2x/day, enrich 2x/day, expire 1x/day, batch 200/run
 - **Immagini**: Unsplash API (assegnate in enrich-sagre Pass 3)
 - **Deploy**: Vercel (nemovia.it)
@@ -24,13 +24,16 @@
 
 ## COSA E' GIA' IMPLEMENTATO
 
-### Scraping (Cheerio — 6 fonti)
+### Scraping (Cheerio — 6 fonti DB-driven + 3 custom API-based)
 - [x] assosagre.it — scraper + detail extractor
 - [x] venetoinfesta.it — scraper + detail extractor
 - [x] solosagre.com — scraper + detail extractor
 - [x] sagritaly.it — scraper + detail extractor
 - [x] eventiesagre.it — scraper + detail extractor
 - [x] itinerarinelgusto.it — scraper + detail extractor
+- [x] sagretoday.it — custom scraper (JSON-LD from Next.js) + detail extractor
+- [x] trovasagre.it — custom scraper (JSON API) + description from API
+- [x] sagriamo.it — custom scraper (REST API) + description from API
 - [x] Enrich pipeline (categorizzazione, geocoding, Unsplash images)
 - [x] Detail scraping (menu, orari, descrizioni) con pattern NULL-only update
 - [x] Vinitaly hardcoded blocklist
@@ -137,20 +140,46 @@
 ---
 
 ### Fase 3: Sezione "Sagre Vegetariane" in Homepage
-- [ ] Nuova ScrollRow dedicata alle sagre vegetariane/ortofrutticole
-  - Filtrare sagre con food_tags: carciofo, broccolo, zucca, verdura, asparago, radicchio, fagiolo, ecc.
-  - Titolo: "Sagre dell'orto" o "Sagre vegetariane" (da decidere)
-  - Stessa logica delle altre food rows ma con filtro multiplo su tag verdura/orto
-- [ ] Verificare che i food_tags coprano abbastanza sagre per riempire la row
+- [x] Aggiunto tag "Verdura" a FOOD_TAGS — FATTO (sessione 2026-03-13 sera)
+- [x] TAG_TO_CATEGORY: Zucca→verdura, Verdura→verdura, Radicchio→verdura, Funghi→verdura
+- [ ] La row "Sagre di Verdura" apparirà automaticamente quando ci saranno ≥3 sagre con tag Verdura
+- [ ] Richiede re-enrichment delle sagre esistenti con nuovo prompt (deploy enrich-sagre)
 
-### Fase 4: Miglioramenti Pipeline (futuri, non prioritari)
+### Fase 4: Miglioramenti Pipeline
 - [x] Applicare migration 016 al DB remoto — FATTO (sessione 2026-03-12)
+- [x] Nuovo tag "Pane" per focacce/pinza/pinzin — FATTO (sessione 2026-03-13 sera)
+- [x] Prompt Gemini migliorato per gastronomia veneta — FATTO
+- [x] Video fallback tematico (cerca per tema sagra, non per nome comune) — FATTO
 - [ ] Aumentare copertura immagini (maggior parte sagre ancora senza immagine)
+- [x] Deployare enrich-sagre aggiornata (nuovi tag + prompt veneto) — FATTO 2026-03-13
+- [x] Re-enrichire sagre esistenti — triggerato manualmente via net.http_post (ID 36)
+
+### Fase 5: Nuove Fonti Scraping (ricerca completata 2026-03-13)
+
+**TIER 1 — Alta priorità, scrapabili con Cheerio:**
+1. **cheventi.it** — JSON-LD con Schema.org Event (date, coordinate, prezzi). 50-100+ eventi. MIGLIOR FONTE.
+2. **venetoedintorni.it** — Server-rendered, filtro `tipo=sagre`. 20-50 sagre.
+3. **culturaveneto.it** — DB ufficiale Regione Veneto. 412 voci. Molto autorevole.
+4. **giraitalia.it** — Liste semplici per provincia/mese. 50-200+ (verificare freschezza dati).
+
+**TIER 2 — Implementati 2026-03-13:**
+5. **sagretoday.it** — [x] IMPLEMENTATO. Next.js, scrape JSON-LD da /sagre/veneto/{provincia}/page/{n}/. 318 sagre, 7 province, max 5 pagine/provincia. Detail extractor per JSON-LD Event.
+6. **trovasagre.it** — [x] IMPLEMENTATO. JSON API `backend-agg.php?action=sagre`, filtro regione=Veneto. Campi: nome_sagra, descrizione, date, comune, foto[].
+7. **sagriamo.it** — [x] IMPLEMENTATO. REST API `app.sagriamo.it/api/festival/all?page={n}&perPage=100`, filtro province Veneto (BL/PD/RO/TV/VE/VI/VR). 323 festival totali, ~150 Veneto. Dati ricchi: description, cover/logo images, address, dates.
+
+**Non ancora implementati:**
+8. **prolocovenete.it** — Portale ufficiale Pro Loco Venete. AJAX WordPress (reverse-engineering).
+9. **paesiinfesta.com** — Solo Veneto orientale (VE/TV). 10-30 sagre.
+
+**Pagine Facebook (per futura Graph API):**
+- **Sagre Veneto** (74.897 like) — facebook.com/sagre.veneto/
+- **Sagre in Veneto** (35.000+ follower) — facebook.com/SagrenelVeneto/
+- **UNPLI Veneto Pro Loco** — facebook.com/unpliveneto.proloco
+- **Pro Loco Verona** (9.848 like) — facebook.com/prolocoverona/
+
+### Fase 6: Valutazioni Future
 - [ ] Valutare LLM (GPT-4o-mini) per parsing HTML ambiguo come alternativa a Cheerio
 - [ ] Valutare Apify ($49/mese) come backup se Graph API ha limitazioni eccessive
-  - Vantaggi: scraping FB/IG senza setup, hashtag search Instagram, zero manutenzione
-  - Svantaggi: zona grigia legale, costo mensile, dipendenza esterna
-  - Decisione: NON ora — solo se Tavily free + Graph API non bastano
 
 ---
 
@@ -277,6 +306,37 @@
 
 ## Log Sessioni
 
+### 2026-03-13 (mattina 2) — Icone food redesign + calamita desktop + audit pipeline
+- **Icona carne**: redesign da T-bone (illeggibile) a drumstick (coscia). Colore marrone #7C2D12 (era rosso).
+- **Icona zucca**: separata da verdura. Zucca→icona zucca arancione dedicata (TAG_TO_CATEGORY fix).
+- **Icona verdura**: foglia verde per tutte le verdure tranne zucca (bisi, radicchio, broccolo, funghi).
+- **Icona giostre**: NUOVA. Ruota panoramica per sagre grandi con luna park. Colore amber #D97706.
+- **Effetto CALAMITA desktop**: snapToNearest() al rilascio mouse. ScrollTo smooth alla card più vicina.
+- **feature_tags**: aggiunto a SagraCardData + query + SagraCard per supporto giostre.
+- **enrich-sagre deployata**: nuovi tag Pane/Verdura + prompt veneto. Triggerato run (ID 36).
+- **Sagre verificate**: Tiramisu TV, Giuggiole Arquà, Calici Arquà/Montagnana, Olio Arquà, Tresto PD, Soco VI, Bisi Baone. Tutte esistono. Tresto/Soco/Bisi confermate su eventiesagre.
+- **Audit fonti**: 6 fonti attuali + 8+ nuove identificate. Top 3: sagretoday.it (318 sagre!), trovasagre.it (API), sagriamo.it (API).
+- **Video centri storici**: annotato TODO — alternare video centri storici veneti in homepage.
+- Commit: 89dbabd
+- **MANCA**: re-enrichire sagre già enriched (serve SQL `UPDATE SET status='pending_llm'`), "Giostre" in prompt Gemini, nuove fonti scraping, video centri storici.
+
+### 2026-03-13 (sera) — ScrollRow definitivo, video tematico, nuovi tag, mappa contenuta, logo grande
+- **ScrollRow DEFINITIVO**: separazione TOTALE mobile/desktop via media query `(pointer: fine)`.
+  - Mobile: ZERO JS handlers, puro CSS scroll-snap. Click sempre funzionante.
+  - Desktop: JS drag + frecce, no snap. onClickCapture solo con hasFinePointer.
+  - Rimosso inline `touchAction`, aggiunto `overscroll-x-contain`.
+- **Video fallback tematico**: cerca per TEMA della sagra (primavera→spring, broccoli→vegetable market) PRIMA del nome comune. Mai più video irrilevanti.
+- **Icona "altro"**: redesign da fork+knife (illeggibile) a steaming bowl (ciotola con vapore).
+- **Pin mappa**: icona spostata più in basso (translate 10→12).
+- **Mappa /mappa**: contenuta in max-w-7xl con rounded-xl (stessa larghezza header).
+- **Gemini prompt migliorato**: istruzioni specifiche per gastronomia veneta (Pinza=focaccia NON dolce, Baccalà=Pesce, ecc.)
+- **Nuovi food_tags**: "Pane" (focacce/pinza) e "Verdura" (orto/zucca/asparago).
+- **Logo più grande**: h-14 mobile (era h-10), h-16 desktop (era h-12). Barra h-18/h-20.
+- **Footer dialetto veneto**: "Ghemo usà un fia de foto bèe da Unsplash..."
+- **Ricerca fonti scraping**: trovate 8+ nuove fonti (cheventi.it, culturaveneto.it, trovasagre.it, ecc.)
+- Commit: c220840, e0f628c, 295d2b0, 961a908
+- **TODO**: deploy enrich-sagre con nuovo prompt + re-enrichire sagre per nuovi tag
+
 ### 2026-03-13 — 10 bugfix + Unsplash image relevance con Gemini
 - 10 bug/richieste dell'utente — tutti risolti in una sessione
 - **ScrollRow**: rimosso `snap-always` (causa scatti mobile + click non funzionanti)
@@ -287,7 +347,7 @@
 - **Unsplash**: Gemini genera query specifiche per immagini più pertinenti (migration 017)
 - **Header**: più spazioso, padding aumentato
 - **Logo**: SVG con palette bordeaux (#9B1B30), brand CSS variables aggiornate
-- **DA FARE**: Applicare migration 017 al DB remoto + deploy edge function enrich-sagre
+- Migration 017 applicata al DB remoto + edge function enrich-sagre deployata
 - File modificati: ScrollRow.tsx, food-icons.tsx, map-markers.ts, ScrollRowSection.tsx, page.tsx, SagraDetail.tsx, TopNav.tsx, Logo.tsx, globals.css, logo-nemo-via.svg, enrich-sagre/index.ts
 
 ### 2026-03-12 — Sessione planning + bugfix

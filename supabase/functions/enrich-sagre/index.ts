@@ -123,7 +123,7 @@ function isValidItalyCoord(lat: number, lon: number): boolean {
 // =============================================================================
 
 const FOOD_TAGS = ["Pesce", "Carne", "Vino", "Formaggi", "Funghi", "Radicchio", "Dolci", "Pane", "Verdura", "Prodotti Tipici"] as const;
-const FEATURE_TAGS = ["Gratis", "Musica", "Artigianato", "Bambini", "Tradizionale"] as const;
+const FEATURE_TAGS = ["Gratis", "Musica", "Artigianato", "Bambini", "Tradizionale", "Giostre"] as const;
 type FoodTag = typeof FOOD_TAGS[number];
 type FeatureTag = typeof FEATURE_TAGS[number];
 const BATCH_SIZE = 8;
@@ -173,6 +173,7 @@ function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
    - "Gnocchi" vanno in "Prodotti Tipici".
    - Se il cibo principale non rientra chiaramente in nessuna categoria specifica, usa "Prodotti Tipici".
 3. feature_tags: array con i tag caratteristici (max 2) scelti SOLO da: ${FEATURE_TAGS.join(", ")}
+   - "Giostre": usa SOLO per sagre/fiere grandi con luna park, giostre, attrazioni da fiera (es. Antica Fiera del Tresto, Antica Fiera del Soco). NON per sagre piccole o normali.
 4. enhanced_description: descrizione coinvolgente in italiano, max ${MAX_DESC_CHARS} caratteri, che menzioni il cibo principale e l'atmosfera
 5. unsplash_query: 2-3 parole IN INGLESE per cercare una foto pertinente su Unsplash. Deve descrivere il CIBO SPECIFICO dell'evento, non generico. Esempi: "olive oil food" per Festa dell'Olio, "grilled sausage festival" per Sagra della Salsiccia, "pumpkin soup autumn" per Sagra della Zucca, "wine tasting vineyard" per Festa del Vino, "focaccia bread Italian" per Sagra della Pinza. MAI usare "italian sagra" o termini generici.
 
