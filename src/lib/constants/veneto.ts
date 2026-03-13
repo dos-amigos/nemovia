@@ -40,7 +40,7 @@ export const SAGRA_CARD_FIELDS =
  * Even leaner than card fields -- only what pins and popups need.
  */
 export const MAP_MARKER_FIELDS =
-  "id, slug, title, location_text, province, start_date, end_date, food_tags, location, is_free";
+  "id, slug, title, location_text, province, start_date, end_date, food_tags, location, is_free, image_url";
 
 /**
  * Map from Nominatim province text (lowercase) to 2-letter province code.

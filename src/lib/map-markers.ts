@@ -27,8 +27,8 @@ const MARKER_ICON_PATHS: Record<FoodCategory, string> = {
   /** Pumpkin */
   zucca: `<path d="M12 3c-1 0-2 .5-2 1.5S11 6 12 7c1-1 2-1.5 2-2.5S13 3 12 3z"/><path d="M7 8c-2.5 1-4 4-4 7s2 5 5 5c1.5 0 2.8-.5 4-2 1.2 1.5 2.5 2 4 2 3 0 5-2 5-5s-1.5-6-4-7"/><path d="M12 7v11"/>`,
 
-  /** Leaf */
-  verdura: `<path d="M6 21c1-4 3-7 6-10 3-3 6-5 9-6-1 3-3 6-6 9-3 3-6 5-9 6z"/><path d="M6 21c0-5 2-9 6-13"/>`,
+  /** Leaf (Lucide) */
+  verdura: `<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>`,
 
   /** Dumpling */
   gnocco: `<ellipse cx="12" cy="14" rx="8" ry="5"/><path d="M8 12c0-2 1.8-4 4-4s4 2 4 4"/><path d="M9 14.5h1M11.5 14.5h1M14 14.5h1"/>`,
@@ -39,8 +39,8 @@ const MARKER_ICON_PATHS: Record<FoodCategory, string> = {
   /** Cupcake */
   dolci: `<circle cx="12" cy="5" r="1.5" fill="white"/><path d="M12 6.5v1"/><path d="M6 13c0-4 2.5-5.5 6-5.5s6 1.5 6 5.5"/><path d="M6 13c1 1 2 1.5 3 .5s2-.5 3 .5 2 .5 3-.5 2-.5 3 .5"/><path d="M7 15l1.5 6h7L17 15"/>`,
 
-  /** Fork + knife */
-  altro: `<path d="M7 2v6c0 1.1.9 2 2 2h0"/><path d="M7 10v12"/><path d="M5 2v4"/><path d="M9 2v4"/><path d="M17 2c-1 0-2.5 1-2.5 4s1.5 4 2.5 4v12"/>`,
+  /** Fork + knife crossed (Lucide UtensilsCrossed) */
+  altro: `<path d="m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8"/><path d="M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7"/><path d="m2.1 21.8 6.4-6.3"/><path d="m19 5-7 7"/>`,
 };
 
 /* -------------------------------------------------------------------------- */

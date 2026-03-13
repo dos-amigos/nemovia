@@ -176,6 +176,22 @@
   }
 }
 
+/* Leaflet popup override — modern card style with edge-to-edge image */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  padding: 0 !important;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15) !important;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: 1.4 !important;
+  width: 240px !important;
+}
+.leaflet-popup-tip {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-pulse {
     animation: none;

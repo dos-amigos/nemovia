@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { MapPin, Calendar, ChevronRight } from "lucide-react";
 import { formatDateRange } from "@/lib/utils";
+import { FoodIcon } from "@/lib/constants/food-icons";
+import { getFallbackImage, isLowQualityUrl } from "@/lib/fallback-images";
 import type { MapMarkerData } from "@/lib/queries/types";
 
 interface MapMarkerPopupProps {
@@ -7,40 +10,77 @@ interface MapMarkerPopupProps {
 }
 
 export default function MapMarkerPopup({ sagra }: MapMarkerPopupProps) {
-  const tags = sagra.food_tags?.slice(0, 2) ?? [];
+  const tags = sagra.food_tags?.slice(0, 3) ?? [];
+  const hasGoodImage = sagra.image_url && !isLowQualityUrl(sagra.image_url);
+  const imageSrc = hasGoodImage
+    ? sagra.image_url!
+    : getFallbackImage(sagra.id, sagra.food_tags);
 
   return (
-    <div className="max-w-[200px] space-y-1">
-      <p className="text-sm font-bold leading-tight">{sagra.title}</p>
-      <p className="text-xs text-muted-foreground">
-        {sagra.location_text}
-        {sagra.province && (() => {
-          const loc = sagra.location_text ?? "";
-          if (loc.includes(`(${sagra.province})`) || loc.toLowerCase().includes(sagra.province.toLowerCase())) return null;
-          return ` (${sagra.province})`;
-        })()}
-      </p>
-      <p className="text-xs text-muted-foreground">
-        {formatDateRange(sagra.start_date, sagra.end_date)}
-      </p>
-      {tags.length > 0 && (
-        <div className="flex gap-1">
-          {tags.map((tag) => (
-            <span
-              key={tag}
-              className="inline-block rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
-            >
-              {tag}
-            </span>
-          ))}
+    <div className="w-[240px] overflow-hidden -m-[13px] -mt-[13px]">
+      {/* Hero image */}
+      <div className="relative h-[120px] w-full overflow-hidden">
+        <img
+          src={imageSrc}
+          alt={sagra.title}
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        {/* Food icon badge */}
+        <div className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/70 backdrop-blur-sm">
+          <FoodIcon foodTags={sagra.food_tags} title={sagra.title} className="h-4 w-4" themed />
         </div>
-      )}
-      <Link
-        href={`/sagra/${sagra.slug}`}
-        className="inline-block text-xs font-medium text-primary hover:underline"
-      >
-        Vedi dettagli
-      </Link>
+        {/* Free badge */}
+        {sagra.is_free === true && (
+          <span className="absolute top-2 right-2 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-semibold text-white">
+            Gratis
+          </span>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="space-y-1.5 p-3">
+        <h3 className="text-sm font-bold leading-tight line-clamp-2">{sagra.title}</h3>
+
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <MapPin className="h-3 w-3 shrink-0" />
+          <span className="line-clamp-1">
+            {sagra.location_text}
+            {sagra.province && (() => {
+              const loc = sagra.location_text ?? "";
+              if (loc.includes(`(${sagra.province})`) || loc.toLowerCase().includes(sagra.province.toLowerCase())) return null;
+              return ` (${sagra.province})`;
+            })()}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <Calendar className="h-3 w-3 shrink-0" />
+          <span>{formatDateRange(sagra.start_date, sagra.end_date)}</span>
+        </div>
+
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <Link
+          href={`/sagra/${sagra.slug}`}
+          className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          Vedi dettagli
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
     </div>
   );
 }

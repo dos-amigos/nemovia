@@ -3,6 +3,8 @@
  * Maps FOOD_TAGS values to icon categories with themed colors.
  */
 
+import { Leaf, UtensilsCrossed } from "lucide-react";
+
 /** The icon categories available — NO giostre (non è cibo) */
 export type FoodCategory =
   | "carne"
@@ -227,21 +229,9 @@ const ICONS: Record<
     </svg>
   ),
 
-  /** Leaf — green for all vegetables (except zucca) */
+  /** Leaf — green for all vegetables (except zucca). Uses Lucide Leaf for better visibility at small sizes. */
   verdura: ({ className }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M6 21c1-4 3-7 6-10 3-3 6-5 9-6-1 3-3 6-6 9-3 3-6 5-9 6z" />
-      <path d="M6 21c0-5 2-9 6-13" />
-    </svg>
+    <Leaf className={className} aria-hidden="true" />
   ),
 
   /** Small dumpling / round shape */
@@ -303,26 +293,9 @@ const ICONS: Record<
     </svg>
   ),
 
-  /** Fork + knife crossed — generic sagra icon, bold for 16px readability */
+  /** Fork + knife crossed — generic sagra icon. Uses Lucide UtensilsCrossed for better readability. */
   altro: ({ className }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      {/* Fork — 3 tines + handle */}
-      <path d="M7 2v6c0 1.1.9 2 2 2h0" />
-      <path d="M7 10v12" />
-      <path d="M5 2v4" />
-      <path d="M9 2v4" />
-      {/* Knife — blade + handle */}
-      <path d="M17 2c-1 0-2.5 1-2.5 4s1.5 4 2.5 4v12" />
-    </svg>
+    <UtensilsCrossed className={className} aria-hidden="true" />
   ),
 };
 

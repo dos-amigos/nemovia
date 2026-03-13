@@ -13,7 +13,7 @@ interface ScrollRowProps {
 export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const drag = useRef({ active: false, startX: 0, scrollLeft: 0, totalDelta: 0 });
+  const drag = useRef({ active: false, startX: 0, scrollLeft: 0, totalDelta: 0, pointerId: 0, captured: false });
 
   // Detect fine pointer (mouse/trackpad) — ONLY enable JS drag on desktop.
   // Mobile: ZERO JS handlers. Pure CSS scroll-snap + native touch.
@@ -59,12 +59,13 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
   }, []);
 
   // Desktop-only pointer drag (mouse only)
+  // CRITICAL: setPointerCapture is DELAYED until 5px drag movement.
+  // Calling it on pointerdown steals clicks from <Link> children.
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.pointerType !== "mouse") return;
     const el = scrollRef.current;
     if (!el) return;
-    el.setPointerCapture(e.pointerId);
-    drag.current = { active: true, startX: e.clientX, scrollLeft: el.scrollLeft, totalDelta: 0 };
+    drag.current = { active: true, startX: e.clientX, scrollLeft: el.scrollLeft, totalDelta: 0, pointerId: e.pointerId, captured: false };
   }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
@@ -74,6 +75,11 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
     const dx = e.clientX - drag.current.startX;
     drag.current.totalDelta = Math.abs(dx);
     if (drag.current.totalDelta > 5) {
+      // Capture ONLY after drag threshold — before this, clicks reach Link children
+      if (!drag.current.captured) {
+        el.setPointerCapture(drag.current.pointerId);
+        drag.current.captured = true;
+      }
       setIsDragging(true);
       el.scrollLeft = drag.current.scrollLeft - dx;
     }
@@ -91,6 +97,7 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
     setTimeout(() => {
       setIsDragging(false);
       drag.current.totalDelta = 0;
+      drag.current.captured = false;
     }, 100);
   }, [snapToNearest]);
 

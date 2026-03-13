@@ -56,6 +56,7 @@ export type MapMarkerData = Pick<
   | "food_tags"
   | "location"
   | "is_free"
+  | "image_url"
 >;
 
 /** Province name with its active sagra count. */
