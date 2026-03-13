@@ -117,7 +117,8 @@ export function getCategoryMarkerIcon(category: FoodCategory): L.DivIcon {
  */
 export function getMarkerIcon(
   foodTags: string[] | null | undefined,
+  title?: string | null,
 ): L.DivIcon {
-  const category = getPrimaryCategory(foodTags);
+  const category = getPrimaryCategory(foodTags, undefined, title);
   return getCategoryMarkerIcon(category);
 }

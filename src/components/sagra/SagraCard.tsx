@@ -95,7 +95,7 @@ export function SagraCard({ sagra, distanceKm }: SagraCardProps) {
 
         {/* Food type icon positioned bottom-right */}
         <div className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/60 backdrop-blur-sm">
-          <FoodIcon foodTags={sagra.food_tags} featureTags={sagra.feature_tags} className="h-4 w-4" themed />
+          <FoodIcon foodTags={sagra.food_tags} featureTags={sagra.feature_tags} title={sagra.title} className="h-4 w-4" themed />
         </div>
       </m.div>
     </Link>

@@ -76,30 +76,63 @@ const CATEGORY_PRIORITY: FoodCategory[] = [
 ];
 
 /**
+ * Title keywords → category fallback.
+ * Used when food_tags don't give a specific category (old enrichment data).
+ * Checked case-insensitive against the sagra title.
+ */
+const TITLE_TO_CATEGORY: [RegExp, FoodCategory][] = [
+  // Verdura
+  [/broccol|radicch|asparag|carciof|fagiol|bisi|pisell|funghi|verdur|orto/i, "verdura"],
+  // Zucca (before verdura so it takes priority)
+  [/zucca|zucche/i, "zucca"],
+  // Carne
+  [/carne|salsiccia|maiale|pollo|oca|anatra|cinghial|bistecca|grigliata|arrosto/i, "carne"],
+  // Pesce
+  [/pesce|baccalà|stoccafisso|sarde|anguilla|mare|frutti di mare/i, "pesce"],
+  // Vino
+  [/vino|vendemmia|calici|prosecco|cantina/i, "vino"],
+  // Dolci
+  [/dolci|tiramisu|tiramisù|frittell|galani|torta|gelato/i, "dolci"],
+  // Gnocco
+  [/gnocc/i, "gnocco"],
+];
+
+/**
  * Determine the primary food category from an array of food tags.
- * Picks the highest-priority specific category, falling back to "altro".
+ * Picks the highest-priority specific category.
+ * Falls back to title-based detection when tags are generic.
+ * Last resort: "altro" (fork+knife).
  */
 export function getPrimaryCategory(
   foodTags: string[] | null | undefined,
   featureTags?: string[] | null | undefined,
+  title?: string | null,
 ): FoodCategory {
-  if (!foodTags || foodTags.length === 0) {
-    return "altro";
+  // Step 1: Try food_tags
+  if (foodTags && foodTags.length > 0) {
+    let best: FoodCategory = "altro";
+    let bestPriority = CATEGORY_PRIORITY.indexOf("altro");
+
+    for (const tag of foodTags) {
+      const cat = TAG_TO_CATEGORY[tag] ?? "altro";
+      const pri = CATEGORY_PRIORITY.indexOf(cat);
+      if (pri < bestPriority) {
+        best = cat;
+        bestPriority = pri;
+      }
+    }
+
+    if (best !== "altro") return best;
   }
 
-  let best: FoodCategory = "altro";
-  let bestPriority = CATEGORY_PRIORITY.indexOf("altro");
-
-  for (const tag of foodTags) {
-    const cat = TAG_TO_CATEGORY[tag] ?? "altro";
-    const pri = CATEGORY_PRIORITY.indexOf(cat);
-    if (pri < bestPriority) {
-      best = cat;
-      bestPriority = pri;
+  // Step 2: Fallback — detect category from sagra title
+  if (title) {
+    for (const [pattern, category] of TITLE_TO_CATEGORY) {
+      if (pattern.test(title)) return category;
     }
   }
 
-  return best;
+  return "altro";
 }
 
 /**
@@ -296,6 +329,8 @@ const ICONS: Record<
 interface FoodIconProps {
   foodTags: string[] | null;
   featureTags?: string[] | null;
+  /** Sagra title — used as fallback to detect food category from name */
+  title?: string | null;
   className?: string;
   style?: React.CSSProperties;
   /** When true, automatically applies the themed category color */
@@ -304,11 +339,11 @@ interface FoodIconProps {
 
 /**
  * Renders the appropriate food category SVG icon based on food tags.
- * Falls back to "altro" (fork+knife) when no specific match is found.
+ * Falls back to title-based detection, then "altro" (fork+knife).
  * Pass themed=true to auto-apply the category color.
  */
-export function FoodIcon({ foodTags, featureTags, className, style, themed }: FoodIconProps) {
-  const category = getPrimaryCategory(foodTags, featureTags);
+export function FoodIcon({ foodTags, featureTags, title, className, style, themed }: FoodIconProps) {
+  const category = getPrimaryCategory(foodTags, featureTags, title);
   const IconFn = ICONS[category];
   const mergedStyle = themed
     ? { color: CATEGORY_COLORS[category], ...style }
