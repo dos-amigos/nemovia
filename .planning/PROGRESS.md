@@ -306,6 +306,39 @@
 
 ## Log Sessioni
 
+### 2026-03-13 (sera 3) — Fix icone DEFINITIVO + scrapers separati + timeout fix
+- **Giostre RIMOSSO completamente** da FoodCategory, ICONS, CATEGORY_COLORS, CATEGORY_PRIORITY, map-markers. MAI PIÙ icona giostre sulle card (sembrava lente d'ingrandimento a 16px).
+- **Title-based fallback per icone**: se food_tags sono generici, il titolo della sagra determina l'icona (broccol→foglia, zucca→arancione, salsiccia→drumstick, baccalà→pesce, calici→vino, gnocchi→gnocco). FoodIcon riceve `title` prop.
+- **"Altro" = forchetta+coltello**: per sagre il cui cibo non è determinabile.
+- **20+ mapping extra in TAG_TO_CATEGORY**: Broccolo, Asparago, Bisi, Carciofi, Baccalà, Salsiccia, Tiramisù, etc.
+- **Video hero-2.mp4 rimosso**: era cibo asiatico con bacchette (Pexels 2941127).
+- **Prompt Zucca fixato**: "Zucca ha tag dedicato" (era erroneamente "va in Verdura").
+- **Province count deduplicato**: getProvinceCounts ora deduplica per titolo (stesso filtro di /cerca).
+- **Scrapers separati in 3 edge function**: timeout fix. scrape-sagretoday (1 provincia per invocazione, round-robin 30min), scrape-trovasagre, scrape-sagriamo. Ciascuna self-contained.
+- **Migration 018**: pg_cron jobs per i 3 nuovi scrapers.
+- **30 test food-icons** (10 nuovi per title fallback), tutti passano.
+- Commits: ba5df5f, a4643a8, 7e8cbe7, 605421b, acb86cd, 461ecf0, 9c04cea, 7df8a79
+- **DA FARE utente**:
+  1. `npx supabase functions deploy scrape-sagre` (pulita, solo 6 fonti)
+  2. `npx supabase functions deploy scrape-sagretoday`
+  3. `npx supabase functions deploy scrape-trovasagre`
+  4. `npx supabase functions deploy scrape-sagriamo`
+  5. Applicare migration 018 in SQL Editor (cron jobs)
+  6. `npx supabase functions deploy enrich-sagre` (fix Zucca + Giostre tag)
+  7. Re-enrichire: `UPDATE sagre SET status='pending_llm' WHERE status='enriched' AND is_active=true;`
+
+### 2026-03-13 (sera 2) — 3 nuovi scrapers + video centri storici + Giostre + card overlay
+- **3 nuovi scrapers implementati** (fonti 6→9):
+  - sagretoday.it: JSON-LD da /sagre/veneto/{provincia}/page/{n}/, 318 sagre, 7 province
+  - trovasagre.it: JSON API `backend-agg.php?action=sagre`, filtro regione=Veneto
+  - sagriamo.it: REST API paginata `app.sagriamo.it/api/festival/all`, ~150 sagre Veneto
+- **Video centri storici veneti**: rotazione in hero homepage (Padova, Verona, Venezia, Vicenza, Treviso, Bassano, Chioggia, Burano, Asolo). Interleave con video food. Preload prossimo video per zero flash bianco.
+- **Giostre in FEATURE_TAGS**: aggiunto a enrich-sagre + llm.ts con guida nel prompt Gemini
+- **Card overlay più scuro**: from-black/85 via-black/30 via-40% (era from-black/70 via-black/25)
+- **Preload video**: hidden video element precarica il prossimo video durante la riproduzione
+- Commit: ba5df5f
+- **DA FARE dall'utente**: `supabase functions deploy enrich-sagre` + `supabase functions deploy scrape-sagre`
+
 ### 2026-03-13 (mattina 2) — Icone food redesign + calamita desktop + audit pipeline
 - **Icona carne**: redesign da T-bone (illeggibile) a drumstick (coscia). Colore marrone #7C2D12 (era rosso).
 - **Icona zucca**: separata da verdura. Zucca→icona zucca arancione dedicata (TAG_TO_CATEGORY fix).
