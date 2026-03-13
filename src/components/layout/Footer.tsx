@@ -17,9 +17,9 @@ export function Footer() {
           Aplicaxion realixà con ❤️ in Veneto
         </p>
 
-        {/* Media attribution */}
+        {/* Media attribution — in dialetto veneto */}
         <p className="text-xs text-muted-foreground/60">
-          Photos by{" "}
+          Ghemo usà un fia de foto bèe da{" "}
           <a
             href="https://unsplash.com/?utm_source=nemovia&utm_medium=referral"
             target="_blank"
@@ -28,8 +28,7 @@ export function Footer() {
           >
             Unsplash
           </a>
-          {" "}&middot;{" "}
-          Videos by{" "}
+          {" "}e ciavà dei video emossionanti da{" "}
           <a
             href="https://www.pexels.com"
             target="_blank"
@@ -38,6 +37,7 @@ export function Footer() {
           >
             Pexels
           </a>
+          .
         </p>
 
         {/* Copyright */}
