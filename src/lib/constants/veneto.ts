@@ -33,7 +33,7 @@ export type QuickFilterChip = (typeof QUICK_FILTER_CHIPS)[number];
  * Keeps network payloads lean -- only fields the SagraCard component needs.
  */
 export const SAGRA_CARD_FIELDS =
-  "id, title, slug, location_text, province, start_date, end_date, enhanced_description, food_tags, image_url, image_credit, is_free, price_info";
+  "id, title, slug, location_text, province, start_date, end_date, enhanced_description, food_tags, feature_tags, image_url, image_credit, is_free, price_info";
 
 /**
  * Column selection string for map marker queries.

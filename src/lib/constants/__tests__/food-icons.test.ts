@@ -10,7 +10,7 @@ describe("getPrimaryCategory", () => {
     expect(getPrimaryCategory(["Pesce"])).toBe("pesce");
   });
 
-  it("maps Funghi to verdura (earthy/leafy category)", () => {
+  it("maps Funghi to verdura", () => {
     expect(getPrimaryCategory(["Funghi"])).toBe("verdura");
   });
 
@@ -18,12 +18,12 @@ describe("getPrimaryCategory", () => {
     expect(getPrimaryCategory(["Radicchio"])).toBe("verdura");
   });
 
-  it("maps Vino to altro (no specific icon)", () => {
-    expect(getPrimaryCategory(["Vino"])).toBe("altro");
+  it("maps Vino to vino", () => {
+    expect(getPrimaryCategory(["Vino"])).toBe("vino");
   });
 
-  it("maps Dolci to altro", () => {
-    expect(getPrimaryCategory(["Dolci"])).toBe("altro");
+  it("maps Dolci to dolci", () => {
+    expect(getPrimaryCategory(["Dolci"])).toBe("dolci");
   });
 
   it("maps Formaggi to altro", () => {
@@ -34,7 +34,7 @@ describe("getPrimaryCategory", () => {
     expect(getPrimaryCategory(["Prodotti Tipici"])).toBe("altro");
   });
 
-  it("maps Zucca to zucca", () => {
+  it("maps Zucca to zucca (dedicated pumpkin icon)", () => {
     expect(getPrimaryCategory(["Zucca"])).toBe("zucca");
   });
 
@@ -55,11 +55,22 @@ describe("getPrimaryCategory", () => {
   });
 
   it("picks highest-priority category when multiple specifics present", () => {
-    // carne has higher priority than pesce in the priority order
     expect(getPrimaryCategory(["Pesce", "Carne"])).toBe("carne");
   });
 
   it("returns altro for undefined input", () => {
     expect(getPrimaryCategory(undefined as unknown as null)).toBe("altro");
+  });
+
+  it("returns giostre when feature_tags has Giostre and food is generic", () => {
+    expect(getPrimaryCategory(["Prodotti Tipici"], ["Giostre"])).toBe("giostre");
+  });
+
+  it("returns giostre when no food tags but has Giostre feature", () => {
+    expect(getPrimaryCategory(null, ["Giostre"])).toBe("giostre");
+  });
+
+  it("returns specific food over giostre when food is not generic", () => {
+    expect(getPrimaryCategory(["Carne"], ["Giostre"])).toBe("carne");
   });
 });

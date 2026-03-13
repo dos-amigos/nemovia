@@ -33,6 +33,31 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
     });
   };
 
+  /** Magnetic snap: after drag release, smoothly align nearest card to left edge */
+  const snapToNearest = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const scrollPadding = parseInt(getComputedStyle(el).scrollPaddingLeft) || 0;
+    const scrollPos = el.scrollLeft;
+    const children = el.children;
+
+    let bestSnapPoint = scrollPos;
+    let bestDist = Infinity;
+
+    // Find the card whose snap point is closest to current scroll position
+    for (let i = 0; i < children.length - 1; i++) { // -1 to skip right spacer
+      const card = children[i] as HTMLElement;
+      const snapPoint = card.offsetLeft - scrollPadding;
+      const dist = Math.abs(snapPoint - scrollPos);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestSnapPoint = snapPoint;
+      }
+    }
+
+    el.scrollTo({ left: bestSnapPoint, behavior: "smooth" });
+  }, []);
+
   // Desktop-only pointer drag (mouse only)
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.pointerType !== "mouse") return;
@@ -57,15 +82,21 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
   const onPointerUp = useCallback(() => {
     if (!drag.current.active) return;
     drag.current.active = false;
+
+    // Magnetic snap to nearest card on the left
+    if (drag.current.totalDelta > 5) {
+      snapToNearest();
+    }
+
     setTimeout(() => {
       setIsDragging(false);
       drag.current.totalDelta = 0;
     }, 100);
-  }, []);
+  }, [snapToNearest]);
 
   return (
     <div className="group relative">
-      {/* Mobile: pure CSS snap-x + native touch. Desktop: JS drag + arrows, no snap. */}
+      {/* Mobile: pure CSS snap-x + native touch. Desktop: JS drag + magnetic snap + arrows. */}
       <div
         ref={scrollRef}
         role="region"

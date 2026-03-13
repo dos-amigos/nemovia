@@ -18,8 +18,8 @@ import {
 /* -------------------------------------------------------------------------- */
 
 const MARKER_ICON_PATHS: Record<FoodCategory, string> = {
-  /** T-bone steak */
-  carne: `<path d="M6 4c-2 1-3 3.5-2.5 6s2.5 4.5 5 5c2 .4 3.5-.2 4.5-1l5-5c1-1 1.5-2.5.5-3.5S16 4.5 15 5.5l-5 5"/><circle cx="8" cy="10" r="2"/>`,
+  /** Drumstick */
+  carne: `<circle cx="15" cy="8" r="5.5"/><path d="M11 12L5 18"/><path d="M5 18l-1.5 1.5M5 18l1.5 1.5"/>`,
 
   /** Fish */
   pesce: `<path d="M2 12c3-4 7-6 12-6 1.5 0 3 .5 4.5 1L22 12l-3.5 5c-1.5.5-3 1-4.5 1-5 0-9-2-12-6z"/><circle cx="16" cy="11" r="1" fill="white"/>`,
@@ -38,6 +38,9 @@ const MARKER_ICON_PATHS: Record<FoodCategory, string> = {
 
   /** Cupcake */
   dolci: `<circle cx="12" cy="5" r="1.5" fill="white"/><path d="M12 6.5v1"/><path d="M6 13c0-4 2.5-5.5 6-5.5s6 1.5 6 5.5"/><path d="M6 13c1 1 2 1.5 3 .5s2-.5 3 .5 2 .5 3-.5 2-.5 3 .5"/><path d="M7 15l1.5 6h7L17 15"/>`,
+
+  /** Ferris wheel */
+  giostre: `<circle cx="12" cy="10" r="7"/><circle cx="12" cy="10" r="1.5" fill="white"/><path d="M12 3v3M12 14v3M5 10h3M17 10h3"/><path d="M7 21l5-4 5 4"/>`,
 
   /** Steaming bowl */
   altro: `<path d="M3 14h18"/><path d="M4 14c0 4 3.6 7 8 7s8-3 8-7"/><path d="M8 10c0-1.5.8-2.5 0-4"/><path d="M12 9c0-1.5.8-2.5 0-4"/><path d="M16 10c0-1.5.8-2.5 0-4"/>`,

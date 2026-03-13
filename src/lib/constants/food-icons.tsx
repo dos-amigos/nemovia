@@ -1,9 +1,9 @@
 /**
  * Food type icon mapping for sagra cards and scroll row titles.
- * Maps FOOD_TAGS values to 8 minimal SVG icon categories.
+ * Maps FOOD_TAGS values to icon categories with themed colors.
  */
 
-/** The 8 icon categories available */
+/** The icon categories available */
 export type FoodCategory =
   | "carne"
   | "pesce"
@@ -12,6 +12,7 @@ export type FoodCategory =
   | "gnocco"
   | "vino"
   | "dolci"
+  | "giostre"
   | "altro";
 
 /**
@@ -21,7 +22,7 @@ export type FoodCategory =
 const TAG_TO_CATEGORY: Record<string, FoodCategory> = {
   Carne: "carne",
   Pesce: "pesce",
-  Zucca: "verdura",
+  Zucca: "zucca",
   Gnocchi: "gnocco",
   Funghi: "verdura",
   Radicchio: "verdura",
@@ -42,17 +43,23 @@ const CATEGORY_PRIORITY: FoodCategory[] = [
   "verdura",
   "vino",
   "dolci",
+  "giostre",
   "altro",
 ];
 
 /**
  * Determine the primary food category from an array of food tags.
  * Picks the highest-priority specific category, falling back to "altro".
+ * If featureTags includes "Giostre" and food category is generic, shows ferris wheel.
  */
 export function getPrimaryCategory(
   foodTags: string[] | null | undefined,
+  featureTags?: string[] | null | undefined,
 ): FoodCategory {
-  if (!foodTags || foodTags.length === 0) return "altro";
+  if (!foodTags || foodTags.length === 0) {
+    if (featureTags?.includes("Giostre")) return "giostre";
+    return "altro";
+  }
 
   let best: FoodCategory = "altro";
   let bestPriority = CATEGORY_PRIORITY.indexOf("altro");
@@ -66,35 +73,42 @@ export function getPrimaryCategory(
     }
   }
 
+  // If only generic food, check for giostre feature
+  if (best === "altro" && featureTags?.includes("Giostre")) return "giostre";
+
   return best;
 }
 
 /**
- * Themed color per food category — used for scroll row titles, map markers, etc.
- * Colors chosen for intuitive food association:
+ * Themed color per food category:
+ * - Carne: warm brown (bistecca, arrosto)
  * - Pesce: sky blue (mare, oceano)
- * - Carne: red (griglia, carne rossa)
- * - Vino: bordeaux (vino rosso, eleganza)
+ * - Vino: bordeaux (vino rosso)
  * - Zucca: orange (zucca, autunno)
- * - Verdura: green (natura, orto)
+ * - Verdura: green (foglia, orto)
  * - Gnocco: golden/wheat (pasta, grano)
- * - Dolci: magenta/pink (dolcezza, zucchero)
+ * - Dolci: magenta/pink (dolcezza)
+ * - Giostre: amber (luna park, festa)
  * - Altro: coral (brand primary)
  */
 export const CATEGORY_COLORS: Record<FoodCategory, string> = {
+  carne: "#7C2D12",
   pesce: "#0EA5E9",
-  carne: "#DC2626",
   vino: "#881337",
   zucca: "#EA580C",
   verdura: "#16A34A",
   gnocco: "#CA8A04",
   dolci: "#DB2777",
+  giostre: "#D97706",
   altro: "#9B1B30",
 };
 
 /** Get themed color for a set of food tags */
-export function getCategoryColor(foodTags: string[] | null | undefined): string {
-  return CATEGORY_COLORS[getPrimaryCategory(foodTags)];
+export function getCategoryColor(
+  foodTags: string[] | null | undefined,
+  featureTags?: string[] | null | undefined,
+): string {
+  return CATEGORY_COLORS[getPrimaryCategory(foodTags, featureTags)];
 }
 
 /** SVG icon render functions keyed by category */
@@ -102,7 +116,7 @@ const ICONS: Record<
   FoodCategory,
   (props: { className?: string }) => React.ReactElement
 > = {
-  /** T-bone steak outline */
+  /** Drumstick — recognizable meat icon at any size */
   carne: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
@@ -114,8 +128,12 @@ const ICONS: Record<
       className={className}
       aria-hidden="true"
     >
-      <path d="M6 4c-2 1-3 3.5-2.5 6s2.5 4.5 5 5c2 .4 3.5-.2 4.5-1l5-5c1-1 1.5-2.5.5-3.5S16 4.5 15 5.5l-5 5" />
-      <circle cx="8" cy="10" r="2" />
+      {/* Meat body */}
+      <circle cx="15" cy="8" r="5.5" />
+      {/* Bone shaft */}
+      <path d="M11 12L5 18" />
+      {/* Bone end */}
+      <path d="M5 18l-1.5 1.5M5 18l1.5 1.5" />
     </svg>
   ),
 
@@ -137,7 +155,7 @@ const ICONS: Record<
     </svg>
   ),
 
-  /** Pumpkin outline */
+  /** Pumpkin — dedicated orange icon */
   zucca: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
@@ -155,7 +173,7 @@ const ICONS: Record<
     </svg>
   ),
 
-  /** Single leaf shape */
+  /** Leaf — green for all vegetables (except zucca) */
   verdura: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
@@ -231,6 +249,29 @@ const ICONS: Record<
     </svg>
   ),
 
+  /** Ferris wheel — luna park / sagre grandi con giostre */
+  giostre: ({ className }) => (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      {/* Wheel */}
+      <circle cx="12" cy="10" r="7" />
+      {/* Hub */}
+      <circle cx="12" cy="10" r="1.5" fill="currentColor" />
+      {/* Spokes */}
+      <path d="M12 3v3M12 14v3M5 10h3M17 10h3" />
+      {/* Support stand */}
+      <path d="M7 21l5-4 5 4" />
+    </svg>
+  ),
+
   /** Steaming bowl — generic food icon, clearly readable at 16px */
   altro: ({ className }) => (
     <svg
@@ -256,6 +297,7 @@ const ICONS: Record<
 
 interface FoodIconProps {
   foodTags: string[] | null;
+  featureTags?: string[] | null;
   className?: string;
   style?: React.CSSProperties;
   /** When true, automatically applies the themed category color */
@@ -264,11 +306,12 @@ interface FoodIconProps {
 
 /**
  * Renders the appropriate food category SVG icon based on food tags.
- * Falls back to "altro" (fork and knife) when no specific match is found.
+ * Falls back to "altro" (steaming bowl) when no specific match is found.
+ * If featureTags includes "Giostre" and food is generic, shows ferris wheel.
  * Pass themed=true to auto-apply the category color.
  */
-export function FoodIcon({ foodTags, className, style, themed }: FoodIconProps) {
-  const category = getPrimaryCategory(foodTags);
+export function FoodIcon({ foodTags, featureTags, className, style, themed }: FoodIconProps) {
+  const category = getPrimaryCategory(foodTags, featureTags);
   const IconFn = ICONS[category];
   const mergedStyle = themed
     ? { color: CATEGORY_COLORS[category], ...style }

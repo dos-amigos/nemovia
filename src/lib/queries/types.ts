@@ -31,6 +31,7 @@ export type SagraCardData = Pick<
   | "end_date"
   | "enhanced_description"
   | "food_tags"
+  | "feature_tags"
   | "image_url"
   | "image_credit"
   | "is_free"
