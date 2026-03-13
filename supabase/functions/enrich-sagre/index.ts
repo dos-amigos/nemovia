@@ -175,7 +175,13 @@ function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
 3. feature_tags: array con i tag caratteristici (max 2) scelti SOLO da: ${FEATURE_TAGS.join(", ")}
    - "Giostre": usa SOLO per sagre/fiere grandi con luna park, giostre, attrazioni da fiera (es. Antica Fiera del Tresto, Antica Fiera del Soco). NON per sagre piccole o normali.
 4. enhanced_description: descrizione coinvolgente in italiano, max ${MAX_DESC_CHARS} caratteri, che menzioni il cibo principale e l'atmosfera
-5. unsplash_query: 2-3 parole IN INGLESE per cercare una foto pertinente su Unsplash. Deve descrivere il CIBO SPECIFICO dell'evento, non generico. Esempi: "olive oil food" per Festa dell'Olio, "grilled sausage festival" per Sagra della Salsiccia, "pumpkin soup autumn" per Sagra della Zucca, "wine tasting vineyard" per Festa del Vino, "focaccia bread Italian" per Sagra della Pinza. MAI usare "italian sagra" o termini generici.
+5. unsplash_query: 2-3 parole IN INGLESE per cercare una BELLA foto su Unsplash. Deve evocare il CIBO/TEMA dell'evento in modo appetitoso e fotogenico. REGOLE IMPORTANTI:
+   - VINO: usa "wine glass pouring", "red wine chalice vineyard", "wine tasting sunset". MAI bottiglie, MAI etichette, MAI cantine industriali.
+   - OLIO: usa "olive oil pouring golden", "fresh olives harvest", "Italian olive grove". MAI macchinari, MAI depositi, MAI fabbriche.
+   - CARNE: usa "grilled meat outdoor", "barbecue Italian festival". MAI carne cruda, MAI macelleria.
+   - PINZA/FOCACCIA: usa "focaccia bread Italian rustic". MAI torte, MAI dolci.
+   - GENERALE: cerca foto con luce calda, ambientazione rustica/all'aperto, piatti serviti. MAI foto industriali, MAI stock generici, MAI "italian sagra".
+   Esempi: "pumpkin soup autumn" per Sagra della Zucca, "grilled sausage festival" per Sagra della Salsiccia.
 
 EVENTI:
 ${JSON.stringify(batch)}
