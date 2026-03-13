@@ -249,26 +249,33 @@ const ICONS: Record<
     </svg>
   ),
 
-  /** Ferris wheel — luna park / sagre grandi con giostre */
+  /** Ferris wheel — luna park / sagre grandi con giostre. Thick strokes + gondolas for readability at 16px */
   giostre: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.5}
+      strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      {/* Wheel */}
+      {/* Outer wheel rim */}
       <circle cx="12" cy="10" r="7" />
       {/* Hub */}
-      <circle cx="12" cy="10" r="1.5" fill="currentColor" />
-      {/* Spokes */}
-      <path d="M12 3v3M12 14v3M5 10h3M17 10h3" />
-      {/* Support stand */}
-      <path d="M7 21l5-4 5 4" />
+      <circle cx="12" cy="10" r="1" fill="currentColor" />
+      {/* 6 spokes radiating from center */}
+      <path d="M12 3v2.5M12 14.5V17M5 10h2.5M16.5 10H19" />
+      <path d="M7.05 5.05l1.77 1.77M15.18 13.18l1.77 1.77" />
+      <path d="M16.95 5.05l-1.77 1.77M8.82 13.18l-1.77 1.77" />
+      {/* 4 gondola seats hanging from wheel */}
+      <rect x="11" y="2" width="2" height="2.5" rx="0.5" fill="currentColor" />
+      <rect x="11" y="15.5" width="2" height="2.5" rx="0.5" fill="currentColor" />
+      <rect x="3.5" y="9" width="2.5" height="2" rx="0.5" fill="currentColor" />
+      <rect x="18" y="9" width="2.5" height="2" rx="0.5" fill="currentColor" />
+      {/* Support legs (A-frame) */}
+      <path d="M8 21l4-3 4 3" strokeWidth={2.5} />
     </svg>
   ),
 
