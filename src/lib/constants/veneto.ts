@@ -56,6 +56,22 @@ export const PROVINCE_CODE_MAP: Record<string, string> = {
   "vicenza": "VI", "provincia di vicenza": "VI",
 };
 
+/**
+ * Return province suffix like " (VR)" to append after location_text.
+ * Returns empty string if province is invalid or already present in location.
+ */
+export function provinceSuffix(province: string | null | undefined, locationText: string | null | undefined): string {
+  if (!province) return "";
+  const code =
+    PROVINCE_CODE_MAP[province.toLowerCase()] ??
+    (VENETO_PROVINCES.some((p) => p.code === province.toUpperCase()) ? province.toUpperCase() : "");
+  if (!code) return "";
+  const loc = locationText ?? "";
+  if (loc.includes(`(${code})`) || loc.includes(`(${province})`)) return "";
+  if (loc.toLowerCase().includes(province.toLowerCase())) return "";
+  return ` (${code})`;
+}
+
 /** Approximate geographic center of the Veneto region. */
 export const VENETO_CENTER: [number, number] = [45.44, 12.32];
 

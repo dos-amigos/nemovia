@@ -8,14 +8,8 @@ import { FadeImage } from "@/components/animations/FadeImage";
 import { FoodIcon } from "@/lib/constants/food-icons";
 import { getFallbackImage, isLowQualityUrl } from "@/lib/fallback-images";
 import { formatDateRange } from "@/lib/utils";
-import { VENETO_PROVINCES } from "@/lib/constants/veneto";
+import { provinceSuffix } from "@/lib/constants/veneto";
 import type { SagraCardData } from "@/lib/queries/types";
-
-/** Map province value (code or full name) -> 2-letter code */
-const PROVINCE_CODES: Record<string, string> = Object.fromEntries([
-  ...VENETO_PROVINCES.map((p) => [p.name, p.code]),
-  ...VENETO_PROVINCES.map((p) => [p.code, p.code]),
-]);
 
 interface SagraCardProps {
   sagra: SagraCardData;
@@ -63,14 +57,7 @@ export function SagraCard({ sagra, distanceKm }: SagraCardProps) {
             <MapPin className="h-3.5 w-3.5 shrink-0" />
             <span className="line-clamp-1">
               {sagra.location_text}
-              {sagra.province && (() => {
-                const loc = sagra.location_text ?? "";
-                const code = PROVINCE_CODES[sagra.province] ?? "";
-                // Skip if location already has code like "(RO)" or "(VR)" or full name
-                if (loc.includes(`(${code})`) || loc.includes(`(${sagra.province})`)) return null;
-                if (loc.toLowerCase().includes(sagra.province.toLowerCase())) return null;
-                return ` (${code})`;
-              })()}
+              {provinceSuffix(sagra.province, sagra.location_text)}
             </span>
           </div>
           <div className="flex items-center gap-1 text-white/70 text-xs mt-0.5">

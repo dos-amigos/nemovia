@@ -3,6 +3,7 @@ import { MapPin, Calendar, ChevronRight } from "lucide-react";
 import { formatDateRange } from "@/lib/utils";
 import { FoodIcon } from "@/lib/constants/food-icons";
 import { getFallbackImage, isLowQualityUrl } from "@/lib/fallback-images";
+import { provinceSuffix } from "@/lib/constants/veneto";
 import type { MapMarkerData } from "@/lib/queries/types";
 
 interface MapMarkerPopupProps {
@@ -47,11 +48,7 @@ export default function MapMarkerPopup({ sagra }: MapMarkerPopupProps) {
           <MapPin className="h-3 w-3 shrink-0" />
           <span className="line-clamp-1">
             {sagra.location_text}
-            {sagra.province && (() => {
-              const loc = sagra.location_text ?? "";
-              if (loc.includes(`(${sagra.province})`) || loc.toLowerCase().includes(sagra.province.toLowerCase())) return null;
-              return ` (${sagra.province})`;
-            })()}
+            {provinceSuffix(sagra.province, sagra.location_text)}
           </span>
         </div>
 

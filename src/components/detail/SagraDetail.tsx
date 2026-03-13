@@ -15,6 +15,7 @@ import { ParallaxHero } from "@/components/animations/ParallaxHero";
 import { ScrollReveal } from "@/components/animations/ScrollReveal";
 import { formatDateRange } from "@/lib/utils";
 import { parseImageCredit } from "@/lib/unsplash";
+import { provinceSuffix } from "@/lib/constants/veneto";
 import type { Sagra } from "@/types/database";
 import BackButton from "./BackButton";
 import DirectionsButton from "./DirectionsButton";
@@ -85,11 +86,7 @@ export default function SagraDetail({ sagra, videoUrl }: SagraDetailProps) {
                   <MapPin className="size-3.5 shrink-0" />
                   <span>
                     {sagra.location_text}
-                    {sagra.province && (() => {
-                      const loc = sagra.location_text ?? "";
-                      if (loc.includes(`(${sagra.province})`) || loc.toLowerCase().includes(sagra.province.toLowerCase())) return null;
-                      return ` (${sagra.province})`;
-                    })()}
+                    {provinceSuffix(sagra.province, sagra.location_text)}
                   </span>
                 </p>
               )}
