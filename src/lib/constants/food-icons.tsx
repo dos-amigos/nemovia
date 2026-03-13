@@ -57,7 +57,6 @@ export function getPrimaryCategory(
   featureTags?: string[] | null | undefined,
 ): FoodCategory {
   if (!foodTags || foodTags.length === 0) {
-    if (featureTags?.includes("Giostre")) return "giostre";
     return "altro";
   }
 
@@ -72,9 +71,6 @@ export function getPrimaryCategory(
       bestPriority = pri;
     }
   }
-
-  // If only generic food, check for giostre feature
-  if (best === "altro" && featureTags?.includes("Giostre")) return "giostre";
 
   return best;
 }
