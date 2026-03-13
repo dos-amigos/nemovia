@@ -3,7 +3,7 @@
  * Maps FOOD_TAGS values to icon categories with themed colors.
  */
 
-/** The icon categories available */
+/** The icon categories available — NO giostre (non è cibo) */
 export type FoodCategory =
   | "carne"
   | "pesce"
@@ -12,26 +12,55 @@ export type FoodCategory =
   | "gnocco"
   | "vino"
   | "dolci"
-  | "giostre"
   | "altro";
 
 /**
  * Map from food tag string to icon category.
+ * Includes both Gemini FOOD_TAGS and common Italian food names as fallback.
  * Tags not listed here fall through to "altro".
  */
 const TAG_TO_CATEGORY: Record<string, FoodCategory> = {
+  // Standard FOOD_TAGS from Gemini prompt
   Carne: "carne",
   Pesce: "pesce",
   Zucca: "zucca",
   Gnocchi: "gnocco",
-  Funghi: "verdura",
-  Radicchio: "verdura",
   Verdura: "verdura",
-  Pane: "altro",
   Vino: "vino",
   Dolci: "dolci",
+  Pane: "altro",
   Formaggi: "altro",
   "Prodotti Tipici": "altro",
+  // Specific vegetables → verdura (in case DB has raw names)
+  Broccolo: "verdura",
+  Brocolo: "verdura",
+  Broccoli: "verdura",
+  Radicchio: "verdura",
+  Asparago: "verdura",
+  Asparagi: "verdura",
+  Funghi: "verdura",
+  Carciofo: "verdura",
+  Carciofi: "verdura",
+  Fagioli: "verdura",
+  Bisi: "verdura",
+  Piselli: "verdura",
+  // Specific meats → carne
+  Salsiccia: "carne",
+  Maiale: "carne",
+  Pollo: "carne",
+  Cinghiale: "carne",
+  Oca: "carne",
+  Anatra: "carne",
+  // Specific fish → pesce
+  Baccalà: "pesce",
+  Stoccafisso: "pesce",
+  Sarde: "pesce",
+  Anguilla: "pesce",
+  // Specific sweets → dolci
+  Tiramisù: "dolci",
+  Tiramisu: "dolci",
+  Frittelle: "dolci",
+  Galani: "dolci",
 };
 
 /** Priority order for categories (lower index = higher priority) */
@@ -43,14 +72,12 @@ const CATEGORY_PRIORITY: FoodCategory[] = [
   "verdura",
   "vino",
   "dolci",
-  "giostre",
   "altro",
 ];
 
 /**
  * Determine the primary food category from an array of food tags.
  * Picks the highest-priority specific category, falling back to "altro".
- * If featureTags includes "Giostre" and food category is generic, shows ferris wheel.
  */
 export function getPrimaryCategory(
   foodTags: string[] | null | undefined,
@@ -84,7 +111,6 @@ export function getPrimaryCategory(
  * - Verdura: green (foglia, orto)
  * - Gnocco: golden/wheat (pasta, grano)
  * - Dolci: magenta/pink (dolcezza)
- * - Giostre: amber (luna park, festa)
  * - Altro: coral (brand primary)
  */
 export const CATEGORY_COLORS: Record<FoodCategory, string> = {
@@ -95,7 +121,6 @@ export const CATEGORY_COLORS: Record<FoodCategory, string> = {
   verdura: "#16A34A",
   gnocco: "#CA8A04",
   dolci: "#DB2777",
-  giostre: "#D97706",
   altro: "#9B1B30",
 };
 
@@ -245,37 +270,7 @@ const ICONS: Record<
     </svg>
   ),
 
-  /** Ferris wheel — luna park / sagre grandi con giostre. Thick strokes + gondolas for readability at 16px */
-  giostre: ({ className }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      {/* Outer wheel rim */}
-      <circle cx="12" cy="10" r="7" />
-      {/* Hub */}
-      <circle cx="12" cy="10" r="1" fill="currentColor" />
-      {/* 6 spokes radiating from center */}
-      <path d="M12 3v2.5M12 14.5V17M5 10h2.5M16.5 10H19" />
-      <path d="M7.05 5.05l1.77 1.77M15.18 13.18l1.77 1.77" />
-      <path d="M16.95 5.05l-1.77 1.77M8.82 13.18l-1.77 1.77" />
-      {/* 4 gondola seats hanging from wheel */}
-      <rect x="11" y="2" width="2" height="2.5" rx="0.5" fill="currentColor" />
-      <rect x="11" y="15.5" width="2" height="2.5" rx="0.5" fill="currentColor" />
-      <rect x="3.5" y="9" width="2.5" height="2" rx="0.5" fill="currentColor" />
-      <rect x="18" y="9" width="2.5" height="2" rx="0.5" fill="currentColor" />
-      {/* Support legs (A-frame) */}
-      <path d="M8 21l4-3 4 3" strokeWidth={2.5} />
-    </svg>
-  ),
-
-  /** Fork + knife — generic sagra icon for unknown food type, bold strokes for 16px */
+  /** Fork + knife crossed — generic sagra icon, bold for 16px readability */
   altro: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
@@ -309,8 +304,7 @@ interface FoodIconProps {
 
 /**
  * Renders the appropriate food category SVG icon based on food tags.
- * Falls back to "altro" (steaming bowl) when no specific match is found.
- * If featureTags includes "Giostre" and food is generic, shows ferris wheel.
+ * Falls back to "altro" (fork+knife) when no specific match is found.
  * Pass themed=true to auto-apply the category color.
  */
 export function FoodIcon({ foodTags, featureTags, className, style, themed }: FoodIconProps) {

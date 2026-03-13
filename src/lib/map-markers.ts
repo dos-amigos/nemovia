@@ -39,9 +39,6 @@ const MARKER_ICON_PATHS: Record<FoodCategory, string> = {
   /** Cupcake */
   dolci: `<circle cx="12" cy="5" r="1.5" fill="white"/><path d="M12 6.5v1"/><path d="M6 13c0-4 2.5-5.5 6-5.5s6 1.5 6 5.5"/><path d="M6 13c1 1 2 1.5 3 .5s2-.5 3 .5 2 .5 3-.5 2-.5 3 .5"/><path d="M7 15l1.5 6h7L17 15"/>`,
 
-  /** Ferris wheel */
-  giostre: `<circle cx="12" cy="10" r="7"/><circle cx="12" cy="10" r="1.5" fill="white"/><path d="M12 3v3M12 14v3M5 10h3M17 10h3"/><path d="M7 21l5-4 5 4"/>`,
-
   /** Fork + knife */
   altro: `<path d="M7 2v6c0 1.1.9 2 2 2h0"/><path d="M7 10v12"/><path d="M5 2v4"/><path d="M9 2v4"/><path d="M17 2c-1 0-2.5 1-2.5 4s1.5 4 2.5 4v12"/>`,
 };

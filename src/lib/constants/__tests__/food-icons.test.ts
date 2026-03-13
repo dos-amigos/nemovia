@@ -18,6 +18,18 @@ describe("getPrimaryCategory", () => {
     expect(getPrimaryCategory(["Radicchio"])).toBe("verdura");
   });
 
+  it("maps Broccolo to verdura", () => {
+    expect(getPrimaryCategory(["Broccolo"])).toBe("verdura");
+  });
+
+  it("maps Asparago to verdura", () => {
+    expect(getPrimaryCategory(["Asparago"])).toBe("verdura");
+  });
+
+  it("maps Bisi to verdura", () => {
+    expect(getPrimaryCategory(["Bisi"])).toBe("verdura");
+  });
+
   it("maps Vino to vino", () => {
     expect(getPrimaryCategory(["Vino"])).toBe("vino");
   });
@@ -42,6 +54,18 @@ describe("getPrimaryCategory", () => {
     expect(getPrimaryCategory(["Gnocchi"])).toBe("gnocco");
   });
 
+  it("maps Baccalà to pesce", () => {
+    expect(getPrimaryCategory(["Baccalà"])).toBe("pesce");
+  });
+
+  it("maps Salsiccia to carne", () => {
+    expect(getPrimaryCategory(["Salsiccia"])).toBe("carne");
+  });
+
+  it("maps Tiramisù to dolci", () => {
+    expect(getPrimaryCategory(["Tiramisù"])).toBe("dolci");
+  });
+
   it("returns altro for null input", () => {
     expect(getPrimaryCategory(null)).toBe("altro");
   });
@@ -62,15 +86,15 @@ describe("getPrimaryCategory", () => {
     expect(getPrimaryCategory(undefined as unknown as null)).toBe("altro");
   });
 
-  it("returns giostre when feature_tags has Giostre and food is generic", () => {
-    expect(getPrimaryCategory(["Prodotti Tipici"], ["Giostre"])).toBe("giostre");
+  it("ignores Giostre feature tag (not a food icon)", () => {
+    expect(getPrimaryCategory(["Prodotti Tipici"], ["Giostre"])).toBe("altro");
   });
 
-  it("returns giostre when no food tags but has Giostre feature", () => {
-    expect(getPrimaryCategory(null, ["Giostre"])).toBe("giostre");
+  it("returns altro when no food tags even with Giostre feature", () => {
+    expect(getPrimaryCategory(null, ["Giostre"])).toBe("altro");
   });
 
-  it("returns specific food over giostre when food is not generic", () => {
+  it("returns specific food regardless of Giostre feature", () => {
     expect(getPrimaryCategory(["Carne"], ["Giostre"])).toBe("carne");
   });
 });
