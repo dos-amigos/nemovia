@@ -18,17 +18,17 @@ export function TopNav() {
   return (
     <>
       {/* Mobile top bar — logo only */}
-      <div className="sticky top-0 z-50 flex h-16 items-center justify-center glass-nav border-b border-white/15 lg:hidden">
+      <div className="sticky top-0 z-50 flex h-18 items-center justify-center glass-nav border-b border-white/15 lg:hidden">
         <Link href="/" className="flex items-center rounded px-3 py-2 focus-visible:ring-[3px] focus-visible:ring-ring/50">
-          <Logo className="h-10 w-auto" />
+          <Logo className="h-14 w-auto" />
         </Link>
       </div>
 
       {/* Desktop nav — logo + tabs */}
       <nav className="hidden lg:block sticky top-0 z-50 glass-nav border-b border-white/15">
-        <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-8">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-8">
           <Link href="/" className="flex items-center rounded px-2 py-3 focus-visible:ring-[3px] focus-visible:ring-ring/50">
-            <Logo className="h-12 w-auto" />
+            <Logo className="h-16 w-auto" />
           </Link>
 
           <div className="flex items-center gap-1">
