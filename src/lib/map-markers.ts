@@ -39,8 +39,8 @@ const MARKER_ICON_PATHS: Record<FoodCategory, string> = {
   /** Cupcake */
   dolci: `<circle cx="12" cy="5" r="1.5" fill="white"/><path d="M12 6.5v1"/><path d="M6 13c0-4 2.5-5.5 6-5.5s6 1.5 6 5.5"/><path d="M6 13c1 1 2 1.5 3 .5s2-.5 3 .5 2 .5 3-.5 2-.5 3 .5"/><path d="M7 15l1.5 6h7L17 15"/>`,
 
-  /** Fork + knife */
-  altro: `<path d="M7 3v5c0 1.4 1.1 2.5 2.5 2.5h0V21"/><path d="M5.5 3v4M7 3v4M8.5 3v4"/><path d="M17 3c-1.5 2-2 4-2 6.5h0c.7.5 1.5.8 2 .8V21"/><path d="M17 3c1 1.5 1.5 3.5 1.5 6.5h-3.5"/>`,
+  /** Steaming bowl */
+  altro: `<path d="M3 14h18"/><path d="M4 14c0 4 3.6 7 8 7s8-3 8-7"/><path d="M8 10c0-1.5.8-2.5 0-4"/><path d="M12 9c0-1.5.8-2.5 0-4"/><path d="M16 10c0-1.5.8-2.5 0-4"/>`,
 };
 
 /* -------------------------------------------------------------------------- */
@@ -64,7 +64,7 @@ function buildMarkerSvg(color: string, iconPaths: string): string {
   <path d="M20 54 C20 54 4 34 4 20 A16 16 0 1 1 36 20 C36 34 20 54 20 54Z"
         fill="${color}" stroke="white" stroke-width="2" filter="url(#s)"/>
   <!-- White food icon centered in the circle part of the pin -->
-  <g transform="translate(10,10) scale(0.83)">
+  <g transform="translate(10,12) scale(0.83)">
     <svg viewBox="0 0 24 24" width="24" height="24"
          fill="none" stroke="white" stroke-width="2.2"
          stroke-linecap="round" stroke-linejoin="round">

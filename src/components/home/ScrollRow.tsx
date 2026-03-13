@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { SagraCard } from "@/components/sagra/SagraCard";
 import type { SagraCardData } from "@/lib/queries/types";
@@ -15,6 +15,17 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
   const [isDragging, setIsDragging] = useState(false);
   const drag = useRef({ active: false, startX: 0, scrollLeft: 0, totalDelta: 0 });
 
+  // Detect fine pointer (mouse/trackpad) — ONLY enable JS drag on desktop.
+  // Mobile: ZERO JS handlers. Pure CSS scroll-snap + native touch.
+  const [hasFinePointer, setHasFinePointer] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia("(pointer: fine)");
+    setHasFinePointer(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setHasFinePointer(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+
   const scroll = (direction: "left" | "right") => {
     scrollRef.current?.scrollBy({
       left: direction === "left" ? -300 : 300,
@@ -22,11 +33,9 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
     });
   };
 
-  // --- Desktop-only pointer drag (mouse only, NOT touch) ---
-  // setPointerCapture only for mouse so desktop drag works properly
-  // Touch uses native CSS scroll-snap instead
+  // Desktop-only pointer drag (mouse only)
   const onPointerDown = useCallback((e: React.PointerEvent) => {
-    if (e.pointerType === "touch") return; // let CSS snap handle mobile
+    if (e.pointerType !== "mouse") return;
     const el = scrollRef.current;
     if (!el) return;
     el.setPointerCapture(e.pointerId);
@@ -48,7 +57,6 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
   const onPointerUp = useCallback(() => {
     if (!drag.current.active) return;
     drag.current.active = false;
-    // Desktop: no snap, scroll stops where mouse releases
     setTimeout(() => {
       setIsDragging(false);
       drag.current.totalDelta = 0;
@@ -57,18 +65,19 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
 
   return (
     <div className="group relative">
-      {/* Mobile: CSS snap-x + native touch scroll. Desktop: JS drag + arrows, no snap */}
+      {/* Mobile: pure CSS snap-x + native touch. Desktop: JS drag + arrows, no snap. */}
       <div
         ref={scrollRef}
         role="region"
         tabIndex={0}
         aria-label={ariaLabel}
-        className={`scrollbar-hide flex gap-3 overflow-x-auto snap-x snap-mandatory lg:snap-none pb-2 pl-4 sm:pl-6 lg:pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] scroll-pl-4 sm:scroll-pl-6 lg:scroll-pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] ${isDragging ? "cursor-grabbing select-none" : "lg:cursor-grab"}`}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        style={{ touchAction: "pan-x pan-y" }}
+        className={`scrollbar-hide flex gap-3 overflow-x-auto overscroll-x-contain snap-x snap-mandatory lg:snap-none pb-2 pl-4 sm:pl-6 lg:pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] scroll-pl-4 sm:scroll-pl-6 lg:scroll-pl-[calc(max(2rem,(100vw-80rem)/2+2rem))] ${isDragging ? "cursor-grabbing select-none" : "lg:cursor-grab"}`}
+        {...(hasFinePointer ? {
+          onPointerDown,
+          onPointerMove,
+          onPointerUp,
+          onPointerCancel: onPointerUp,
+        } : {})}
       >
         {sagre.map((sagra) => (
           <div
@@ -76,12 +85,14 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
             className="w-[75vw] flex-shrink-0 snap-start sm:w-[45vw] lg:w-[280px]"
             draggable={false}
             onDragStart={(e) => e.preventDefault()}
-            onClickCapture={(e) => {
-              if (drag.current.totalDelta > 10) {
-                e.preventDefault();
-                e.stopPropagation();
-              }
-            }}
+            {...(hasFinePointer ? {
+              onClickCapture: (e: React.MouseEvent) => {
+                if (drag.current.totalDelta > 10) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              },
+            } : {})}
           >
             <SagraCard sagra={sagra} />
           </div>

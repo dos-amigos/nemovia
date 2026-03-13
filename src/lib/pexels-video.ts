@@ -17,22 +17,78 @@ interface PexelsSearchResponse {
 }
 
 /**
- * Search Pexels for an ambient city video.
- * Fallback chain: "{city} Italy" → "{province} Italy" → "Veneto Italy countryside"
+ * Extract a theme keyword from the sagra title for video search.
+ * "Sagra di Primavera a Borgo Veneto" → "spring Italy"
+ * "Sagra dei Broccoli" → "broccoli market Italy"
+ * "Festa dell'Olio" → "olive oil Italy"
+ */
+const TITLE_THEMES: [RegExp, string][] = [
+  [/primavera/i, "spring flowers countryside Italy"],
+  [/estate|ferragosto/i, "summer Italian countryside"],
+  [/autunno/i, "autumn harvest Italy"],
+  [/inverno|natale/i, "winter Italian village"],
+  [/broccol/i, "broccoli vegetable market"],
+  [/asparag/i, "asparagus vegetable market"],
+  [/carciofo|carciofi/i, "artichoke food market"],
+  [/radicchio/i, "radicchio salad Italian"],
+  [/zucca|zucch/i, "pumpkin autumn market"],
+  [/fungh/i, "mushroom forest Italy"],
+  [/pesce|mare|frutti/i, "seafood fish market Italy"],
+  [/carne|grigliata|salsicc/i, "grilled meat barbecue Italy"],
+  [/olio|oliv/i, "olive oil food Italy"],
+  [/vino|vendemmia|uva/i, "wine vineyard Italy"],
+  [/formaggio|formaggi|caseus/i, "cheese Italian market"],
+  [/dolci|torta|frittella|pinz/i, "Italian pastry sweets"],
+  [/gnocch/i, "gnocchi pasta Italian food"],
+  [/polenta/i, "polenta Italian food"],
+  [/baccalà|baccala/i, "stockfish Italian food"],
+  [/risotto|riso/i, "risotto Italian food"],
+];
+
+function extractThemeQuery(title: string, foodTags?: string[] | null): string | null {
+  // Check title for specific themes
+  for (const [pattern, query] of TITLE_THEMES) {
+    if (pattern.test(title)) return query;
+  }
+  // Check food tags
+  if (foodTags?.length) {
+    const tag = foodTags[0];
+    const foodQueries: Record<string, string> = {
+      Pesce: "seafood fish market Italy",
+      Carne: "grilled meat barbecue Italy",
+      Vino: "wine vineyard Italy",
+      Formaggi: "cheese Italian market",
+      Funghi: "mushroom autumn Italy",
+      Radicchio: "radicchio Italian vegetable",
+      Dolci: "Italian pastry sweets bakery",
+      Zucca: "pumpkin autumn market",
+    };
+    if (foodQueries[tag]) return foodQueries[tag];
+  }
+  return null;
+}
+
+/**
+ * Search Pexels for a video matching the sagra's theme.
+ * Priority: sagra theme (from title/food) → city → province → generic Veneto.
  * Returns a direct video URL (mp4) or null.
  */
 export async function searchCityVideo(
   locationText: string,
-  province?: string | null
+  province?: string | null,
+  title?: string,
+  foodTags?: string[] | null,
 ): Promise<string | null> {
   if (!PEXELS_API_KEY) return null;
 
   const cityName = extractCityName(locationText);
+  const themeQuery = title ? extractThemeQuery(title, foodTags) : null;
 
   const queries = [
-    `${cityName} Italy`,
-    province ? `${province} Italy` : null,
-    "Veneto Italy countryside",
+    themeQuery,                                    // Theme/food first
+    `${cityName} Italy`,                           // City fallback
+    province ? `${province} Italy` : null,         // Province fallback
+    "Veneto Italy countryside",                    // Generic fallback
   ].filter(Boolean) as string[];
 
   for (const query of queries) {

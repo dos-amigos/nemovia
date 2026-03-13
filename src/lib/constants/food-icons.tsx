@@ -229,7 +229,7 @@ const ICONS: Record<
     </svg>
   ),
 
-  /** Crossed fork and knife */
+  /** Steaming bowl — generic food icon, clearly readable at 16px */
   altro: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
@@ -241,12 +241,13 @@ const ICONS: Record<
       className={className}
       aria-hidden="true"
     >
-      {/* Fork */}
-      <path d="M7 3v5c0 1.4 1.1 2.5 2.5 2.5h0V21" />
-      <path d="M5.5 3v4M7 3v4M8.5 3v4" />
-      {/* Knife */}
-      <path d="M17 3c-1.5 2-2 4-2 6.5h0c.7.5 1.5.8 2 .8V21" />
-      <path d="M17 3c1 1.5 1.5 3.5 1.5 6.5h-3.5" />
+      {/* Bowl */}
+      <path d="M3 14h18" />
+      <path d="M4 14c0 4 3.6 7 8 7s8-3 8-7" />
+      {/* Steam wisps */}
+      <path d="M8 10c0-1.5.8-2.5 0-4" />
+      <path d="M12 9c0-1.5.8-2.5 0-4" />
+      <path d="M16 10c0-1.5.8-2.5 0-4" />
     </svg>
   ),
 };

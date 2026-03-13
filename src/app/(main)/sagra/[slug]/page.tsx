@@ -44,11 +44,12 @@ export default async function SagraDetailPage({
     notFound();
   }
 
-  // Fetch city video when no good image available
+  // Fetch themed video when no good image available
+  // Priority: sagra theme (from title/food) → city → province → generic
   const hasGoodImage = sagra.image_url && !isLowQualityUrl(sagra.image_url);
   const videoUrl = hasGoodImage
     ? null
-    : await searchCityVideo(sagra.location_text, sagra.province);
+    : await searchCityVideo(sagra.location_text, sagra.province, sagra.title, sagra.food_tags);
 
   return <SagraDetail sagra={sagra} videoUrl={videoUrl} />;
 }
