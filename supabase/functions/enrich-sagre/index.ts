@@ -169,7 +169,7 @@ function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
    - "Polenta" va in "Prodotti Tipici" o "Carne" se servita con carne.
    - "Baccalà" e "Stoccafisso" vanno in "Pesce".
    - "Asparago", "Radicchio", "Broccolo", "Carciofo", "Fagiolo" vanno in "Verdura".
-   - "Zucca" va in "Verdura".
+   - "Zucca" ha il suo tag dedicato "Zucca" (NON "Verdura").
    - "Gnocchi" vanno in "Prodotti Tipici".
    - Se il cibo principale non rientra chiaramente in nessuna categoria specifica, usa "Prodotti Tipici".
 3. feature_tags: array con i tag caratteristici (max 2) scelti SOLO da: ${FEATURE_TAGS.join(", ")}

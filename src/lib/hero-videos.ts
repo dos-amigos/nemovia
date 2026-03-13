@@ -27,12 +27,6 @@ export const HERO_VIDEOS: HeroVideo[] = [
     type: "food",
   },
   {
-    src: "/videos/hero-2.mp4",
-    photographer: "Kelly",
-    pexelsUrl: "https://www.pexels.com/video/2941127/",
-    type: "food",
-  },
-  {
     src: "/videos/hero-3.mp4",
     photographer: "cottonbro studio",
     pexelsUrl: "https://www.pexels.com/video/4253150/",

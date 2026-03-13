@@ -231,7 +231,7 @@ export async function getProvinceCounts(): Promise<ProvinceCount[]> {
 
     const { data, error } = await supabase
       .from("sagre")
-      .select("province")
+      .select("province, title")
       .eq("is_active", true)
       .not("province", "is", null)
       .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${today})`);
@@ -241,9 +241,10 @@ export async function getProvinceCounts(): Promise<ProvinceCount[]> {
       return [];
     }
 
-    // Group and count in-memory
+    // Deduplicate by title (same logic as searchSagre) then count
+    const deduplicated = deduplicateByTitle(data ?? []);
     const counts = new Map<string, number>();
-    for (const row of data ?? []) {
+    for (const row of deduplicated) {
       const p = row.province as string;
       counts.set(p, (counts.get(p) ?? 0) + 1);
     }
