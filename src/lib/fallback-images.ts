@@ -8,17 +8,17 @@
  */
 
 const CATEGORY_IMAGES: Record<string, string[]> = {
-  carne: ["/images/fallback/carne-1.jpg", "/images/fallback/carne-2.jpg", "/images/fallback/carne-3.jpg"],
-  pesce: ["/images/fallback/pesce-1.jpg", "/images/fallback/pesce-2.jpg", "/images/fallback/pesce-3.jpg"],
-  vino: ["/images/fallback/vino-1.jpg", "/images/fallback/vino-2.jpg", "/images/fallback/vino-3.jpg"],
-  zucca: ["/images/fallback/zucca-1.jpg", "/images/fallback/zucca-2.jpg", "/images/fallback/zucca-3.jpg"],
-  formaggi: ["/images/fallback/formaggi-1.jpg", "/images/fallback/formaggi-2.jpg", "/images/fallback/formaggi-3.jpg"],
-  funghi: ["/images/fallback/funghi-1.jpg", "/images/fallback/funghi-2.jpg", "/images/fallback/funghi-3.jpg"],
-  gnocchi: ["/images/fallback/gnocchi-1.jpg", "/images/fallback/gnocchi-2.jpg", "/images/fallback/gnocchi-3.jpg"],
-  dolci: ["/images/fallback/dolci-1.jpg", "/images/fallback/dolci-2.jpg", "/images/fallback/dolci-3.jpg"],
-  verdura: ["/images/fallback/verdura-1.jpg", "/images/fallback/verdura-2.jpg", "/images/fallback/verdura-3.jpg"],
-  "prodotti-tipici": ["/images/fallback/prodotti-tipici-1.jpg", "/images/fallback/prodotti-tipici-2.jpg", "/images/fallback/prodotti-tipici-3.jpg"],
-  generico: ["/images/fallback/generico-1.jpg", "/images/fallback/generico-2.jpg", "/images/fallback/generico-3.jpg"],
+  carne: ["/images/fallback/carne-1.jpg", "/images/fallback/carne-2.jpg", "/images/fallback/carne-3.jpg", "/images/fallback/carne-4.jpg", "/images/fallback/carne-5.jpg"],
+  pesce: ["/images/fallback/pesce-1.jpg", "/images/fallback/pesce-2.jpg", "/images/fallback/pesce-3.jpg", "/images/fallback/pesce-4.jpg", "/images/fallback/pesce-5.jpg"],
+  vino: ["/images/fallback/vino-1.jpg", "/images/fallback/vino-2.jpg", "/images/fallback/vino-3.jpg", "/images/fallback/vino-4.jpg", "/images/fallback/vino-5.jpg"],
+  zucca: ["/images/fallback/zucca-1.jpg", "/images/fallback/zucca-2.jpg", "/images/fallback/zucca-3.jpg", "/images/fallback/zucca-4.jpg", "/images/fallback/zucca-5.jpg"],
+  formaggi: ["/images/fallback/formaggi-1.jpg", "/images/fallback/formaggi-2.jpg", "/images/fallback/formaggi-3.jpg", "/images/fallback/formaggi-4.jpg", "/images/fallback/formaggi-5.jpg"],
+  funghi: ["/images/fallback/funghi-1.jpg", "/images/fallback/funghi-2.jpg", "/images/fallback/funghi-3.jpg", "/images/fallback/funghi-4.jpg", "/images/fallback/funghi-5.jpg"],
+  gnocchi: ["/images/fallback/gnocchi-1.jpg", "/images/fallback/gnocchi-2.jpg", "/images/fallback/gnocchi-3.jpg", "/images/fallback/gnocchi-4.jpg", "/images/fallback/gnocchi-5.jpg"],
+  dolci: ["/images/fallback/dolci-1.jpg", "/images/fallback/dolci-2.jpg", "/images/fallback/dolci-3.jpg", "/images/fallback/dolci-4.jpg", "/images/fallback/dolci-5.jpg"],
+  verdura: ["/images/fallback/verdura-1.jpg", "/images/fallback/verdura-2.jpg", "/images/fallback/verdura-3.jpg", "/images/fallback/verdura-4.jpg", "/images/fallback/verdura-5.jpg"],
+  "prodotti-tipici": ["/images/fallback/prodotti-tipici-1.jpg", "/images/fallback/prodotti-tipici-2.jpg", "/images/fallback/prodotti-tipici-3.jpg", "/images/fallback/prodotti-tipici-4.jpg", "/images/fallback/prodotti-tipici-5.jpg"],
+  generico: ["/images/fallback/generico-1.jpg", "/images/fallback/generico-2.jpg", "/images/fallback/generico-3.jpg", "/images/fallback/generico-4.jpg", "/images/fallback/generico-5.jpg"],
 };
 
 /** Maps food_tag display values to image categories */

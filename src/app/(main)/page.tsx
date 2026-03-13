@@ -29,6 +29,11 @@ const SKIP_TAGS = new Set([
   "Prodotti Locali",
 ]);
 
+/** Custom display names for food tag rows */
+const TAG_DISPLAY: Record<string, string> = {
+  Verdura: "Sagre Vegetariane",
+};
+
 const MIN_ROW = 3;
 const MAX_PROVINCE_ROWS = 3;
 const MAX_FOOD_ROWS = 4;
@@ -146,7 +151,7 @@ export default async function HomePage() {
           {foodRows.map((row) => (
             <ScrollRowSection
               key={row.tag}
-              title={`Sagre di ${row.tag}`}
+              title={TAG_DISPLAY[row.tag] ?? `Sagre di ${row.tag}`}
               icon={<FoodIcon foodTags={[row.tag]} className="h-5 w-5" themed />}
               sagre={row.sagre}
               viewAllHref={`/cerca?cucina=${row.tag}`}
