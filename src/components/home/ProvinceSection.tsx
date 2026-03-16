@@ -16,13 +16,13 @@ export function ProvinceSection({ counts }: ProvinceSectionProps) {
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
         {VENETO_PROVINCES.map((province) => {
-          const match = counts.find((c) => c.province === province.name);
+          const match = counts.find((c) => c.province === province.code);
           const count = match?.count ?? 0;
 
           return (
             <Link
               key={province.code}
-              href={`/cerca?provincia=${province.name}`}
+              href={`/cerca?provincia=${province.code}`}
               className="flex items-center justify-between rounded-lg border bg-card p-3 transition-shadow hover:shadow-sm focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               <span className="text-sm font-medium">{province.name}</span>

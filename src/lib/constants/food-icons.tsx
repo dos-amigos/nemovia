@@ -58,6 +58,8 @@ const TAG_TO_CATEGORY: Record<string, FoodCategory> = {
   Stoccafisso: "pesce",
   Sarde: "pesce",
   Anguilla: "pesce",
+  Rane: "pesce",
+  Rana: "pesce",
   // Specific sweets → dolci
   Tiramisù: "dolci",
   Tiramisu: "dolci",
@@ -212,7 +214,7 @@ const ICONS: Record<
     </svg>
   ),
 
-  /** Pumpkin — dedicated orange icon */
+  /** Pumpkin — round ribbed shape with stem, clear at 16px */
   zucca: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
@@ -224,9 +226,15 @@ const ICONS: Record<
       className={className}
       aria-hidden="true"
     >
-      <path d="M12 3c-1 0-2 .5-2 1.5S11 6 12 7c1-1 2-1.5 2-2.5S13 3 12 3z" />
-      <path d="M7 8c-2.5 1-4 4-4 7s2 5 5 5c1.5 0 2.8-.5 4-2 1.2 1.5 2.5 2 4 2 3 0 5-2 5-5s-1.5-6-4-7" />
-      <path d="M12 7v11" />
+      {/* Stem */}
+      <path d="M12 4c0-1.5-1-2-1-2s1 .5 1 2z" fill="currentColor" stroke="none" />
+      <path d="M11 2c.5 0 1.2.3 1.2 1.2S12 5 12 5" />
+      {/* Main body — wide oval pumpkin shape */}
+      <ellipse cx="12" cy="14" rx="8" ry="6.5" />
+      {/* Ribs — vertical lines that make it look like a pumpkin */}
+      <path d="M12 7.5v13" />
+      <path d="M8 8.5c-1 1.5-1.5 4-1.5 5.5s.5 4 1.5 5.5" />
+      <path d="M16 8.5c1 1.5 1.5 4 1.5 5.5s-.5 4-1.5 5.5" />
     </svg>
   ),
 

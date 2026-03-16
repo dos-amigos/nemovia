@@ -78,9 +78,12 @@ export const VENETO_CITY_QUERIES = [
 // =============================================================================
 
 export const FOOD_VIDEO_QUERIES = [
-  "pouring red wine rustic Italian",
-  "draft beer tap outdoor festival",
-  "grilling meat outdoor barbecue",
+  "pouring red wine Italian vineyard",
+  "Italian pizza wood oven",
+  "pasta making fresh Italian kitchen",
+  "Italian cheese prosciutto cutting",
+  "olive oil pouring Mediterranean food",
+  "Italian outdoor food market",
 ] as const;
 
 interface PexelsVideoFile {

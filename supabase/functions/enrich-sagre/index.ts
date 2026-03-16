@@ -14,7 +14,7 @@ const GEOCODE_LIMIT = 30;   // max rows to geocode per loop iteration
 const LLM_LIMIT = 200;      // max sagre to enrich per loop iteration (25 batches of 8)
 const SLEEP_MS = 1100;      // 1.1s between Nominatim calls (policy: 1 req/sec)
 const VENETO_VIEWBOX = "10.62,44.79,13.10,46.68"; // Nominatim viewbox: lon_min,lat_min,lon_max,lat_max
-const TIME_BUDGET_MS = 120_000; // 120s time budget for the full pipeline (leaves 30s margin on 150s timeout)
+const TIME_BUDGET_MS = 120_000; // 120s time budget (leaves 30s margin — free tier timeout appears to be ≥150s)
 
 // Pass 3: Unsplash image assignment (batch-by-tag strategy)
 const UNSPLASH_ACCESS_KEY = Deno.env.get("UNSPLASH_ACCESS_KEY");
@@ -190,7 +190,9 @@ function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
    - "Sagra dei Funghi" → "porcini mushroom Italian dish"
    - "Sagra della Carne" → "grilled meat outdoor barbecue"
    - "Festa del Radicchio" → "radicchio red chicory Italian"
-   ERRORI VIETATI: MAI mettere cibi/temi NON presenti nel titolo. "Olio" NON è miele. "Pinza" NON è formaggio. "Pasqua" NON è cannoli. Se non sai cosa cercare, usa "Italian food festival outdoor".
+   ERRORI VIETATI: MAI mettere cibi/temi NON presenti nel titolo. "Olio" NON è miele. "Pinza" NON è formaggio. "Pasqua" NON è cannoli.
+   MAI usare query generiche come "Italian food festival outdoor" — OGNI sagra DEVE avere una query UNICA e SPECIFICA.
+   Se il titolo non menziona un cibo specifico, usa il TEMA dell'evento: "Festa di Primavera" → "spring countryside Italian village", "Sagra Paesana" → "Italian village square celebration", "Festa della Salute" → "Italian autumn harvest festival".
 
 EVENTI:
 ${JSON.stringify(batch)}

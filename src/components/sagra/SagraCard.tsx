@@ -55,8 +55,8 @@ export function SagraCard({ sagra, distanceKm }: SagraCardProps) {
           </h3>
           <div className="flex items-center gap-1 text-white/80 text-sm mt-1">
             <MapPin className="h-3.5 w-3.5 shrink-0" />
-            <span className="line-clamp-1">
-              {sagra.location_text}
+            <span className="line-clamp-1 capitalize">
+              {sagra.location_text?.toLowerCase()}
               {provinceSuffix(sagra.province, sagra.location_text)}
             </span>
           </div>

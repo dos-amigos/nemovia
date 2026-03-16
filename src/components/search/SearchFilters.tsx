@@ -163,7 +163,7 @@ export function SearchFilters({ variant = "sidebar" }: SearchFiltersProps) {
 
   // ---- City search block (reused in both variants) ----
   const citySearchBlock = (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+    <div className="flex flex-col gap-2">
       <div className="relative flex-1">
         {hasGeo ? (
           <div className="flex h-10 items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-3">
@@ -245,7 +245,7 @@ export function SearchFilters({ variant = "sidebar" }: SearchFiltersProps) {
           size="sm"
           onClick={requestLocation}
           disabled={loading}
-          className="h-10 shrink-0 whitespace-nowrap rounded-lg"
+          className="h-10 w-full whitespace-nowrap rounded-lg"
         >
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -312,7 +312,7 @@ export function SearchFilters({ variant = "sidebar" }: SearchFiltersProps) {
         <SelectContent>
           <SelectItem value="__all__">Tutte</SelectItem>
           {VENETO_PROVINCES.map((p) => (
-            <SelectItem key={p.code} value={p.name}>
+            <SelectItem key={p.code} value={p.code}>
               {p.name}
             </SelectItem>
           ))}

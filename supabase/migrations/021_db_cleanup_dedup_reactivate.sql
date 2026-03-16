@@ -9,9 +9,19 @@
 --   5. Province not normalized (some have full names instead of 2-letter codes)
 -- =============================================================================
 
--- Step 0: Normalize province values to 2-letter codes
+-- Step 0: Normalize province values to 2-letter codes (inline, no function)
 UPDATE public.sagre
-SET province = normalize_province_code(province), updated_at = NOW()
+SET province = CASE lower(trim(province))
+    WHEN 'belluno' THEN 'BL'
+    WHEN 'padova' THEN 'PD'
+    WHEN 'rovigo' THEN 'RO'
+    WHEN 'treviso' THEN 'TV'
+    WHEN 'venezia' THEN 'VE'
+    WHEN 'verona' THEN 'VR'
+    WHEN 'vicenza' THEN 'VI'
+    ELSE upper(trim(province))
+  END,
+  updated_at = NOW()
 WHERE province IS NOT NULL
   AND province NOT IN ('BL', 'PD', 'RO', 'TV', 'VE', 'VR', 'VI');
 

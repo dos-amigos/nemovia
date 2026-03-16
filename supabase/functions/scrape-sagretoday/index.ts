@@ -331,7 +331,7 @@ function extractSagretodayDetail($: cheerio.CheerioAPI): DetailContent {
   $('script[type="application/ld+json"]').each((_i: number, el: cheerio.Element) => {
     try {
       const jsonData = JSON.parse($(el).text().trim());
-      if (jsonData["@type"] === "Event") {
+      if (jsonData["@type"] === "Event" || jsonData["@type"] === "EventSeries") {
         if (jsonData.description) {
           description = String(jsonData.description).slice(0, 1000);
         }
@@ -348,9 +348,14 @@ function extractSagretodayDetail($: cheerio.CheerioAPI): DetailContent {
 
   if (!description) {
     const bodyText = $("main, article, .content, [class*='description']").first().text().trim();
-    if (bodyText && bodyText.length > 50) {
+    if (bodyText && bodyText.length > 50 && !bodyText.startsWith("{")) {
       description = bodyText.slice(0, 1000);
     }
+  }
+
+  // Strip markdown bold markers from sagretoday descriptions
+  if (description) {
+    description = description.replace(/\*\*/g, "");
   }
 
   const pageText = $("body").text();

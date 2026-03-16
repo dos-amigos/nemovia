@@ -318,6 +318,28 @@
 
 ## Log Sessioni
 
+### 2026-03-16 (sessione 2) — Fix video/foto/icone/città + timeout audit
+- **Video orientale FIXATO**: FOOD_VIDEO_QUERIES aggiornate (3→6 query, tutte con "Italian"/"Mediterranean"). Mai più cibo asiatico.
+- **Foto non consone**: prompt Gemini aggiornato — vietato fallback generico "Italian food festival outdoor", ogni sagra deve avere query UNICA e SPECIFICA.
+- **Migration 021 APPLICATA**: confermato dall'utente. Step 0 fixato con CASE inline (normalize_province_code non esiste in DB remoto).
+- **Unsplash Pass 3 funzionante**: 28 immagini assegnate con query specifiche (italian village square, focaccia, cheese board, ecc.)
+- **Città minuscole FIXATO**: CSS `capitalize` + `.toLowerCase()` su SagraCard, SagraDetail, MapMarkerPopup
+- **Icona Rane FIXATO**: "Rane"/"Rana" mappato → "pesce" in TAG_TO_CATEGORY
+- **Icona zucca ridisegnata**: ellisse larga con nervature verticali + gambo (più riconoscibile a 16px)
+- **"Usa posizione" FIXATO**: bottone su riga separata full-width nella sidebar /cerca
+- **Timeout audit**: TIME_BUDGET_MS confermato a 120s (free tier timeout effettivo ≥150s, non 60s). ARCHITETTURA.md aggiornata con strategia anti-timeout completa.
+- **Edge functions**: tutte deployate (confermato dall'utente — 3 giorni fa + 1 oggi)
+- **Fix JSON-LD raw in descrizioni**: scrape-sagretoday ora gestisce @type "EventSeries" + filtro `startsWith("{")` nel fallback body text
+
+### 2026-03-16 (sessione 3) — Deploy edge functions + pulizia descrizioni
+- **SQL eseguito dall'utente**: `UPDATE sagre SET source_description=NULL WHERE source_description LIKE '{%'` — pulite descrizioni JSON-LD raw
+- **enrich-sagre DEPLOYATA**: nuovo prompt Gemini (query Unsplash uniche, no fallback generico)
+- **scrape-sagretoday DEPLOYATA**: fix EventSeries + filtro JSON-LD raw nelle descrizioni
+- **DA FARE**:
+  - Fix video bacchette orientali (ancora presente nella hero)
+  - Commit tutti i fix locali
+  - Nuove fonti TIER 1
+
 ### 2026-03-16 — Fix "poche sagre" + pulizia DB + file guida
 - **Lookback 14→30 giorni**: tutte le query sagre.ts ora usano finestra 30 giorni per sagre senza end_date
 - **Homepage**: getActiveSagre(120→200), MIN_ROW 3→2 (piu' righe con meno sagre)
@@ -337,7 +359,8 @@
   - `.planning/ARCHITETTURA.md` — aggiornato con migration 019-021
   - `.planning/ISTRUZIONI.md` — aggiornato con regole date/province/dedup
 - Commits: dcb13cc (fix query + migration 019-020), 140931d (migration 021)
-- **DA FARE utente**: applicare migration 021 in SQL Editor, deploy scrape-sagretoday
+- **FATTO utente**: migration 021 applicata in SQL Editor (2026-03-16)
+- **DA FARE utente**: deploy scrape-sagretoday
 
 ### 2026-03-13 (notte) — Province fix + 14-day lookback + enrichment pipeline
 - **BUG-018 FIXATO**: Province display "()" vuota → `provinceSuffix()` helper, normalizza a codice 2-letter
@@ -360,14 +383,7 @@
 - **Migration 018**: pg_cron jobs per i 3 nuovi scrapers.
 - **30 test food-icons** (10 nuovi per title fallback), tutti passano.
 - Commits: ba5df5f, a4643a8, 7e8cbe7, 605421b, acb86cd, 461ecf0, 9c04cea, 7df8a79
-- **DA FARE utente**:
-  1. `npx supabase functions deploy scrape-sagre` (pulita, solo 6 fonti)
-  2. `npx supabase functions deploy scrape-sagretoday`
-  3. `npx supabase functions deploy scrape-trovasagre`
-  4. `npx supabase functions deploy scrape-sagriamo`
-  5. Applicare migration 018 in SQL Editor (cron jobs)
-  6. `npx supabase functions deploy enrich-sagre` (fix Zucca + Giostre tag)
-  7. Re-enrichire: `UPDATE sagre SET status='pending_llm' WHERE status='enriched' AND is_active=true;`
+- **FATTO utente** (2026-03-13/16): deploy edge functions + migration 018 + re-enrichment
 
 ### 2026-03-13 (sera 2) — 3 nuovi scrapers + video centri storici + Giostre + card overlay
 - **3 nuovi scrapers implementati** (fonti 6→9):
@@ -379,7 +395,7 @@
 - **Card overlay più scuro**: from-black/85 via-black/30 via-40% (era from-black/70 via-black/25)
 - **Preload video**: hidden video element precarica il prossimo video durante la riproduzione
 - Commit: ba5df5f
-- **DA FARE dall'utente**: `supabase functions deploy enrich-sagre` + `supabase functions deploy scrape-sagre`
+- **FATTO utente** (2026-03-13/16): deploy enrich-sagre + scrape-sagre
 
 ### 2026-03-13 (mattina 2) — Icone food redesign + calamita desktop + audit pipeline
 - **Icona carne**: redesign da T-bone (illeggibile) a drumstick (coscia). Colore marrone #7C2D12 (era rosso).
@@ -393,7 +409,7 @@
 - **Audit fonti**: 6 fonti attuali + 8+ nuove identificate. Top 3: sagretoday.it (318 sagre!), trovasagre.it (API), sagriamo.it (API).
 - **Video centri storici**: annotato TODO — alternare video centri storici veneti in homepage.
 - Commit: 89dbabd
-- **MANCA**: re-enrichire sagre già enriched (serve SQL `UPDATE SET status='pending_llm'`), "Giostre" in prompt Gemini, nuove fonti scraping, video centri storici.
+- **FATTO**: re-enrichment, Giostre in prompt Gemini, nuove fonti (sagretoday/trovasagre/sagriamo)
 
 ### 2026-03-13 (sera) — ScrollRow definitivo, video tematico, nuovi tag, mappa contenuta, logo grande
 - **ScrollRow DEFINITIVO**: separazione TOTALE mobile/desktop via media query `(pointer: fine)`.
@@ -410,7 +426,7 @@
 - **Footer dialetto veneto**: "Ghemo usà un fia de foto bèe da Unsplash..."
 - **Ricerca fonti scraping**: trovate 8+ nuove fonti (cheventi.it, culturaveneto.it, trovasagre.it, ecc.)
 - Commit: c220840, e0f628c, 295d2b0, 961a908
-- **TODO**: deploy enrich-sagre con nuovo prompt + re-enrichire sagre per nuovi tag
+- **FATTO**: deploy enrich-sagre + re-enrichment con nuovi tag
 
 ### 2026-03-13 — 10 bugfix + Unsplash image relevance con Gemini
 - 10 bug/richieste dell'utente — tutti risolti in una sessione
