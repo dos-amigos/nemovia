@@ -331,10 +331,19 @@
 - **Edge functions**: tutte deployate (confermato dall'utente — 3 giorni fa + 1 oggi)
 - **Fix JSON-LD raw in descrizioni**: scrape-sagretoday ora gestisce @type "EventSeries" + filtro `startsWith("{")` nel fallback body text
 
-### 2026-03-16 (sessione 4) — Cambio modello Gemini per rate limits
-- **Gemini 2.5 Flash → 2.5 Flash-Lite**: free tier aveva solo 20 RPD (richieste/giorno), causava 429 continui. Flash-Lite ha 1000 RPD.
-- **File modificato**: `supabase/functions/enrich-sagre/index.ts` riga 384
-- **DA FARE**: deploy enrich-sagre
+### 2026-03-16 (sessione 4) — Gemini flash-lite + icona Beef + prompt migliorato
+- **Gemini 2.5 Flash → 2.5 Flash-Lite**: free tier aveva solo 20 RPD, causava 429 continui. Flash-Lite ha 1000 RPD.
+- **TEST con flash-lite RIUSCITO**: 28 enriched, 14 non-sagra deactivated, 34 immagini assegnate in 1 run (123s)
+- **Icona carne cambiata**: SVG custom ellisse+osso → **Lucide `Beef`** (bistecca con marezzatura). Aggiornato food-icons.tsx + map-markers.ts
+- **Prompt Gemini unsplash_query RISCRITTO**: query DEVONO contenere almeno 1 alimento specifico. VIETATO: "party", "celebration", "festival", "market", "outdoor". Esempio: "Festa della Birra" → "craft beer glasses golden ale" (NON "beer festival outdoor party" che dava acrobati)
+- **TAG_QUERIES aggiornate**: "Prodotti Tipici" → "Italian cheese salami board rustic", aggiunti Zucca + Gnocchi
+- **DEFAULT_UNSPLASH_QUERY**: "italian sagra food festival" → "Italian grilled sausage polenta rustic"
+- **Commit d4b5830**: model change + docs (5 file)
+- **NON COMMITTATO**: icona Beef + prompt migliorato + TAG_QUERIES
+- **DA FARE UTENTE**:
+  1. Deploy enrich-sagre (nuovo prompt + flash-lite + Beef)
+  2. Reset immagini brutte: `UPDATE sagre SET image_url=NULL, image_credit=NULL, unsplash_query=NULL WHERE is_active=true AND image_url IS NOT NULL;`
+  3. TEST enrich-sagre per ri-generare immagini con query specifiche
 
 ### 2026-03-16 (sessione 3) — Deploy edge functions + fix province + fix immagini duplicate
 - **SQL pulizia descrizioni JSON-LD raw**: eseguito dall'utente

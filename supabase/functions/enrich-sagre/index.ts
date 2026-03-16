@@ -34,9 +34,11 @@ const TAG_QUERIES: Record<string, string> = {
   "Dolci": "Italian pastry dessert table",
   "Pane": "Italian focaccia flatbread rustic",
   "Verdura": "fresh vegetables Italian garden market",
-  "Prodotti Tipici": "Italian food market outdoor rustic",
+  "Prodotti Tipici": "Italian cheese salami board rustic",
+  "Zucca": "pumpkin soup autumn Italian dish",
+  "Gnocchi": "Italian gnocchi potato pasta dish",
 };
-const DEFAULT_UNSPLASH_QUERY = "italian sagra food festival";
+const DEFAULT_UNSPLASH_QUERY = "Italian grilled sausage polenta rustic";
 
 // =============================================================================
 // Geocoding helpers (copied verbatim from src/lib/enrichment/geocode.ts)
@@ -177,22 +179,29 @@ function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
 3. feature_tags: array con i tag caratteristici (max 2) scelti SOLO da: ${FEATURE_TAGS.join(", ")}
    - "Giostre": usa SOLO per sagre/fiere grandi con luna park, giostre, attrazioni da fiera (es. Antica Fiera del Tresto, Antica Fiera del Soco). NON per sagre piccole o normali.
 4. enhanced_description: descrizione coinvolgente in italiano, max ${MAX_DESC_CHARS} caratteri, che menzioni il cibo principale e l'atmosfera
-5. unsplash_query: 2-4 parole IN INGLESE per Unsplash. REGOLA FONDAMENTALE: la parola chiave dopo "Sagra del/della/delle" o "Festa del/della/delle" È IL SOGGETTO DELLA FOTO. Traduci QUEL soggetto in inglese e cerca QUELLO.
+5. unsplash_query: 2-4 parole IN INGLESE per cercare una FOTO DI CIBO su Unsplash. La foto DEVE mostrare CIBO o BEVANDE, mai persone, eventi, paesaggi o scene generiche.
+   REGOLA: estrai il SOGGETTO ALIMENTARE dal titolo e traduci in inglese. La query deve descrivere CIBO VISIBILE su un tavolo/piatto.
    Esempi corretti:
-   - "Festa dell'Olio" → "olive oil pouring bread" (olio = olive oil)
-   - "Festa della Primavera" → "spring blossoms countryside" (primavera = spring)
-   - "Sagra del Pesce" → "fresh seafood platter" (pesce = seafood)
-   - "Festa della Zucca" → "pumpkin soup autumn" (zucca = pumpkin)
-   - "Fior di Pasqua" → "Easter spring flowers Italian" (Pasqua = Easter)
-   - "Sagra della Pinza" → "Italian focaccia flatbread" (pinza veneta = focaccia, NON dolce)
-   - "Sagra del Vino" → "wine glass pouring vineyard" (MAI bottiglie)
+   - "Festa dell'Olio" → "olive oil pouring bread"
+   - "Sagra del Pesce" → "fresh seafood platter Mediterranean"
+   - "Festa della Zucca" → "pumpkin soup autumn dish"
+   - "Sagra della Pinza" → "Italian focaccia flatbread rustic" (pinza veneta = focaccia)
+   - "Sagra del Vino" → "wine glasses vineyard table" (MAI bottiglie)
    - "Sagra degli Asparagi" → "fresh green asparagus dish"
    - "Sagra dei Funghi" → "porcini mushroom Italian dish"
-   - "Sagra della Carne" → "grilled meat outdoor barbecue"
-   - "Festa del Radicchio" → "radicchio red chicory Italian"
-   ERRORI VIETATI: MAI mettere cibi/temi NON presenti nel titolo. "Olio" NON è miele. "Pinza" NON è formaggio. "Pasqua" NON è cannoli.
-   MAI usare query generiche come "Italian food festival outdoor" — OGNI sagra DEVE avere una query UNICA e SPECIFICA.
-   Se il titolo non menziona un cibo specifico, usa il TEMA dell'evento: "Festa di Primavera" → "spring countryside Italian village", "Sagra Paesana" → "Italian village square celebration", "Festa della Salute" → "Italian autumn harvest festival".
+   - "Sagra della Carne" → "grilled meat Italian barbecue"
+   - "Festa del Radicchio" → "radicchio red chicory salad"
+   - "Festa della Birra" → "craft beer glasses golden ale" (MAI "party" o "festival")
+   - "Sagra del Riso" → "Italian risotto rice dish"
+   - "Festa della Bufala" → "buffalo mozzarella fresh Italian"
+   - "Sagra del Baccalà" → "salt cod Italian traditional dish"
+   Se il titolo NON menziona un cibo specifico (es. "Sagra Paesana", "Festa di Primavera", "Festa della Salute"):
+   → cerca il CIBO più probabile servito all'evento: "Italian grilled sausage polenta" o "Italian cheese salami board" o "fresh pasta Italian rustic table"
+   VIETATO ASSOLUTAMENTE:
+   - Query generiche: "Italian food festival", "village celebration", "autumn harvest festival", "outdoor party", "countryside life market"
+   - Query senza cibo: "Italian village square", "spring blossoms", "traditional festival"
+   - Parole che portano a persone/eventi: "party", "celebration", "festival", "market", "outdoor"
+   OGNI query DEVE contenere almeno un ALIMENTO SPECIFICO (meat, cheese, wine, bread, fish, pasta, ecc.).
 
 EVENTI:
 ${JSON.stringify(batch)}

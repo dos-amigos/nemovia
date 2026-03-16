@@ -3,7 +3,7 @@
  * Maps FOOD_TAGS values to icon categories with themed colors.
  */
 
-import { Leaf, UtensilsCrossed } from "lucide-react";
+import { Beef, Leaf, UtensilsCrossed } from "lucide-react";
 
 /** The icon categories available — NO giostre (non è cibo) */
 export type FoodCategory =
@@ -174,26 +174,9 @@ const ICONS: Record<
   FoodCategory,
   (props: { className?: string }) => React.ReactElement
 > = {
-  /** Drumstick — horizontal ellipse meat + bone. NOT a circle (circle+line = magnifying glass at 16px!) */
+  /** Beef cut — Lucide Beef icon. Recognizable steak cross-section at all sizes. */
   carne: ({ className }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      {/* Meat body — horizontal ELLIPSE, never a circle */}
-      <ellipse cx="14" cy="9" rx="6.5" ry="4.5" />
-      {/* Bone shaft */}
-      <path d="M9 12.5L4.5 18.5" />
-      {/* Bone end knobs */}
-      <circle cx="3.5" cy="19.5" r="1.2" />
-      <circle cx="5.5" cy="20.5" r="1.2" />
-    </svg>
+    <Beef className={className} aria-hidden="true" />
   ),
 
   /** Simple fish silhouette */
