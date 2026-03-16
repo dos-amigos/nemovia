@@ -174,7 +174,7 @@ supabase/
 ### enrich-sagre (~2000 LOC)
 Pipeline 3 passi con budget temporale 120s:
 1. **Pass 1 — Geocoding**: Nominatim (location_text → coordinate + provincia)
-2. **Pass 2 — LLM**: Gemini genera food_tags, feature_tags, enhanced_description, unsplash_query
+2. **Pass 2 — LLM**: Gemini 2.5 Flash-Lite genera food_tags, feature_tags, enhanced_description, unsplash_query
 3. **Pass 3 — Immagini**: Unsplash API usando unsplash_query di Gemini
 
 ### scrape-sagretoday
@@ -341,7 +341,7 @@ Pipeline 3 passi con budget temporale 120s:
 ### Strategia anti-timeout Edge Functions
 Il free tier Supabase ha timeout 60s. Per non sforare:
 1. **1 function per fonte** — ogni scraper è una edge function separata (scrape-sagre per le 6 fonti Cheerio, scrape-sagretoday, scrape-trovasagre, scrape-sagriamo). MAI accorpare scraper pesanti.
-2. **Batch limitati** — enrich-sagre processa max 200 sagre per run. Pass 2 (Gemini) usa batch da 10 con rate limiting 4.5s tra batch. Pass 3 (Unsplash) raggruppa per query per minimizzare API calls.
+2. **Batch limitati** — enrich-sagre processa max 200 sagre per run. Pass 2 (Gemini 2.5 Flash-Lite, 1000 RPD free tier) usa batch da 10 con rate limiting 4.5s tra batch. Pass 3 (Unsplash) raggruppa per query per minimizzare API calls.
 3. **Round-robin cron** — scrape-sagretoday fa 1 provincia per invocazione (7 province, round-robin ogni 30min). Così ogni invocazione sta sotto i 60s.
 4. **Time budget** — enrich-sagre ha `TIME_BUDGET_MS = 120_000` (120s). Il timeout reale del free tier risulta ≥150s (verificato: function completata a 124s senza kill). Se sfora il budget, si ferma e riprende al prossimo ciclo cron. **Piano Supabase: FREE** (timeout effettivo ≥150s).
 5. **Cron frequenti** — enrich gira 2x/day, scrape 2x/day, sagretoday ogni 30min. Tanti run piccoli > pochi run grandi.

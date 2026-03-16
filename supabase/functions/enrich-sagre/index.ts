@@ -381,7 +381,7 @@ async function runLLMPass(
       const prompt = buildEnrichmentPrompt(batch);
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-2.5-flash-lite",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -473,6 +473,7 @@ async function runLLMPass(
 
 interface SagraForUnsplash {
   id: string;
+  title: string;
   food_tags: string[] | null;
   image_url: string | null;
   unsplash_query: string | null;
@@ -525,6 +526,104 @@ function isLowQualityUrl(url: string | null | undefined): boolean {
     if (pattern.test(url)) return true;
   }
   return false;
+}
+
+// Italian food word → English Unsplash query (for title-based fallback in Pass 3)
+const ITALIAN_FOOD_TRANSLATIONS: Record<string, string> = {
+  "radicchio": "radicchio red chicory Italian",
+  "asparago": "fresh green asparagus dish",
+  "asparagi": "fresh green asparagus dish",
+  "zucca": "pumpkin soup autumn harvest",
+  "zucche": "pumpkin soup autumn harvest",
+  "fagiolo": "Italian bean soup rustic",
+  "fagioli": "Italian bean soup rustic",
+  "funghi": "porcini mushroom Italian dish",
+  "fungo": "porcini mushroom Italian dish",
+  "pesce": "fresh seafood platter Mediterranean",
+  "baccalà": "salt cod Italian dish",
+  "stoccafisso": "salt cod Italian dish",
+  "vino": "wine glass vineyard sunset",
+  "olio": "olive oil pouring bread",
+  "polenta": "Italian polenta mountain dish",
+  "gnocchi": "Italian gnocchi potato pasta",
+  "gnocco": "Italian gnocchi potato pasta",
+  "salsiccia": "Italian sausage grilled outdoor",
+  "carne": "grilled meat outdoor Italian barbecue",
+  "dolci": "Italian pastry dessert table",
+  "formaggio": "Italian cheese board rustic",
+  "formaggi": "Italian cheese board rustic",
+  "pinza": "Italian focaccia flatbread rustic",
+  "riso": "Italian risotto rice dish",
+  "birra": "craft beer outdoor festival",
+  "oca": "roasted goose Italian dish",
+  "anatra": "roasted duck Italian dish",
+  "castagne": "roasted chestnuts autumn",
+  "castagna": "roasted chestnuts autumn",
+  "mele": "fresh apples harvest autumn",
+  "mela": "fresh apples harvest autumn",
+  "ciliegia": "fresh cherries harvest",
+  "ciliegie": "fresh cherries harvest",
+  "fragola": "fresh strawberries Italian",
+  "fragole": "fresh strawberries Italian",
+  "tartufo": "Italian truffle dish",
+  "prosciutto": "Italian prosciutto ham cutting",
+  "salame": "Italian salami cured meat",
+  "pane": "Italian bread rustic bakery",
+  "pasta": "fresh Italian pasta homemade",
+  "pizza": "Italian pizza wood oven",
+  "trippa": "Italian tripe stew",
+  "lumache": "Italian snail dish",
+  "rane": "fried frog legs Italian",
+  "broccolo": "broccoli Italian dish",
+  "broccoli": "broccoli Italian dish",
+  "carciofo": "Italian artichoke dish",
+  "carciofi": "Italian artichoke dish",
+  "bisi": "Italian peas risotto spring",
+  "piselli": "Italian peas dish",
+  "primavera": "spring countryside Italian village",
+  "pasqua": "Easter spring flowers Italian",
+  "salute": "Italian autumn harvest festival",
+};
+
+/**
+ * Build an Unsplash query from the sagra title when unsplash_query is NULL.
+ * Extracts the food keyword from "Sagra del/della X" or "Festa del/della X".
+ * Falls back to TAG_QUERIES if no keyword is recognized.
+ */
+function buildQueryFromTitle(title: string, foodTags: string[] | null): string {
+  // Try to extract the subject from title patterns
+  const match = title.match(
+    /(?:sagra|festa|fiera|rassegna)\s+d(?:el|ella|elle|ei|egli|ell'|i\s)\s*(.+)/i
+  );
+
+  if (match) {
+    const subject = match[1].trim().toLowerCase()
+      .replace(/\s*[&"'].*/i, "") // strip trailing junk
+      .replace(/\s+e\s+.*/i, ""); // strip "e qualcosa"
+
+    // Check each word in the subject against translations
+    const words = subject.split(/\s+/);
+    for (const word of words) {
+      const clean = word.replace(/[^a-zàèéìòù]/gi, "");
+      if (ITALIAN_FOOD_TRANSLATIONS[clean]) {
+        return ITALIAN_FOOD_TRANSLATIONS[clean];
+      }
+    }
+
+    // If we extracted a subject but couldn't translate, use it directly
+    // (Unsplash often understands Italian food words)
+    if (subject.length >= 3 && subject.length <= 30) {
+      return `${subject} Italian food`;
+    }
+  }
+
+  // Fallback: use TAG_QUERIES mapping by first food tag
+  const firstTag = foodTags?.[0];
+  if (firstTag && TAG_QUERIES[firstTag]) return TAG_QUERIES[firstTag];
+
+  // Last resort: use title itself as search
+  const shortTitle = title.slice(0, 30).trim();
+  return `${shortTitle} Italian festival`;
 }
 
 interface UnsplashPhoto {
@@ -601,7 +700,7 @@ async function runUnsplashPass(
   // Query 1: sagre with NULL image_url
   const { data: nullRows } = await supabase
     .from("sagre")
-    .select("id, food_tags, image_url, unsplash_query")
+    .select("id, title, food_tags, image_url, unsplash_query")
     .is("image_url", null)
     .eq("is_active", true)
     .eq("status", "enriched")
@@ -613,7 +712,7 @@ async function runUnsplashPass(
   // since Supabase doesn't support regex filtering
   const { data: imageRows } = await supabase
     .from("sagre")
-    .select("id, food_tags, image_url, unsplash_query")
+    .select("id, title, food_tags, image_url, unsplash_query")
     .not("image_url", "is", null)
     .eq("is_active", true)
     .eq("status", "enriched")
@@ -635,7 +734,7 @@ async function runUnsplashPass(
   console.log(`Unsplash pass: ${sagre.length} sagre need images (${(nullRows ?? []).length} null, ${lowQualityRows.length} low-quality)`);
 
   // Step 1: Group sagre by Unsplash search query
-  // Priority: LLM-generated unsplash_query > TAG_QUERIES by food tag > default
+  // Priority: LLM-generated unsplash_query > title-based query > TAG_QUERIES > default
   const queryGroups = new Map<string, SagraForUnsplash[]>();
   for (const sagra of sagre) {
     let queryKey: string;
@@ -643,9 +742,8 @@ async function runUnsplashPass(
       // Use Gemini-generated query (most specific)
       queryKey = sagra.unsplash_query.trim().toLowerCase();
     } else {
-      // Fallback: use TAG_QUERIES mapping
-      const firstTag = sagra.food_tags?.[0];
-      queryKey = (firstTag && TAG_QUERIES[firstTag]) ? TAG_QUERIES[firstTag] : DEFAULT_UNSPLASH_QUERY;
+      // Fallback: build query from title (extracts food keyword → English translation)
+      queryKey = buildQueryFromTitle(sagra.title, sagra.food_tags);
     }
     const group = queryGroups.get(queryKey) ?? [];
     group.push(sagra);

@@ -331,14 +331,27 @@
 - **Edge functions**: tutte deployate (confermato dall'utente — 3 giorni fa + 1 oggi)
 - **Fix JSON-LD raw in descrizioni**: scrape-sagretoday ora gestisce @type "EventSeries" + filtro `startsWith("{")` nel fallback body text
 
-### 2026-03-16 (sessione 3) — Deploy edge functions + pulizia descrizioni
-- **SQL eseguito dall'utente**: `UPDATE sagre SET source_description=NULL WHERE source_description LIKE '{%'` — pulite descrizioni JSON-LD raw
-- **enrich-sagre DEPLOYATA**: nuovo prompt Gemini (query Unsplash uniche, no fallback generico)
-- **scrape-sagretoday DEPLOYATA**: fix EventSeries + filtro JSON-LD raw nelle descrizioni
+### 2026-03-16 (sessione 4) — Cambio modello Gemini per rate limits
+- **Gemini 2.5 Flash → 2.5 Flash-Lite**: free tier aveva solo 20 RPD (richieste/giorno), causava 429 continui. Flash-Lite ha 1000 RPD.
+- **File modificato**: `supabase/functions/enrich-sagre/index.ts` riga 384
+- **DA FARE**: deploy enrich-sagre
+
+### 2026-03-16 (sessione 3) — Deploy edge functions + fix province + fix immagini duplicate
+- **SQL pulizia descrizioni JSON-LD raw**: eseguito dall'utente
+- **enrich-sagre DEPLOYATA** (2x):
+  1. Primo deploy: nuovo prompt Gemini (query Unsplash uniche, no fallback generico)
+  2. Secondo deploy: Pass 3 title-based fallback (buildQueryFromTitle con 40+ traduzioni cibo italiano→inglese)
+- **scrape-sagretoday DEPLOYATA**: fix EventSeries + filtro JSON-LD raw
+- **Province counts FIXATO**: ProvinceSection + SearchFilters ora usano code (BL) non name (Belluno)
+- **Province code display FIXATO**: "(RO)" non "(Ro)" — CSS capitalize separato da provinceSuffix()
+- **Immagini duplicate FIXATO**: problema era che reset unsplash_query senza reset status → Pass 3 usava TAG_QUERIES generiche → stesse foto per tutte le sagre con stesso tag. Fix: buildQueryFromTitle() estrae keyword dal titolo sagra.
+- **Commit c7e2fdd**: 12 file (tutte fix sessione 2+3)
+- **Commit f221cfb**: province code display fix (3 file)
+- **Utente ha eseguito**: reset image_url + status→pending_llm per re-enrichment completo
+- **IN CORSO**: TEST enrich-sagre per ri-generare immagini con query uniche
 - **DA FARE**:
-  - Fix video bacchette orientali (ancora presente nella hero)
-  - Commit tutti i fix locali
-  - Nuove fonti TIER 1
+  - Commit enrich-sagre title-based fallback
+  - Fonti TIER 1
 
 ### 2026-03-16 — Fix "poche sagre" + pulizia DB + file guida
 - **Lookback 14→30 giorni**: tutte le query sagre.ts ora usano finestra 30 giorni per sagre senza end_date

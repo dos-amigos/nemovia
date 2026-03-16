@@ -80,9 +80,29 @@ Riferimento definitivo su **cosa mostrare e come**. Per l'architettura tecnica v
 Tracking pixel, placeholder, favicon, logo sito, thumbnail WordPress, data URI, dimensioni URL <= 400px.
 Siti specifici: `eventiesagre/thumb`, `assosagre/thumb`, `sagritaly/_small`, `solosagre/s/`.
 
-### Fallback
+### Fallback immagini — REGOLA TASSATIVA
 
-5 immagini Unsplash curate per categoria: carne, pesce, vino, zucca, formaggi, funghi, gnocchi, dolci, verdura, prodotti-tipici, generico. Selezione **deterministica** via hash dell'ID sagra (consistenza SSR).
+**Sistema a 3 livelli:**
+1. **Unsplash query specifica** (da Gemini `unsplash_query`) — priorità massima
+2. **Immagini locali per SOGGETTO specifico** — quando Unsplash non disponibile
+3. **MAI immagini generiche** — ogni sagra deve avere un'immagine pertinente al suo tema
+
+**Immagini locali per soggetto** (`/public/images/fallback/{soggetto}-{1..5}.jpg`):
+- Scaricare da Unsplash 5 foto BELLE e SPECIFICHE per ogni soggetto
+- Categorie OBBLIGATORIE (basate su analisi sagre attive):
+  radicchio, zucca, pesce, vino, uva, formaggio, gnocchi, bigoli, cinghiale,
+  piselli, carciofi, asparagi, funghi, polenta, baccalà, salsiccia, castagne,
+  mele, fragole, riso, bufala, oca, dolci, pane/focaccia, olio, birra,
+  prodotti-tipici, generico-sagra
+- Ogni soggetto ha 5 varianti → assegnazione RANDOM per hash ID sagra
+- Con 5 varianti per soggetto è MOLTO improbabile che sagre vicine abbiano la stessa foto
+- La keyword del soggetto si estrae dal TITOLO: "Sagra del Radicchio" → soggetto "radicchio"
+- Se il soggetto non ha immagini locali dedicate → fallback alla categoria food tag più vicina
+
+**VIETATO:**
+- Foto di mercati generici, tendoni, bancarelle senza cibo riconoscibile
+- Foto non pertinenti al soggetto (luna per bufala, spaghetti per radicchio)
+- Stessa immagine ripetuta su più sagre visibili contemporaneamente
 
 ---
 
@@ -92,14 +112,30 @@ Siti specifici: `eventiesagre/thumb`, `assosagre/thumb`, `sagritaly/_small`, `so
 
 5 video nel progetto + 12 query citta' venete (Padova Prato della Valle, Verona arena, Venezia canal grande, Vicenza piazza, Treviso fiume, Bassano ponte, ecc.).
 
-### Ricerca video dettaglio (Pexels)
+### Video dettaglio sagra — REGOLA TASSATIVA
 
-Ordine: **tema sagra** → citta' → provincia → generico Veneto.
-Il titolo viene convertito in tema tramite 30+ regex (primavera→spring, broccol→vegetable market, zucca→pumpkin market, ecc.).
+**Sistema a 3 livelli (stesso principio delle immagini):**
+1. **Video Pexels per SOGGETTO sagra** — cerca il CIBO/TEMA dal titolo, NON la città
+2. **Video locali per soggetto** (`/public/videos/fallback/{soggetto}-{1..5}.mp4`) — quando Pexels non disponibile
+3. **Video locali hero generici** (centri storici veneti, cibo italiano) — ultimo fallback
+
+**Video locali per soggetto** — scaricare da Pexels 5 video per ogni tema:
+  radicchio, pesce, vino, formaggio, gnocchi, carne-griglia, asparagi, funghi,
+  polenta, dolci, pane, olio, pizza, pasta, mercato-italiano, sagra-generica
+- Assegnazione RANDOM per hash ID sagra (5 varianti → no duplicati)
+- La keyword si estrae dal TITOLO: "Festa della Bufala" → cerca "buffalo mozzarella", NON "Terrassa Padovana"
+
+**Ordine ricerca video Pexels:**
+1. Soggetto dal titolo sagra (tradotto in inglese)
+2. Se nessun risultato → food tag principale
+3. Se nessun risultato → video locale per soggetto
+4. **MAI** cercare per nome città — produce risultati irrilevanti (luna, panorami, traffico)
 
 ### Divieti assoluti
 
 - **MAI** cibo asiatico, bacchette, cucina orientale
+- **MAI** cercare video per nome città (produce luna, panorami, traffico)
+- **MAI** video irrilevanti al tema sagra (luna per bufala, tramonto per radicchio)
 - **SOLO** cibo italiano, campagna veneta, centri storici
 
 ---

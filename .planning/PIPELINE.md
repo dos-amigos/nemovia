@@ -22,7 +22,7 @@ ENRICHMENT Pass 1: Geocoding (Nominatim)
  [sagre] status='pending_llm'
     |
     v
-ENRICHMENT Pass 2: LLM (Google Gemini)
+ENRICHMENT Pass 2: LLM (Google Gemini 2.5 Flash-Lite — 1000 RPD free tier)
   - Genera: food_tags, feature_tags, enhanced_description, unsplash_query
   - Budget: 120s totale, rate limit 4.5s tra batch
     |
@@ -224,7 +224,7 @@ Siti specifici: eventiesagre/thumb, assosagre/thumb, sagritaly/_small, solosagre
 - **Chunking**: 1 provincia per invocazione (sagretoday)
 - **NULL-only update**: detail scraping aggiorna solo campi NULL (non sovrascrive)
 - **Copie inline**: funzioni pure copiate dentro la edge function (Deno non importa da src/)
-- **Rate limiting**: 1-1.5s tra richieste HTTP, 4.5s tra batch Gemini
+- **Rate limiting**: 1-1.5s tra richieste HTTP, 4.5s tra batch Gemini (modello: gemini-2.5-flash-lite, 1000 RPD free tier)
 
 ### Schedule (pg_cron)
 | Job | Orario | Note |
