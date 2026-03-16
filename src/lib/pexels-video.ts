@@ -17,63 +17,84 @@ interface PexelsSearchResponse {
 }
 
 /**
- * Extract a theme keyword from the sagra title for video search.
- * "Sagra di Primavera a Borgo Veneto" → "spring Italy"
- * "Sagra dei Broccoli" → "broccoli market Italy"
- * "Festa dell'Olio" → "olive oil Italy"
+ * Extract a food theme from the sagra title for video search.
+ * NEVER searches by city name — always food/subject.
  */
 const TITLE_THEMES: [RegExp, string][] = [
-  [/primavera/i, "spring flowers countryside Italy"],
-  [/estate|ferragosto/i, "summer Italian countryside"],
-  [/autunno/i, "autumn harvest Italy"],
-  [/inverno|natale/i, "winter Italian village"],
-  [/broccol/i, "broccoli vegetable market"],
-  [/asparag/i, "asparagus vegetable market"],
-  [/carciofo|carciofi/i, "artichoke food market"],
-  [/radicchio/i, "radicchio salad Italian"],
-  [/zucca|zucch/i, "pumpkin autumn market"],
-  [/fungh/i, "mushroom forest Italy"],
-  [/pesce|mare|frutti/i, "seafood fish market Italy"],
-  [/carne|grigliata|salsicc/i, "grilled meat barbecue Italy"],
-  [/olio|oliv/i, "olive oil food Italy"],
-  [/vino|vendemmia|uva/i, "wine vineyard Italy"],
-  [/formaggio|formaggi|caseus/i, "cheese Italian market"],
-  [/dolci|frittella|galani/i, "Italian pastry sweets"],
-  [/pinza|pinzin|focaccia/i, "Italian focaccia flatbread"],
-  [/torta/i, "Italian cake dessert"],
-  [/gnocch/i, "gnocchi pasta Italian food"],
-  [/polenta/i, "polenta Italian food"],
-  [/baccalà|baccala/i, "stockfish Italian food"],
-  [/risotto|riso/i, "risotto Italian food"],
+  // Specific foods first
+  [/birr[ae]/i, "craft beer pouring glass"],
+  [/radicchio/i, "radicchio red chicory salad"],
+  [/asparag/i, "asparagus green cooking"],
+  [/carciofo|carciofi/i, "artichoke cooking Italian"],
+  [/broccol/i, "broccoli cooking vegetables"],
+  [/polenta/i, "polenta Italian corn cooking"],
+  [/baccalà|baccala|stoccafisso/i, "cod fish cooking Italian"],
+  [/salsicc/i, "sausage grilling Italian"],
+  [/castagne|castagna|marroni/i, "roasting chestnuts fire autumn"],
+  [/mele\b|mela\b/i, "fresh apples harvest"],
+  [/fragol/i, "fresh strawberries red"],
+  [/risotto/i, "risotto cooking Italian rice"],
+  [/bufal/i, "mozzarella fresh Italian cheese"],
+  [/\boca\b|dell'oca/i, "roasted poultry dinner"],
+  [/pinza|pinzin|focaccia/i, "focaccia bread baking Italian"],
+  [/\bolio\b|oliv/i, "olive oil pouring Italian food"],
+  [/bigol/i, "fresh pasta Italian making"],
+  [/cinghiale/i, "meat stew Italian cooking"],
+  [/piselli|\bbisi\b/i, "green peas cooking spring"],
+  [/\bran[ae]\b|delle\s+rane/i, "frying food Italian traditional"],
+  [/\buva\b|vendemmia/i, "grape harvest vineyard"],
+  [/\bmiele\b/i, "honey pouring golden"],
+  [/torta/i, "Italian cake dessert baking"],
+  // Broader categories
+  [/gnocch/i, "gnocchi pasta Italian cooking"],
+  [/fungh/i, "mushroom cooking Italian"],
+  [/zucc[ah]/i, "pumpkin soup autumn cooking"],
+  [/pesce|mare|frutti|sarde|anguilla/i, "seafood cooking Mediterranean"],
+  [/carne|grigliata|barbecue|griglia/i, "grilled meat barbecue Italian"],
+  [/\briso\b/i, "risotto Italian cooking"],
+  [/vino\b/i, "wine pouring glass Italian"],
+  [/formaggio|formaggi|caseus/i, "cheese Italian making"],
+  [/dolci|frittella|galani|fritola/i, "Italian pastry dessert making"],
+  [/pane\b/i, "bread baking Italian"],
+  // Seasons
+  [/primavera/i, "spring Italian countryside flowers"],
+  [/estate|ferragosto/i, "summer Italian food outdoor"],
+  [/autunno/i, "autumn harvest Italian food"],
+  [/inverno|natale/i, "winter Italian food warm"],
 ];
 
+/** Fallback: food tag → video query */
+const TAG_QUERIES: Record<string, string> = {
+  Pesce: "seafood cooking Mediterranean",
+  Carne: "grilled meat barbecue Italian",
+  Vino: "wine pouring glass Italian",
+  Formaggi: "cheese Italian making",
+  Funghi: "mushroom cooking Italian",
+  Radicchio: "radicchio salad Italian",
+  Dolci: "Italian pastry dessert making",
+  Zucca: "pumpkin soup cooking",
+  Gnocchi: "gnocchi pasta Italian",
+  Pane: "bread baking Italian",
+  Verdura: "vegetables cooking Italian",
+  "Prodotti Tipici": "Italian charcuterie cheese board",
+};
+
 function extractThemeQuery(title: string, foodTags?: string[] | null): string | null {
-  // Check title for specific themes
   for (const [pattern, query] of TITLE_THEMES) {
     if (pattern.test(title)) return query;
   }
-  // Check food tags
   if (foodTags?.length) {
-    const tag = foodTags[0];
-    const foodQueries: Record<string, string> = {
-      Pesce: "seafood fish market Italy",
-      Carne: "grilled meat barbecue Italy",
-      Vino: "wine vineyard Italy",
-      Formaggi: "cheese Italian market",
-      Funghi: "mushroom autumn Italy",
-      Radicchio: "radicchio Italian vegetable",
-      Dolci: "Italian pastry sweets bakery",
-      Zucca: "pumpkin autumn market",
-    };
-    if (foodQueries[tag]) return foodQueries[tag];
+    for (const tag of foodTags) {
+      if (TAG_QUERIES[tag]) return TAG_QUERIES[tag];
+    }
   }
   return null;
 }
 
 /**
- * Search Pexels for a video matching the sagra's theme.
- * Priority: sagra theme (from title/food) → city → province → generic Veneto.
- * Returns a direct video URL (mp4) or null.
+ * Search Pexels for a video matching the sagra's FOOD theme.
+ * NEVER searches by city name — only food/subject queries.
+ * Priority: title theme → food tag → generic Italian food.
  */
 export async function searchCityVideo(
   locationText: string,
@@ -83,14 +104,11 @@ export async function searchCityVideo(
 ): Promise<string | null> {
   if (!PEXELS_API_KEY) return null;
 
-  const cityName = extractCityName(locationText);
   const themeQuery = title ? extractThemeQuery(title, foodTags) : null;
 
   const queries = [
-    themeQuery,                                    // Theme/food first
-    `${cityName} Italy`,                           // City fallback
-    province ? `${province} Italy` : null,         // Province fallback
-    "Veneto Italy countryside",                    // Generic fallback
+    themeQuery,
+    "Italian food cooking rustic", // Generic food fallback (NEVER city/province)
   ].filter(Boolean) as string[];
 
   for (const query of queries) {
@@ -99,7 +117,7 @@ export async function searchCityVideo(
     try {
       const res = await fetch(url, {
         headers: { Authorization: PEXELS_API_KEY },
-        next: { revalidate: 86400 }, // Cache 24h
+        next: { revalidate: 86400 },
       });
 
       if (!res.ok) continue;
@@ -108,7 +126,6 @@ export async function searchCityVideo(
       if (data.videos.length === 0) continue;
 
       const video = data.videos[0];
-      // Prefer HD mp4 ≤ 1280px wide, fallback to SD
       const hdFile = video.video_files.find(
         (f) =>
           f.quality === "hd" &&
@@ -132,7 +149,6 @@ export async function searchCityVideo(
 /**
  * Extract city name from location_text.
  * "Zugliano (VI)" → "Zugliano"
- * "San Bonifacio" → "San Bonifacio"
  */
 export function extractCityName(locationText: string): string {
   return locationText.replace(/\s*\([^)]+\)\s*$/, "").trim();

@@ -1,28 +1,106 @@
 /**
- * Maps food_tags to local fallback images in /public/images/fallback/.
+ * Maps sagra TITLE + food_tags to local fallback images in /public/images/fallback/.
  * Used when a sagra has no image_url from the pipeline.
  * Deterministic selection based on sagra ID for SSR/hydration consistency.
  *
- * Also exports isLowQualityUrl() for detecting known bad/low-res image patterns
- * from scraped sources (site logos, placeholder images, tracking pixels, tiny thumbnails).
+ * Priority: title pattern match → food_tag match → "generico"
+ * 33 subjects × 5 variants each = 165 fallback images.
+ *
+ * Also exports isLowQualityUrl() for detecting known bad/low-res image patterns.
  */
 
-const CATEGORY_IMAGES: Record<string, string[]> = {
-  carne: ["/images/fallback/carne-1.jpg", "/images/fallback/carne-2.jpg", "/images/fallback/carne-3.jpg", "/images/fallback/carne-4.jpg", "/images/fallback/carne-5.jpg"],
-  pesce: ["/images/fallback/pesce-1.jpg", "/images/fallback/pesce-2.jpg", "/images/fallback/pesce-3.jpg", "/images/fallback/pesce-4.jpg", "/images/fallback/pesce-5.jpg"],
-  vino: ["/images/fallback/vino-1.jpg", "/images/fallback/vino-2.jpg", "/images/fallback/vino-3.jpg", "/images/fallback/vino-4.jpg", "/images/fallback/vino-5.jpg"],
-  zucca: ["/images/fallback/zucca-1.jpg", "/images/fallback/zucca-2.jpg", "/images/fallback/zucca-3.jpg", "/images/fallback/zucca-4.jpg", "/images/fallback/zucca-5.jpg"],
-  formaggi: ["/images/fallback/formaggi-1.jpg", "/images/fallback/formaggi-2.jpg", "/images/fallback/formaggi-3.jpg", "/images/fallback/formaggi-4.jpg", "/images/fallback/formaggi-5.jpg"],
-  funghi: ["/images/fallback/funghi-1.jpg", "/images/fallback/funghi-2.jpg", "/images/fallback/funghi-3.jpg", "/images/fallback/funghi-4.jpg", "/images/fallback/funghi-5.jpg"],
-  gnocchi: ["/images/fallback/gnocchi-1.jpg", "/images/fallback/gnocchi-2.jpg", "/images/fallback/gnocchi-3.jpg", "/images/fallback/gnocchi-4.jpg", "/images/fallback/gnocchi-5.jpg"],
-  dolci: ["/images/fallback/dolci-1.jpg", "/images/fallback/dolci-2.jpg", "/images/fallback/dolci-3.jpg", "/images/fallback/dolci-4.jpg", "/images/fallback/dolci-5.jpg"],
-  verdura: ["/images/fallback/verdura-1.jpg", "/images/fallback/verdura-2.jpg", "/images/fallback/verdura-3.jpg", "/images/fallback/verdura-4.jpg", "/images/fallback/verdura-5.jpg"],
-  "prodotti-tipici": ["/images/fallback/prodotti-tipici-1.jpg", "/images/fallback/prodotti-tipici-2.jpg", "/images/fallback/prodotti-tipici-3.jpg", "/images/fallback/prodotti-tipici-4.jpg", "/images/fallback/prodotti-tipici-5.jpg"],
-  generico: ["/images/fallback/generico-1.jpg", "/images/fallback/generico-2.jpg", "/images/fallback/generico-3.jpg", "/images/fallback/generico-4.jpg", "/images/fallback/generico-5.jpg"],
+/** Helper to generate the 5 image paths for a subject */
+function paths(subject: string): string[] {
+  return [1, 2, 3, 4, 5].map((n) => `/images/fallback/${subject}-${n}.jpg`);
+}
+
+const SUBJECT_IMAGES: Record<string, string[]> = {
+  // Core categories
+  carne: paths("carne"),
+  pesce: paths("pesce"),
+  vino: paths("vino"),
+  zucca: paths("zucca"),
+  formaggi: paths("formaggi"),
+  funghi: paths("funghi"),
+  gnocchi: paths("gnocchi"),
+  dolci: paths("dolci"),
+  verdura: paths("verdura"),
+  "prodotti-tipici": paths("prodotti-tipici"),
+  generico: paths("generico"),
+  // Specific food subjects
+  birra: paths("birra"),
+  radicchio: paths("radicchio"),
+  asparagi: paths("asparagi"),
+  polenta: paths("polenta"),
+  baccala: paths("baccala"),
+  salsiccia: paths("salsiccia"),
+  castagne: paths("castagne"),
+  mele: paths("mele"),
+  fragole: paths("fragole"),
+  risotto: paths("risotto"),
+  bufala: paths("bufala"),
+  oca: paths("oca"),
+  focaccia: paths("focaccia"),
+  olio: paths("olio"),
+  bigoli: paths("bigoli"),
+  cinghiale: paths("cinghiale"),
+  piselli: paths("piselli"),
+  carciofi: paths("carciofi"),
+  rane: paths("rane"),
+  uva: paths("uva"),
+  miele: paths("miele"),
+  pasta: paths("pasta"),
 };
 
-/** Maps food_tag display values to image categories */
-const TAG_TO_CATEGORY: Record<string, string> = {
+// =============================================================================
+// Title → subject matching (FIRST priority)
+// =============================================================================
+
+/** Regex patterns to extract the food subject from a sagra title.
+ *  Order matters: more specific patterns first, broader ones last. */
+const TITLE_TO_SUBJECT: [RegExp, string][] = [
+  // Specific foods
+  [/birr[ae]/i, "birra"],
+  [/radicchio/i, "radicchio"],
+  [/asparag/i, "asparagi"],
+  [/polenta/i, "polenta"],
+  [/baccalà|baccala|stoccafisso/i, "baccala"],
+  [/salsicc/i, "salsiccia"],
+  [/castagne|castagna|marroni/i, "castagne"],
+  [/mele\b|mela\b|miele?\s*e\s*mel/i, "mele"],
+  [/fragol/i, "fragole"],
+  [/risotto/i, "risotto"],
+  [/bufal/i, "bufala"],
+  [/\boca\b|dell'oca|dell'oca/i, "oca"],
+  [/focaccia|pinza\b|pinzin/i, "focaccia"],
+  [/\bolio\b|oliv/i, "olio"],
+  [/bigol/i, "bigoli"],
+  [/cinghiale/i, "cinghiale"],
+  [/piselli|\bbisi\b/i, "piselli"],
+  [/carciofi|carciofo/i, "carciofi"],
+  [/\bran[ae]\b|delle\s+rane/i, "rane"],
+  [/\buva\b|vendemmia/i, "uva"],
+  [/\bmiele\b/i, "miele"],
+  [/\bpasta\b|bigoli|tagliatelle|pappardelle/i, "pasta"],
+  // Broader categories (check after specific)
+  [/gnocch/i, "gnocchi"],
+  [/fungh/i, "funghi"],
+  [/zucc[ah]/i, "zucca"],
+  [/pesce|frutti.*mare|mare.*frutti|sarde|sardella|anguilla/i, "pesce"],
+  [/carne|grigliata|barbecue|griglia/i, "carne"],
+  [/\briso\b/i, "risotto"],
+  [/vino\b/i, "vino"],
+  [/formaggio|formaggi|caseus/i, "formaggi"],
+  [/dolci|torta\b|frittelle|galani|fritola/i, "dolci"],
+  [/pane\b|panettone/i, "focaccia"],
+  [/prodotti?\s*tipic/i, "prodotti-tipici"],
+];
+
+// =============================================================================
+// Food tag → subject mapping (SECOND priority)
+// =============================================================================
+
+const TAG_TO_SUBJECT: Record<string, string> = {
   Carne: "carne",
   Pesce: "pesce",
   Vino: "vino",
@@ -31,21 +109,24 @@ const TAG_TO_CATEGORY: Record<string, string> = {
   Funghi: "funghi",
   Gnocchi: "gnocchi",
   Dolci: "dolci",
-  Radicchio: "verdura",
+  Pane: "focaccia",
+  Radicchio: "radicchio",
   Verdura: "verdura",
   "Prodotti Tipici": "prodotti-tipici",
 };
 
-/** Priority for category selection (higher = preferred) */
-const CATEGORY_PRIORITY: Record<string, number> = {
+/** Priority when multiple food_tags match (higher = preferred) */
+const TAG_PRIORITY: Record<string, number> = {
   carne: 6,
   pesce: 5,
   zucca: 4,
   gnocchi: 3,
   funghi: 3,
+  radicchio: 3,
   vino: 2,
   formaggi: 2,
   dolci: 2,
+  focaccia: 2,
   verdura: 1,
   "prodotti-tipici": 1,
 };
@@ -54,20 +135,12 @@ const CATEGORY_PRIORITY: Record<string, number> = {
 // Low-quality / bad image URL detection
 // =============================================================================
 
-/**
- * Known patterns that indicate a scraped image_url is NOT a real event photo.
- * These are site logos, default placeholders, tracking pixels, or tiny thumbnails
- * that should be replaced with a themed Unsplash/local fallback.
- */
 const BAD_IMAGE_PATTERNS: RegExp[] = [
-  // Tracking pixels and spacer GIFs
   /spacer\.(gif|png)/i,
   /pixel\.(gif|png)/i,
   /1x1\.(gif|png|jpg)/i,
   /blank\.(gif|png|jpg)/i,
   /transparent\.(gif|png)/i,
-
-  // Common placeholder / default image filenames
   /no[-_]?image/i,
   /no[-_]?photo/i,
   /no[-_]?pic/i,
@@ -76,53 +149,32 @@ const BAD_IMAGE_PATTERNS: RegExp[] = [
   /coming[-_]?soon/i,
   /image[-_]?not[-_]?found/i,
   /missing[-_]?(image|photo)/i,
-
-  // Site logos and branding (not event photos)
   /\blogo[-_]?(sito|site|header|footer|main)?\b.*\.(png|jpg|svg|gif|webp)$/i,
   /\bfavicon\b/i,
   /\bicon[-_]?\d*\.(png|ico|svg)/i,
-
-  // WordPress placeholder patterns
   /wp-content\/plugins\/.*placeholder/i,
   /woocommerce-placeholder/i,
-
-  // Thumbnail / small image indicators in path
   /[/_-](thumb|thumbnail|small|mini|micro|tiny|icon)[/_.-]/i,
   /\/thumbs?\//i,
   /\/thumbnails?\//i,
   /\/miniature?\//i,
-
-  // Data URIs (shouldn't be in DB but just in case)
   /^data:image/i,
-
-  // Dimension indicators in URL — width or height <= 400px
-  // Query params: ?w=300, ?width=200, ?h=150
   /[?&]w(idth)?=([1-9]\d{0,1}|[1-3]\d{2}|400)(&|$)/,
   /[?&]h(eight)?=([1-9]\d{0,1}|[1-3]\d{2}|400)(&|$)/,
-  // WordPress-style suffix: -300x200.jpg, -150x150.png
   /-(\d{1,2}|[1-3]\d{2}|400)x(\d{1,2}|[1-3]\d{2}|400)\.\w+$/,
-  // Resize services: /resize/300/200, =s150, =w300
   /\/resize\/([1-3]\d{2}|[1-9]\d?)\//i,
   /[=]s([1-3]\d{2}|[1-9]\d?)(&|$)/,
-
-  // Known low-quality source site patterns (Italian sagre sites)
   /eventiesagre\.it\/.*\/immagini\/thumb/i,
   /assosagre\.it\/.*\/thumb/i,
   /sagritaly\.it\/.*_small/i,
   /solosagre\.com\/.*\/s\//i,
 ];
 
-/**
- * Returns true if the image URL matches known low-quality / bad image patterns.
- * Used both at display time (client) and in the enrich pipeline (Edge Function).
- */
 export function isLowQualityUrl(url: string | null | undefined): boolean {
   if (!url || url.trim() === "") return true;
-
   for (const pattern of BAD_IMAGE_PATTERNS) {
     if (pattern.test(url)) return true;
   }
-
   return false;
 }
 
@@ -130,7 +182,6 @@ export function isLowQualityUrl(url: string | null | undefined): boolean {
 // Deterministic fallback image selection
 // =============================================================================
 
-/** Simple string hash for deterministic image selection */
 function hashString(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -141,29 +192,42 @@ function hashString(str: string): number {
 
 /**
  * Get a fallback image path for a sagra without an image_url.
- * Selection is deterministic based on sagra ID for SSR consistency.
+ * Priority: title pattern → food_tags → "generico".
+ * Selection is deterministic (hash of sagraId) for SSR consistency.
  */
 export function getFallbackImage(
   sagraId: string,
-  foodTags?: string[] | null
+  foodTags?: string[] | null,
+  title?: string | null,
 ): string {
-  let bestCategory = "generico";
-  let bestPriority = -1;
+  let subject = "generico";
 
-  if (foodTags && foodTags.length > 0) {
+  // 1. Try to match from title (most specific)
+  if (title) {
+    for (const [pattern, subj] of TITLE_TO_SUBJECT) {
+      if (pattern.test(title)) {
+        subject = subj;
+        break;
+      }
+    }
+  }
+
+  // 2. If title didn't match, try food_tags
+  if (subject === "generico" && foodTags && foodTags.length > 0) {
+    let bestPriority = -1;
     for (const tag of foodTags) {
-      const category = TAG_TO_CATEGORY[tag];
-      if (category) {
-        const priority = CATEGORY_PRIORITY[category] ?? 0;
+      const mapped = TAG_TO_SUBJECT[tag];
+      if (mapped) {
+        const priority = TAG_PRIORITY[mapped] ?? 0;
         if (priority > bestPriority) {
           bestPriority = priority;
-          bestCategory = category;
+          subject = mapped;
         }
       }
     }
   }
 
-  const images = CATEGORY_IMAGES[bestCategory] ?? CATEGORY_IMAGES.generico;
+  const images = SUBJECT_IMAGES[subject] ?? SUBJECT_IMAGES.generico;
   const index = hashString(sagraId) % images.length;
   return images[index];
 }

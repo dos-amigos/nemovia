@@ -15,7 +15,7 @@ export default function MapMarkerPopup({ sagra }: MapMarkerPopupProps) {
   const hasGoodImage = sagra.image_url && !isLowQualityUrl(sagra.image_url);
   const imageSrc = hasGoodImage
     ? sagra.image_url!
-    : getFallbackImage(sagra.id, sagra.food_tags);
+    : getFallbackImage(sagra.id, sagra.food_tags, sagra.title);
 
   return (
     <div className="w-[240px] overflow-hidden">
