@@ -18,7 +18,7 @@ interface SagraCardProps {
 
 export function SagraCard({ sagra, distanceKm }: SagraCardProps) {
   const distance = distanceKm ?? sagra.distance_km;
-  const fallback = getFallbackImage(sagra.id, sagra.food_tags, sagra.title);
+  const fallback = getFallbackImage(sagra.id, sagra.food_tags, sagra.title, sagra.enhanced_description);
   const hasGoodImage = sagra.image_url && !isLowQualityUrl(sagra.image_url);
   const imageSrc = hasGoodImage ? sagra.image_url! : fallback;
 

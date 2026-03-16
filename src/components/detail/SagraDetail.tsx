@@ -33,7 +33,7 @@ export default function SagraDetail({ sagra, videoUrl }: SagraDetailProps) {
   const lng = hasLocation ? sagra.location!.coordinates[0] : null;
 
   const description = sagra.source_description ?? sagra.enhanced_description ?? sagra.description;
-  const fallback = getFallbackImage(sagra.id, sagra.food_tags, sagra.title);
+  const fallback = getFallbackImage(sagra.id, sagra.food_tags, sagra.title, description);
   const hasGoodImage = sagra.image_url && !isLowQualityUrl(sagra.image_url);
   const imageSrc = hasGoodImage ? sagra.image_url! : fallback;
   // Only show Unsplash credit when we're actually displaying the pipeline image (not a fallback)

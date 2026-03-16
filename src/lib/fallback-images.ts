@@ -3,7 +3,7 @@
  * Used when a sagra has no image_url from the pipeline.
  * Deterministic selection based on sagra ID for SSR/hydration consistency.
  *
- * Priority: title pattern match → food_tag match → "generico"
+ * Priority: title pattern → description pattern → food_tags → "generico"
  * 33 subjects × 10 variants each = 330 fallback images.
  *
  * Also exports isLowQualityUrl() for detecting known bad/low-res image patterns.
@@ -67,32 +67,39 @@ const TITLE_TO_SUBJECT: [RegExp, string][] = [
   [/baccalà|baccala|stoccafisso/i, "baccala"],
   [/salsicc/i, "salsiccia"],
   [/castagne|castagna|marroni/i, "castagne"],
-  [/mele\b|mela\b|miele?\s*e\s*mel/i, "mele"],
+  [/mele\b|mela\b|pomo\b|pero\b/i, "mele"],
   [/fragol/i, "fragole"],
+  [/ciliegi[ae]/i, "fragole"],
   [/risotto/i, "risotto"],
   [/bufal/i, "bufala"],
-  [/\boca\b|dell'oca|dell'oca/i, "oca"],
+  [/\boca\b|dell.oca/i, "oca"],
   [/focaccia|pinza\b|pinzin/i, "focaccia"],
+  [/scarpetta/i, "focaccia"],
   [/\bolio\b|oliv/i, "olio"],
-  [/bigol/i, "bigoli"],
+  [/bigol|bigui/i, "bigoli"],
   [/cinghiale/i, "cinghiale"],
+  [/somarino|\basino\b/i, "carne"],
   [/piselli|\bbisi\b/i, "piselli"],
   [/carciofi|carciofo/i, "carciofi"],
   [/\bran[ae]\b|delle\s+rane/i, "rane"],
   [/\buva\b|vendemmia/i, "uva"],
   [/\bmiele\b/i, "miele"],
-  [/\bpasta\b|bigoli|tagliatelle|pappardelle/i, "pasta"],
+  [/fico\b|fichi\b|figh\b/i, "dolci"],
+  [/giuggiola|giuggiole/i, "dolci"],
+  [/cioccolat/i, "dolci"],
+  [/\bpasta\b|tagliatelle|pappardelle|gargat/i, "pasta"],
   [/fagiol/i, "verdura"],
   [/patat[ae]/i, "verdura"],
   [/lenticch/i, "verdura"],
+  [/\berbe\b|erborist/i, "verdura"],
   // Broader categories (check after specific)
-  [/gnocch/i, "gnocchi"],
+  [/gnocch|gnoche/i, "gnocchi"],
   [/fungh/i, "funghi"],
   [/zucc[ah]/i, "zucca"],
-  [/pesce|frutti.*mare|mare.*frutti|sarde|sardella|\banguilla\b/i, "pesce"],
+  [/pesce|frutti.*mare|mare.*frutti|sarde|sardella|\banguilla\b|ittich/i, "pesce"],
   [/carne|grigliata|barbecue|griglia/i, "carne"],
   [/\briso\b/i, "risotto"],
-  [/vino\b/i, "vino"],
+  [/wine|vino\b|chiaretto|torcolato/i, "vino"],
   [/formaggio|formaggi|caseus/i, "formaggi"],
   [/dolci|torta\b|frittelle|galani|fritola/i, "dolci"],
   [/pane\b|panettone/i, "focaccia"],
@@ -193,29 +200,38 @@ function hashString(str: string): number {
   return Math.abs(hash);
 }
 
+/** Try to match a text against TITLE_TO_SUBJECT patterns */
+function matchSubject(text: string): string | null {
+  for (const [pattern, subj] of TITLE_TO_SUBJECT) {
+    if (pattern.test(text)) return subj;
+  }
+  return null;
+}
+
 /**
  * Get a fallback image path for a sagra without an image_url.
- * Priority: title pattern → food_tags → "generico".
+ * Priority: title → description → food_tags → "generico".
  * Selection is deterministic (hash of sagraId) for SSR consistency.
  */
 export function getFallbackImage(
   sagraId: string,
   foodTags?: string[] | null,
   title?: string | null,
+  description?: string | null,
 ): string {
   let subject = "generico";
 
   // 1. Try to match from title (most specific)
   if (title) {
-    for (const [pattern, subj] of TITLE_TO_SUBJECT) {
-      if (pattern.test(title)) {
-        subject = subj;
-        break;
-      }
-    }
+    subject = matchSubject(title) ?? "generico";
   }
 
-  // 2. If title didn't match, try food_tags
+  // 2. If title didn't match, try description
+  if (subject === "generico" && description) {
+    subject = matchSubject(description) ?? "generico";
+  }
+
+  // 3. If still no match, try food_tags
   if (subject === "generico" && foodTags && foodTags.length > 0) {
     let bestPriority = -1;
     for (const tag of foodTags) {
