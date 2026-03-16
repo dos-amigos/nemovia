@@ -18,8 +18,8 @@ import {
 /* -------------------------------------------------------------------------- */
 
 const MARKER_ICON_PATHS: Record<FoodCategory, string> = {
-  /** Drumstick */
-  carne: `<circle cx="15" cy="8" r="5.5"/><path d="M11 12L5 18"/><path d="M5 18l-1.5 1.5M5 18l1.5 1.5"/>`,
+  /** Drumstick — horizontal ellipse, NOT circle (circle+line = magnifying glass!) */
+  carne: `<ellipse cx="14" cy="9" rx="6.5" ry="4.5"/><path d="M9 12.5L4.5 18.5"/><circle cx="3.5" cy="19.5" r="1.2"/><circle cx="5.5" cy="20.5" r="1.2"/>`,
 
   /** Fish */
   pesce: `<path d="M2 12c3-4 7-6 12-6 1.5 0 3 .5 4.5 1L22 12l-3.5 5c-1.5.5-3 1-4.5 1-5 0-9-2-12-6z"/><circle cx="16" cy="11" r="1" fill="white"/>`,

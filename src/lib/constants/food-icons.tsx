@@ -172,7 +172,7 @@ const ICONS: Record<
   FoodCategory,
   (props: { className?: string }) => React.ReactElement
 > = {
-  /** Drumstick — recognizable meat icon at any size */
+  /** Drumstick — horizontal ellipse meat + bone. NOT a circle (circle+line = magnifying glass at 16px!) */
   carne: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
@@ -184,12 +184,13 @@ const ICONS: Record<
       className={className}
       aria-hidden="true"
     >
-      {/* Meat body */}
-      <circle cx="15" cy="8" r="5.5" />
+      {/* Meat body — horizontal ELLIPSE, never a circle */}
+      <ellipse cx="14" cy="9" rx="6.5" ry="4.5" />
       {/* Bone shaft */}
-      <path d="M11 12L5 18" />
-      {/* Bone end */}
-      <path d="M5 18l-1.5 1.5M5 18l1.5 1.5" />
+      <path d="M9 12.5L4.5 18.5" />
+      {/* Bone end knobs */}
+      <circle cx="3.5" cy="19.5" r="1.2" />
+      <circle cx="5.5" cy="20.5" r="1.2" />
     </svg>
   ),
 
