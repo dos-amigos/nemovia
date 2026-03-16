@@ -48,6 +48,8 @@ interface DetailContent {
   description: string | null;
   menu: string | null;
   orari: string | null;
+  startDate: string | null;
+  endDate: string | null;
 }
 
 // --- Helper functions (inline copies for Deno edge runtime) ---
@@ -323,6 +325,8 @@ async function logRun(
 function extractSagretodayDetail($: cheerio.CheerioAPI): DetailContent {
   let description: string | null = null;
   let orari: string | null = null;
+  let startDate: string | null = null;
+  let endDate: string | null = null;
 
   $('script[type="application/ld+json"]').each((_i: number, el: cheerio.Element) => {
     try {
@@ -330,6 +334,13 @@ function extractSagretodayDetail($: cheerio.CheerioAPI): DetailContent {
       if (jsonData["@type"] === "Event") {
         if (jsonData.description) {
           description = String(jsonData.description).slice(0, 1000);
+        }
+        // Extract dates from detail page JSON-LD
+        if (jsonData.startDate) {
+          startDate = String(jsonData.startDate).slice(0, 10);
+        }
+        if (jsonData.endDate) {
+          endDate = String(jsonData.endDate).slice(0, 10);
         }
       }
     } catch { /* skip */ }
@@ -351,16 +362,17 @@ function extractSagretodayDetail($: cheerio.CheerioAPI): DetailContent {
     orari = pageText.slice(start, end).replace(/\s+/g, " ").trim().slice(0, 500);
   }
 
-  return { description, menu: null, orari };
+  return { description, menu: null, orari, startDate, endDate };
 }
 
 async function scrapeDetailPages(
   supabase: SupabaseClient,
   eventUrls: Array<{ id: string; url: string }>
-): Promise<{ scraped: number; updated: number }> {
+): Promise<{ scraped: number; updated: number; datesRecovered: number }> {
   let scraped = 0;
   let updated = 0;
-  const MAX_DETAIL_PAGES = 5; // fewer detail pages to stay within time budget
+  let datesRecovered = 0;
+  const MAX_DETAIL_PAGES = 15; // more detail pages to recover dates faster
 
   for (const { id, url } of eventUrls.slice(0, MAX_DETAIL_PAGES)) {
     const html = await fetchWithTimeout(url, 10_000);
@@ -370,60 +382,84 @@ async function scrapeDetailPages(
     const $ = cheerio.load(html);
     const detail = extractSagretodayDetail($);
 
-    const updates: Record<string, string | undefined> = {};
-    if (detail.description) updates.source_description = detail.description;
-    if (detail.menu) updates.menu_text = detail.menu;
-    if (detail.orari) updates.orari_text = detail.orari;
+    // Fetch current state to apply NULL-only updates
+    const { data: existing } = await supabase
+      .from("sagre")
+      .select("source_description, menu_text, orari_text, start_date, end_date")
+      .eq("id", id)
+      .single();
 
-    if (Object.keys(updates).length > 0) {
-      const { data: existing } = await supabase
-        .from("sagre")
-        .select("source_description, menu_text, orari_text")
-        .eq("id", id)
-        .single();
-
-      const finalUpdates: Record<string, string> = {};
-      if (updates.source_description && !existing?.source_description) {
-        finalUpdates.source_description = updates.source_description;
-      }
-      if (updates.menu_text && !existing?.menu_text) {
-        finalUpdates.menu_text = updates.menu_text;
-      }
-      if (updates.orari_text && !existing?.orari_text) {
-        finalUpdates.orari_text = updates.orari_text;
-      }
-
-      if (Object.keys(finalUpdates).length > 0) {
-        await supabase.from("sagre").update({
-          ...finalUpdates,
-          updated_at: new Date().toISOString(),
-        }).eq("id", id);
-        updated++;
-      }
+    const finalUpdates: Record<string, string> = {};
+    if (detail.description && !existing?.source_description) {
+      finalUpdates.source_description = detail.description;
+    }
+    if (detail.menu && !existing?.menu_text) {
+      finalUpdates.menu_text = detail.menu;
+    }
+    if (detail.orari && !existing?.orari_text) {
+      finalUpdates.orari_text = detail.orari;
+    }
+    // Recover dates if missing
+    if (detail.startDate && !existing?.start_date) {
+      finalUpdates.start_date = detail.startDate;
+      datesRecovered++;
+    }
+    if (detail.endDate && !existing?.end_date) {
+      finalUpdates.end_date = detail.endDate;
     }
 
-    await new Promise(r => setTimeout(r, 1500));
+    if (Object.keys(finalUpdates).length > 0) {
+      await supabase.from("sagre").update({
+        ...finalUpdates,
+        updated_at: new Date().toISOString(),
+      }).eq("id", id);
+      updated++;
+    }
+
+    await new Promise(r => setTimeout(r, 1000));
   }
 
-  return { scraped, updated };
+  return { scraped, updated, datesRecovered };
 }
 
 async function getEventsNeedingDetails(
   supabase: SupabaseClient,
-  limit: number = 5
+  limit: number = 15
 ): Promise<Array<{ id: string; url: string }>> {
-  const { data } = await supabase
+  // Priority 1: sagre with NULL dates (most critical — invisible on homepage)
+  const { data: needDates } = await supabase
     .from("sagre")
     .select("id, source_url")
     .eq("is_active", true)
     .not("source_url", "is", null)
-    .is("source_description", null)
+    .is("start_date", null)
     .contains("sources", ["sagretoday"])
     .limit(limit);
 
-  return (data ?? [])
+  const results: Array<{ id: string; url: string }> = (needDates ?? [])
     .filter((r: { source_url: string | null }) => r.source_url != null)
     .map((r: { id: string; source_url: string }) => ({ id: r.id, url: r.source_url }));
+
+  // Priority 2: sagre needing description (fill remaining slots)
+  if (results.length < limit) {
+    const seenIds = new Set(results.map(r => r.id));
+    const { data: needDesc } = await supabase
+      .from("sagre")
+      .select("id, source_url")
+      .eq("is_active", true)
+      .not("source_url", "is", null)
+      .is("source_description", null)
+      .contains("sources", ["sagretoday"])
+      .limit(limit - results.length);
+
+    for (const r of needDesc ?? []) {
+      if (r.source_url && !seenIds.has(r.id)) {
+        results.push({ id: r.id, url: r.source_url });
+      }
+    }
+  }
+
+  return results;
 }
 
 // --- CHUNKED PROVINCE SCRAPING ---
@@ -617,10 +653,10 @@ async function scrapeSagretodayProvince(supabase: SupabaseClient, province: stri
     }
 
     // Detail page scraping for sagretoday (limited to stay in time budget)
-    const detailUrls = await getEventsNeedingDetails(supabase, 5);
+    const detailUrls = await getEventsNeedingDetails(supabase, 15);
     if (detailUrls.length > 0) {
-      const { scraped, updated } = await scrapeDetailPages(supabase, detailUrls);
-      console.log(`[scrapeSagretoday] ${province}: detail pages scraped=${scraped}, updated=${updated}`);
+      const { scraped, updated, datesRecovered } = await scrapeDetailPages(supabase, detailUrls);
+      console.log(`[scrapeSagretoday] ${province}: detail pages scraped=${scraped}, updated=${updated}, datesRecovered=${datesRecovered}`);
     }
 
     await logRun(supabase, "sagretoday", "success", eventsFound, eventsInserted, eventsMerged, null, startedAt, `province=${province}`);

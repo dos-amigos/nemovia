@@ -84,14 +84,14 @@ export async function getWeekendSagre(limit = 12): Promise<SagraCardData[]> {
  * Used as a broad pool for Netflix-style scroll row categorization.
  * Ordered by start_date ascending so nearest events appear first.
  */
-export async function getActiveSagre(limit = 80): Promise<SagraCardData[]> {
+export async function getActiveSagre(limit = 200): Promise<SagraCardData[]> {
   try {
     const supabase = await createClient();
     const now = new Date();
     const today = now.toISOString().split("T")[0];
-    // Include sagre with null end_date that started within the last 14 days
+    // Include sagre with null end_date that started within the last 30 days
     // (many multi-day sagre don't have explicit end dates from scrapers)
-    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+    const lookbackDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
       .toISOString()
       .split("T")[0];
 
@@ -100,8 +100,8 @@ export async function getActiveSagre(limit = 80): Promise<SagraCardData[]> {
       .select(SAGRA_CARD_FIELDS)
       .eq("is_active", true)
       .not("province", "is", null)
-      .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${twoWeeksAgo})`)
-      .order("start_date", { ascending: true })
+      .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${lookbackDate}),and(end_date.is.null,start_date.is.null)`)
+      .order("start_date", { ascending: true, nullsFirst: false })
       .limit(limit);
 
     if (error) {
@@ -145,16 +145,17 @@ export async function searchSagre(
 
       let results = (data as SagraCardData[]) ?? [];
       const today = new Date().toISOString().split("T")[0];
-      const twoWeeksAgoRpc = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+      const lookbackRpc = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split("T")[0];
 
-      // Default: hide past events (include null end_date if started within 14 days)
+      // Default: hide past events (include null end_date if started within 30 days, or no dates at all)
       if (!da) {
         results = results.filter(
           (s) =>
             (s.end_date != null && s.end_date >= today) ||
-            (s.end_date == null && s.start_date != null && s.start_date >= twoWeeksAgoRpc)
+            (s.end_date == null && s.start_date != null && s.start_date >= lookbackRpc) ||
+            (s.end_date == null && s.start_date == null)
         );
       }
 
@@ -185,7 +186,7 @@ export async function searchSagre(
     // Standard query with chained filters
     const now = new Date();
     const today = now.toISOString().split("T")[0];
-    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+    const lookbackStd = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
       .toISOString()
       .split("T")[0];
 
@@ -199,8 +200,8 @@ export async function searchSagre(
     if (da) {
       query = query.gte("end_date", da);
     } else {
-      // Default: hide past events. Include sagre with null end_date started within 14 days
-      query = query.or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${twoWeeksAgo})`);
+      // Default: hide past events. Include sagre with null end_date started within 30 days, or no dates at all
+      query = query.or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${lookbackStd}),and(end_date.is.null,start_date.is.null)`);
     }
     if (a) {
       query = query.lte("start_date", a);
@@ -217,7 +218,7 @@ export async function searchSagre(
     }
 
     const { data, error } = await query
-      .order("start_date", { ascending: true })
+      .order("start_date", { ascending: true, nullsFirst: false })
       .limit(50);
 
     if (error) {
@@ -242,7 +243,7 @@ export async function getProvinceCounts(): Promise<ProvinceCount[]> {
     const supabase = await createClient();
     const now = new Date();
     const today = now.toISOString().split("T")[0];
-    const twoWeeksAgoPc = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+    const lookbackPc = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
       .toISOString()
       .split("T")[0];
 
@@ -251,7 +252,7 @@ export async function getProvinceCounts(): Promise<ProvinceCount[]> {
       .select("province, title")
       .eq("is_active", true)
       .not("province", "is", null)
-      .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${twoWeeksAgoPc})`);
+      .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${lookbackPc}),and(end_date.is.null,start_date.is.null)`);
 
     if (error) {
       console.error("getProvinceCounts error:", error.message);
@@ -303,18 +304,19 @@ export async function searchMapSagre(
 
       let results = (data ?? []) as Array<Record<string, unknown>>;
       const today = new Date().toISOString().split("T")[0];
-      const twoWeeksAgoMap = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+      const lookbackMap = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split("T")[0];
 
-      // Default: hide past events (include null end_date if started within 14 days)
+      // Default: hide past events (include null end_date if started within 30 days, or no dates at all)
       if (!da) {
         results = results.filter(
           (s) =>
             (s.end_date != null && (s.end_date as string) >= today) ||
             (s.end_date == null &&
               s.start_date != null &&
-              (s.start_date as string) >= twoWeeksAgoMap)
+              (s.start_date as string) >= lookbackMap) ||
+            (s.end_date == null && s.start_date == null)
         );
       }
 
@@ -355,7 +357,7 @@ export async function searchMapSagre(
     // Standard query with chained filters
     const now2 = new Date();
     const today = now2.toISOString().split("T")[0];
-    const twoWeeksAgoStd = new Date(now2.getTime() - 14 * 24 * 60 * 60 * 1000)
+    const lookbackMapStd = new Date(now2.getTime() - 30 * 24 * 60 * 60 * 1000)
       .toISOString()
       .split("T")[0];
 
@@ -369,9 +371,9 @@ export async function searchMapSagre(
     if (da) {
       query = query.gte("end_date", da);
     } else {
-      // Default: hide past events (include null end_date if started within 14 days)
+      // Default: hide past events (include null end_date if started within 30 days, or no dates at all)
       query = query.or(
-        `end_date.gte.${today},and(end_date.is.null,start_date.gte.${twoWeeksAgoStd})`
+        `end_date.gte.${today},and(end_date.is.null,start_date.gte.${lookbackMapStd}),and(end_date.is.null,start_date.is.null)`
       );
     }
     if (a) {
@@ -418,7 +420,7 @@ export async function getMapSagre(): Promise<MapMarkerData[]> {
     const supabase = await createClient();
     const now = new Date();
     const today = now.toISOString().split("T")[0];
-    const twoWeeksAgoMs = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+    const lookbackMs = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
       .toISOString()
       .split("T")[0];
 
@@ -427,7 +429,7 @@ export async function getMapSagre(): Promise<MapMarkerData[]> {
       .select(MAP_MARKER_FIELDS)
       .eq("is_active", true)
       .not("location", "is", null)
-      .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${twoWeeksAgoMs})`);
+      .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${lookbackMs}),and(end_date.is.null,start_date.is.null)`);
 
     if (error) {
       console.error("getMapSagre error:", error.message);

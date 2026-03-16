@@ -40,7 +40,7 @@ const TAG_DISPLAY: Record<string, string> = {
   Verdura: "Sagre Vegetariane",
 };
 
-const MIN_ROW = 3;
+const MIN_ROW = 2;
 const MAX_PROVINCE_ROWS = 3;
 const MAX_FOOD_ROWS = 4;
 
@@ -48,7 +48,7 @@ export default async function HomePage() {
   const [weekendSagre, allActive, provinceCounts, cityVideos, foodApiVideos] =
     await Promise.all([
       getWeekendSagre(20),
-      getActiveSagre(120),
+      getActiveSagre(200),
       getProvinceCounts(),
       fetchCityVideos(2), // Fetch 2 Veneto city center videos
       fetchFoodVideos(3), // Fetch 3 food-themed videos (wine, beer, grilling)

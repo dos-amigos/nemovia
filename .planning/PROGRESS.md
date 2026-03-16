@@ -302,9 +302,28 @@
   - Colore "altro" food icon aggiornato a #9B1B30
 - **Stato**: FIXATO
 
+### BUG-018: Province display "()" vuota e nomi non normalizzati
+- **Repro**: Card sagra mostra "Sarcedo ()" o "Sarcedo (verona)" invece di "Sarcedo (VI)"
+- **Causa**: SagraCard, MapMarkerPopup, SagraDetail usavano sagra.province raw senza normalizzare a codice 2-letter. Se province non matchava → parentesi vuote.
+- **Fix applicato**:
+  - Creata funzione `provinceSuffix()` in veneto.ts (single source of truth)
+  - Se provincia non corrisponde a nessun codice valido → niente parentesi
+  - Se provincia è "verona" → normalizza a "(VR)"
+  - Applicato a tutti e 3 i componenti (SagraCard, MapMarkerPopup, SagraDetail)
+- **Stato**: FIXATO (commit d09f84d, pushato)
+
 ---
 
 ## Log Sessioni
+
+### 2026-03-13 (notte) — Province fix + 14-day lookback + enrichment pipeline
+- **BUG-018 FIXATO**: Province display "()" vuota → `provinceSuffix()` helper, normalizza a codice 2-letter
+- **14-day lookback**: sagre senza end_date appaiono se iniziate negli ultimi 14 giorni (fix "poche sagre")
+- **3 nuovi food tags**: Zucca, Pane, Verdura nel prompt Gemini (llm.ts)
+- **enrich-sagre migliorato**: loop con time budget 120s, rate limiting Gemini (4.5s tra batch), reset modes (?reset=all, ?reset=images)
+- **Province code/name fix**: homepage CODE_TO_NAME, SagraCard PROVINCE_CODES accetta codici e nomi
+- Commits: 4e53d85, d09f84d (pushati su Vercel)
+- **DA FARE**: deploy enrich-sagre aggiornata, re-enrichment, investigare perché poche sagre visibili
 
 ### 2026-03-13 (sera 3) — Fix icone DEFINITIVO + scrapers separati + timeout fix
 - **Giostre RIMOSSO completamente** da FoodCategory, ICONS, CATEGORY_COLORS, CATEGORY_PRIORITY, map-markers. MAI PIÙ icona giostre sulle card (sembrava lente d'ingrandimento a 16px).
