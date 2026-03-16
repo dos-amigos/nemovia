@@ -53,7 +53,9 @@
 - [x] Video Pexels della città come fallback quando immagine non disponibile
 - [x] Mappa mobile: drag con 2 dita (MapGestureHandler) + hint "Usa due dita"
 - [x] Hero parallax: fade-out graduale allo scroll (no scomparsa brusca)
-- [x] ScrollRow: snap-always per evitare skip di 2 card allo swipe
+- [x] ScrollRow: snap magnetico desktop + CSS snap mobile (SOLUZIONE DEFINITIVA)
+- [x] Fix "poche sagre": lookback 30gg, MIN_ROW 2, limite 200, grace period 30gg
+- [x] DB cleanup: dedup, ri-attiva fiere food, filtra non-sagre (migration 021)
 
 ---
 
@@ -315,6 +317,27 @@
 ---
 
 ## Log Sessioni
+
+### 2026-03-16 — Fix "poche sagre" + pulizia DB + file guida
+- **Lookback 14→30 giorni**: tutte le query sagre.ts ora usano finestra 30 giorni per sagre senza end_date
+- **Homepage**: getActiveSagre(120→200), MIN_ROW 3→2 (piu' righe con meno sagre)
+- **Migration 019**: grace period 14gg per expire cron (applicata dall'utente)
+- **Migration 020**: grace period esteso a 30gg + riattivazione sagre wrongly expired
+- **Migration 021**: pulizia DB completa:
+  - Normalizzazione province a codice 2 lettere
+  - Deattivazione non-Veneto (es. "Toscana San Miniato")
+  - Deduplicazione per normalized_title (es. "Fiera di Santa Sofia" x6 → 1)
+  - Riattivazione fiere food wrongly killed (Fiera del Riso, ecc.)
+  - Filtro non-sagre (visita guidata, tasting, tour, ecc.)
+  - Re-enrichment sagre senza provincia (set status='new')
+- **scrape-sagretoday aggiornato**: recupera start_date/end_date da JSON-LD dettaglio, priorita' sagre senza date
+- **DB stats pre-fix**: 4528 totali, 1608 attive, 332 con provincia, 2920 disattivate, 1276 attive senza provincia/location
+- **File guida creati**:
+  - `.planning/PIPELINE.md` — regole definitive scraping/qualita'/date/province
+  - `.planning/ARCHITETTURA.md` — aggiornato con migration 019-021
+  - `.planning/ISTRUZIONI.md` — aggiornato con regole date/province/dedup
+- Commits: dcb13cc (fix query + migration 019-020), 140931d (migration 021)
+- **DA FARE utente**: applicare migration 021 in SQL Editor, deploy scrape-sagretoday
 
 ### 2026-03-13 (notte) — Province fix + 14-day lookback + enrichment pipeline
 - **BUG-018 FIXATO**: Province display "()" vuota → `provinceSuffix()` helper, normalizza a codice 2-letter
