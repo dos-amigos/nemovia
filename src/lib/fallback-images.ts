@@ -4,14 +4,14 @@
  * Deterministic selection based on sagra ID for SSR/hydration consistency.
  *
  * Priority: title pattern match → food_tag match → "generico"
- * 33 subjects × 5 variants each = 165 fallback images.
+ * 33 subjects × 10 variants each = 330 fallback images.
  *
  * Also exports isLowQualityUrl() for detecting known bad/low-res image patterns.
  */
 
-/** Helper to generate the 5 image paths for a subject */
+/** Helper to generate the 10 image paths for a subject */
 function paths(subject: string): string[] {
-  return [1, 2, 3, 4, 5].map((n) => `/images/fallback/${subject}-${n}.jpg`);
+  return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => `/images/fallback/${subject}-${n}.jpg`);
 }
 
 const SUBJECT_IMAGES: Record<string, string[]> = {
@@ -82,11 +82,14 @@ const TITLE_TO_SUBJECT: [RegExp, string][] = [
   [/\buva\b|vendemmia/i, "uva"],
   [/\bmiele\b/i, "miele"],
   [/\bpasta\b|bigoli|tagliatelle|pappardelle/i, "pasta"],
+  [/fagiol/i, "verdura"],
+  [/patat[ae]/i, "verdura"],
+  [/lenticch/i, "verdura"],
   // Broader categories (check after specific)
   [/gnocch/i, "gnocchi"],
   [/fungh/i, "funghi"],
   [/zucc[ah]/i, "zucca"],
-  [/pesce|frutti.*mare|mare.*frutti|sarde|sardella|anguilla/i, "pesce"],
+  [/pesce|frutti.*mare|mare.*frutti|sarde|sardella|\banguilla\b/i, "pesce"],
   [/carne|grigliata|barbecue|griglia/i, "carne"],
   [/\briso\b/i, "risotto"],
   [/vino\b/i, "vino"],
