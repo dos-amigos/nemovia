@@ -84,8 +84,8 @@ export default function SagraDetail({ sagra, videoUrl }: SagraDetailProps) {
               {sagra.location_text && (
                 <p className="mt-1 flex items-center gap-1.5 text-sm text-white/80 drop-shadow">
                   <MapPin className="size-3.5 shrink-0" />
-                  <span className="capitalize">
-                    {sagra.location_text?.toLowerCase()}
+                  <span>
+                    <span className="capitalize">{sagra.location_text?.toLowerCase()}</span>
                     {provinceSuffix(sagra.province, sagra.location_text)}
                   </span>
                 </p>

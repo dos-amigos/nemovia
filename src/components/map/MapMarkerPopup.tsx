@@ -46,8 +46,8 @@ export default function MapMarkerPopup({ sagra }: MapMarkerPopupProps) {
 
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <MapPin className="h-3 w-3 shrink-0" />
-          <span className="line-clamp-1 capitalize">
-            {sagra.location_text?.toLowerCase()}
+          <span className="line-clamp-1">
+            <span className="capitalize">{sagra.location_text?.toLowerCase()}</span>
             {provinceSuffix(sagra.province, sagra.location_text)}
           </span>
         </div>
