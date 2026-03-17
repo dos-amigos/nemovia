@@ -11,9 +11,10 @@
 - **Framework**: Next.js 15, Tailwind v4, Shadcn/UI
 - **Database**: Supabase (PostGIS + pg_trgm)
 - **Scraping attuale**: Cheerio in Edge Functions + Node.js scripts via GitHub Actions
-- **Fonti attive (12)**: assosagre, venetoinfesta, solosagre, sagritaly, eventiesagre, itinerarinelgusto + sagretoday, trovasagre, sagriamo + cheventi, facebook, tavily
+- **Fonti attive (13)**: assosagre, venetoinfesta, solosagre, sagritaly, eventiesagre, itinerarinelgusto + sagretoday, trovasagre, sagriamo + cheventi, facebook, tavily, instagram/apify
 - **Pipeline**: pg_cron (Edge Functions) + GitHub Actions (Node.js scripts)
 - **Immagini**: Unsplash → Pexels → local fallback (cascata in enrich-sagre Pass 3)
+- **Quality system**: confidence scoring (0-100) + review_status workflow + admin area
 - **Deploy**: Vercel (nemovia.it)
 
 ### Versioni Completate
@@ -274,6 +275,27 @@
 ---
 
 ## Log Sessioni
+
+### 2026-03-17 (sessione 8) — Quality rearchitecture + Admin area + Instagram/Apify
+- **MAJOR: Quality rearchitecture** — user demanded fresh start ("cancelliamo tutto")
+  - Migration 023: `confidence` (0-100) + `review_status` columns, archive ALL existing sagre
+  - enrich-sagre rewritten: single-pass Gemini prompt (clean title, description, city, dates, confidence, tags, image query)
+  - Auto-approve (confidence≥70 + has date), needs_review, or discard (confidence<30)
+  - Title-based city extraction (`extractCityFromTitle()`) prevents geocoding to province capitals
+- **Admin area** (`/admin`): password-protected dashboard
+  - Filter by review_status, paginated table with confidence scores and food icons
+  - Approve/reject/edit individual sagre, bulk approve auto_approved
+  - Edit modal: modify all fields, Save & Approve shortcut
+  - Service role client for write operations
+- **Multiple food icons**: `FoodIcons` component shows up to 3 themed icons per sagra
+  - SagraCard + MapMarkerPopup updated to multi-icon pill layout
+- **Instagram/Apify scraper**: `scripts/scrape-instagram.mjs`
+  - 4 IG profiles, Gemini Vision OCR for locandine, pre-filter by caption
+  - GitHub Actions cron Mon+Thu 09:00 UTC
+- **Dead sources confirmed**: venetoedintorni.it (404), culturaveneto.it (404), giraitalia.it (2005 data)
+- **Fixes**: HTML entities in cheventi, blue link in map popup, detail scraping in cheventi
+- Commits: ffb2c91 (quality rearch), 7441805 (admin area)
+- **DA FARE utente**: Apply migration 023 in SQL Editor, add ADMIN_PASSWORD + SUPABASE_SERVICE_ROLE_KEY to Vercel env vars, add APIFY_API + GEMINI_API_KEY to GitHub Secrets
 
 ### 2026-03-17 (sessione 7) — Pexels images + cheventi + Tavily + Facebook + GitHub Actions
 - **Pexels Image API in enrich-sagre**: cascata Unsplash→Pexels→title fallback. 250 req/ora combinati.
