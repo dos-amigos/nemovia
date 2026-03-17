@@ -3,7 +3,7 @@
 // Runs three sequential passes:
 //   1. Geocoding pass: pending_geocode -> pending_llm (or geocode_failed)
 //   2. LLM enrichment pass: pending_llm | geocode_failed -> enriched
-//   3. Unsplash image pass: enriched with null image_url -> assigns Unsplash fallback
+//   3. Image pass: enriched with null image_url -> Unsplash (primary) + Pexels (fallback)
 // Deploy to Supabase Dashboard (no Supabase CLI per project pattern)
 // =============================================================================
 
@@ -16,11 +16,13 @@ const SLEEP_MS = 1100;      // 1.1s between Nominatim calls (policy: 1 req/sec)
 const VENETO_VIEWBOX = "10.62,44.79,13.10,46.68"; // Nominatim viewbox: lon_min,lat_min,lon_max,lat_max
 const TIME_BUDGET_MS = 120_000; // 120s time budget (leaves 30s margin — free tier timeout appears to be ≥150s)
 
-// Pass 3: Unsplash image assignment (batch-by-tag strategy)
+// Pass 3: Image assignment — Unsplash (primary) + Pexels (fallback)
 const UNSPLASH_ACCESS_KEY = Deno.env.get("UNSPLASH_ACCESS_KEY");
+const PEXELS_API_KEY = Deno.env.get("PEXELS_API_KEY");
 const UNSPLASH_LIMIT = 200;     // max sagre to process per run (batch strategy uses ~9-10 API calls total)
 const UNSPLASH_SLEEP_MS = 2000;  // 2s between calls (courtesy + safety margin)
 const UNSPLASH_PER_PAGE = 30;    // max results per Unsplash API call (API max is 30)
+const PEXELS_PER_PAGE = 30;      // max results per Pexels API call
 
 // Inline copy of TAG_QUERIES from src/lib/unsplash.ts
 // Edge Functions cannot import from the Next.js src/ directory.
@@ -681,6 +683,72 @@ async function fetchUnsplashPhotos(
   return { photos: (data.results ?? []) as UnsplashPhoto[], rateLimitLow, error: false };
 }
 
+// =============================================================================
+// Pexels Image API — fallback when Unsplash returns 0 results
+// =============================================================================
+
+interface PexelsPhoto {
+  src: { large2x: string; large: string; medium: string };
+  photographer: string;
+  photographer_url: string;
+}
+
+/**
+ * Fetch photos from Pexels for a given query string.
+ * Used as fallback when Unsplash returns 0 results for a query.
+ * Pexels free tier: 200 req/hr (4x more than Unsplash).
+ */
+async function fetchPexelsPhotos(
+  query: string,
+  perPage: number = PEXELS_PER_PAGE
+): Promise<{ photos: PexelsPhoto[]; rateLimitLow: boolean; error: boolean }> {
+  if (!PEXELS_API_KEY) {
+    return { photos: [], rateLimitLow: false, error: true };
+  }
+
+  const params = new URLSearchParams({
+    query,
+    orientation: "landscape",
+    per_page: String(perPage),
+  });
+
+  const resp = await fetch(
+    `https://api.pexels.com/v1/search?${params}`,
+    { headers: { Authorization: PEXELS_API_KEY } }
+  );
+
+  if (!resp.ok) {
+    console.error(`Pexels API error: HTTP ${resp.status} for query: ${query}`);
+    return { photos: [], rateLimitLow: resp.status === 429, error: true };
+  }
+
+  const remaining = parseInt(resp.headers.get("X-Ratelimit-Remaining") ?? "200", 10);
+  const rateLimitLow = remaining < 10;
+  if (rateLimitLow) {
+    console.log(`Pexels rate limit low (${remaining} remaining) after query: ${query}`);
+  }
+
+  const data = await resp.json();
+  return { photos: (data.photos ?? []) as PexelsPhoto[], rateLimitLow, error: false };
+}
+
+/**
+ * Convert a Pexels photo to the same image_url/image_credit format used by Unsplash.
+ * Uses large (940px) for good quality without being too heavy.
+ */
+function pickPexelsPhotoForSagra(photos: PexelsPhoto[], sagraId: string): { imageUrl: string; imageCredit: string } {
+  // Use same hash-based picking as Unsplash for deterministic variety
+  let hash = 0;
+  for (let i = 0; i < sagraId.length; i++) {
+    hash = ((hash << 5) - hash + sagraId.charCodeAt(i)) | 0;
+  }
+  const picked = photos[Math.abs(hash) % photos.length];
+  return {
+    imageUrl: picked.src.large,  // 940px wide
+    imageCredit: `${picked.photographer}|${picked.photographer_url}?utm_source=nemovia&utm_medium=referral`,
+  };
+}
+
 /**
  * Pick a photo from a pool, using a hash of the sagra ID for deterministic variety.
  * Returns a different photo for each sagra even when they share the same tag.
@@ -764,6 +832,9 @@ async function runUnsplashPass(
   // Step 2: For each unique query, fetch photos once and distribute to all matching sagre
   // Photo cache: reuse across queries to avoid re-fetching
   const photoCache = new Map<string, UnsplashPhoto[]>();
+  // Track sagre where Gemini query returned 0 results — retry with buildQueryFromTitle()
+  const retryWithTitleQuery: SagraForUnsplash[] = [];
+  let rateLimitExhausted = false;
 
   for (const [queryKey, groupSagre] of queryGroups) {
     const query = queryKey;
@@ -777,6 +848,7 @@ async function runUnsplashPass(
         if (result.error && result.rateLimitLow) {
           // Rate limited — stop the entire pass
           console.log("Unsplash rate limit hit, stopping pass");
+          rateLimitExhausted = true;
           break;
         }
 
@@ -790,8 +862,27 @@ async function runUnsplashPass(
         photoCache.set(query, photos);
 
         if (photos.length === 0) {
-          console.log(`No Unsplash results for query: ${query}`);
+          console.log(`No Unsplash results for query: ${query}, trying Pexels...`);
+          // Try Pexels as fallback before queuing for title-based retry
+          const pexelsResult = await fetchPexelsPhotos(query);
           await sleep(UNSPLASH_SLEEP_MS);
+          if (!pexelsResult.error && pexelsResult.photos.length > 0) {
+            // Pexels found results — assign directly
+            console.log(`Pexels found ${pexelsResult.photos.length} photos for query: ${query}`);
+            for (const sagra of groupSagre) {
+              const { imageUrl, imageCredit } = pickPexelsPhotoForSagra(pexelsResult.photos, sagra.id);
+              await supabase.from("sagre").update({
+                image_url: imageUrl,
+                image_credit: imageCredit,
+                updated_at: new Date().toISOString(),
+              }).eq("id", sagra.id);
+              assigned++;
+            }
+            console.log(`Pexels: assigned ${groupSagre.length} images for query: ${query}`);
+            continue;
+          }
+          // Both Unsplash and Pexels returned 0 — queue for title-based fallback retry
+          retryWithTitleQuery.push(...groupSagre.filter(s => s.unsplash_query));
           continue;
         }
 
@@ -832,6 +923,97 @@ async function runUnsplashPass(
     }
 
     console.log(`Assigned ${groupSagre.length} images for query: ${queryKey}`);
+  }
+
+  // =========================================================================
+  // RETRY PHASE: sagre where Gemini query returned 0 results
+  // Fall back to buildQueryFromTitle() which extracts food keywords from title
+  // =========================================================================
+  if (retryWithTitleQuery.length > 0 && !rateLimitExhausted) {
+    const retryGroups = new Map<string, SagraForUnsplash[]>();
+    for (const sagra of retryWithTitleQuery) {
+      const fbQuery = buildQueryFromTitle(sagra.title, sagra.food_tags).toLowerCase();
+      // Skip if the fallback query is the same as the failed Gemini query
+      if (fbQuery === (sagra.unsplash_query ?? "").trim().toLowerCase()) continue;
+      const group = retryGroups.get(fbQuery) ?? [];
+      group.push(sagra);
+      retryGroups.set(fbQuery, group);
+    }
+
+    if (retryGroups.size > 0) {
+      console.log(`Retry phase: ${retryWithTitleQuery.length} sagre → ${retryGroups.size} title-based fallback queries`);
+
+      for (const [queryKey, groupSagre] of retryGroups) {
+        let photos = photoCache.get(queryKey);
+        if (!photos) {
+          try {
+            const result = await fetchUnsplashPhotos(queryKey);
+
+            if (result.error && result.rateLimitLow) {
+              console.log("Unsplash rate limit hit during retry, stopping");
+              break;
+            }
+            if (result.error) {
+              await sleep(UNSPLASH_SLEEP_MS);
+              continue;
+            }
+
+            photos = result.photos;
+            photoCache.set(queryKey, photos);
+
+            if (photos.length === 0) {
+              console.log(`No Unsplash results for fallback query: ${queryKey}, trying Pexels...`);
+              const pexelsResult = await fetchPexelsPhotos(queryKey);
+              await sleep(UNSPLASH_SLEEP_MS);
+              if (!pexelsResult.error && pexelsResult.photos.length > 0) {
+                console.log(`Pexels found ${pexelsResult.photos.length} photos for retry query: ${queryKey}`);
+                for (const sagra of groupSagre) {
+                  const { imageUrl, imageCredit } = pickPexelsPhotoForSagra(pexelsResult.photos, sagra.id);
+                  await supabase.from("sagre").update({
+                    image_url: imageUrl,
+                    image_credit: imageCredit,
+                    updated_at: new Date().toISOString(),
+                  }).eq("id", sagra.id);
+                  assigned++;
+                }
+                console.log(`Pexels retry: assigned ${groupSagre.length} images for query: ${queryKey}`);
+                continue;
+              }
+              continue;
+            }
+
+            if (result.rateLimitLow) {
+              console.log("Rate limit low — will assign for this retry group then stop");
+            }
+
+            await sleep(UNSPLASH_SLEEP_MS);
+          } catch (err) {
+            console.error(`Unsplash fetch error for fallback query ${queryKey}:`, err);
+            await sleep(UNSPLASH_SLEEP_MS);
+            continue;
+          }
+        }
+
+        if (!photos || photos.length === 0) continue;
+
+        for (const sagra of groupSagre) {
+          const photo = pickPhotoForSagra(photos, sagra.id);
+          const imageUrl = `${photo.urls.raw}&w=800&h=500&fit=crop&q=80`;
+          const imageCredit = `${photo.user.name}|${photo.user.links.html}?utm_source=nemovia&utm_medium=referral`;
+
+          await supabase.from("sagre").update({
+            image_url: imageUrl,
+            image_credit: imageCredit,
+            updated_at: new Date().toISOString(),
+          }).eq("id", sagra.id);
+
+          assigned++;
+          fetch(`${photo.links.download_location}?client_id=${UNSPLASH_ACCESS_KEY}`).catch(() => {});
+        }
+
+        console.log(`Retry: assigned ${groupSagre.length} images for fallback query: ${queryKey}`);
+      }
+    }
   }
 
   console.log(`Unsplash pass complete: ${assigned} images assigned`);
@@ -923,7 +1105,7 @@ async function runEnrichmentPipeline(
         if (r.enriched + r.classified > 0) didWork = true;
       }
 
-      // Pass 3: Unsplash image assignment
+      // Pass 3: Image assignment (Unsplash primary + Pexels fallback)
       if (hasTimeBudget()) {
         const r = await runUnsplashPass(supabase);
         unsplashAssigned += r;

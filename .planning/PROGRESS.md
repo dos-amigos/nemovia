@@ -318,6 +318,33 @@
 
 ## Log Sessioni
 
+### 2026-03-16 (sessione 6) — INTERROTTA: Piano Pexels come seconda fonte immagini
+- **TASK IN CORSO**: Aggiungere Pexels Image API come seconda fonte immagini nel Pass 3 di enrich-sagre
+- **Decisione utente**: Unsplash + Pexels (NO Pixabay). Pexels key già presente in .env (usata per video).
+- **Contesto**:
+  - Unsplash: 50 req/ora, buona qualità ma pochi piatti tipici italiani
+  - Pexels: 200 req/ora, ottima per cibo italiano, key già in `.env` (PEXELS_API_KEY)
+  - Strategia: fallback a cascata — Unsplash prima, se 0 risultati → Pexels
+  - Questo triplica il budget API (50+200 = 250 req/ora) e migliora copertura per cibi specifici (baccalà, rane, fichi)
+- **Explore agents completati** (prima del crash):
+  1. Pexels Image API usage — 28 tool uses, API endpoint: `GET https://api.pexels.com/v1/search?query=...&per_page=30&orientation=landscape`
+  2. enrich-sagre Pass 3 flow — 10 tool uses, capito dove inserire Pexels nel flusso
+- **Piano era in fase di scrittura** quando il terminale è crashato (`supabase secrets list` ha perso la connessione)
+- **PEXELS_API_KEY**: già in `.env` locale (usata da pexels-video.ts), da verificare se è anche nei Supabase secrets (`npx supabase secrets list`)
+- **Modifiche unstaged**: enrich-sagre/index.ts ha già la RETRY PHASE (buildQueryFromTitle fallback) non ancora committata
+- **DA FARE nella prossima sessione**:
+  1. Verificare PEXELS_API_KEY nei Supabase secrets (se non c'è: `npx supabase secrets set PEXELS_API_KEY=...`)
+  2. Modificare `runUnsplashPass()` in enrich-sagre/index.ts:
+     - Aggiungere `fetchPexelsPhotos()` simile a `fetchUnsplashPhotos()`
+     - Dopo Unsplash 0 risultati → provare Pexels prima del retry con buildQueryFromTitle
+     - Pexels API: `GET https://api.pexels.com/v1/search`, header `Authorization: PEXELS_API_KEY`
+     - Response: `{ photos: [{ src: { large2x, large, medium }, photographer, photographer_url }] }`
+     - Image URL: `photo.src.large` (940px) o `photo.src.large2x` (1880px)
+     - Credit: `photographer|photographer_url`
+  3. Deploy enrich-sagre aggiornata
+  4. Testare con run manuale
+  5. Committare tutto
+
 ### 2026-03-16 (sessione 2) — Fix video/foto/icone/città + timeout audit
 - **Video orientale FIXATO**: FOOD_VIDEO_QUERIES aggiornate (3→6 query, tutte con "Italian"/"Mediterranean"). Mai più cibo asiatico.
 - **Foto non consone**: prompt Gemini aggiornato — vietato fallback generico "Italian food festival outdoor", ogni sagra deve avere query UNICA e SPECIFICA.
