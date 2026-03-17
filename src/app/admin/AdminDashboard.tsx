@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect, useCallback } from "react";
+import { useState, useTransition, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   getAdminSagre,
@@ -14,10 +14,11 @@ import {
   type ReviewStatus,
 } from "./actions";
 import { EditModal } from "./EditModal";
-import { Check, X, ExternalLink, LogOut, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { Check, X, ExternalLink, LogOut, ChevronLeft, ChevronRight, RefreshCw, Play, Pause } from "lucide-react";
 import { FoodIcons } from "@/lib/constants/food-icons";
 
 type SagraRow = Awaited<ReturnType<typeof getAdminSagre>>["data"][number];
+type PipelineData = Awaited<ReturnType<typeof getPipelineStats>>;
 
 /** Derive a human-readable reason for the review status */
 function getReason(row: SagraRow): string {
@@ -54,42 +55,106 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [editId, setEditId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [pipeline, setPipeline] = useState<Awaited<ReturnType<typeof getPipelineStats>> | null>(null);
+  const [pipeline, setPipeline] = useState<PipelineData | null>(null);
+  const [prevPipeline, setPrevPipeline] = useState<PipelineData | null>(null);
   const [enrichMsg, setEnrichMsg] = useState<string | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [activityLog, setActivityLog] = useState<string[]>([]);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const load = useCallback(() => {
+  const addLog = useCallback((msg: string) => {
+    const time = new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    setActivityLog((prev) => [`[${time}] ${msg}`, ...prev].slice(0, 20));
+  }, []);
+
+  // Load table data (only on filter/page change)
+  const loadTable = useCallback(() => {
     setLoading(true);
-    Promise.all([getAdminSagre(status, page), getStatusCounts(), getPipelineStats()])
-      .then(([result, c, p]) => {
+    Promise.all([getAdminSagre(status, page), getStatusCounts()])
+      .then(([result, c]) => {
         setRows(result.data);
         setTotal(result.total);
         setCounts(c);
-        setPipeline(p);
       })
       .finally(() => setLoading(false));
   }, [status, page]);
 
-  useEffect(() => { load(); }, [load]);
+  // Load pipeline stats (lightweight, called frequently)
+  const loadPipeline = useCallback(() => {
+    getPipelineStats().then((p) => {
+      setPipeline((prev) => {
+        if (prev) {
+          setPrevPipeline(prev);
+          // Detect changes and log them
+          const diffs: string[] = [];
+          if (p.pending_llm < prev.pending_llm) diffs.push(`Gemini: ${prev.pending_llm - p.pending_llm} analizzate`);
+          if (p.enriched > prev.enriched) diffs.push(`+${p.enriched - prev.enriched} enriched`);
+          if (p.active > prev.active) diffs.push(`+${p.active - prev.active} attive`);
+          if (p.with_image > prev.with_image) diffs.push(`+${p.with_image - prev.with_image} immagini`);
+          if (p.pending_geocode < prev.pending_geocode) diffs.push(`${prev.pending_geocode - p.pending_geocode} geocodificate`);
+          if (diffs.length > 0) addLog(diffs.join(", "));
+        }
+        return p;
+      });
+      setLastUpdate(new Date());
+    });
+  }, [addLog]);
+
+  // Initial load
+  useEffect(() => { loadTable(); loadPipeline(); }, [loadTable, loadPipeline]);
+
+  // Auto-refresh pipeline stats every 10s
+  useEffect(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (autoRefresh) {
+      intervalRef.current = setInterval(() => {
+        loadPipeline();
+        // Also refresh table counts
+        getStatusCounts().then(setCounts);
+      }, 10_000);
+    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [autoRefresh, loadPipeline]);
 
   function handleApprove(id: string) {
     startTransition(async () => {
       await approveAction(id);
-      load();
+      loadTable();
+      loadPipeline();
     });
   }
 
   function handleReject(id: string) {
     startTransition(async () => {
       await rejectAction(id);
-      load();
+      loadTable();
+      loadPipeline();
     });
   }
 
   function handleBulkApprove() {
     if (!confirm("Approvare tutte le sagre auto_approved?")) return;
     startTransition(async () => {
-      await bulkApproveAutoAction();
-      load();
+      const count = await bulkApproveAutoAction();
+      addLog(`Bulk approve: ${count} sagre approvate`);
+      loadTable();
+      loadPipeline();
+    });
+  }
+
+  function handleTriggerEnrich() {
+    setEnrichMsg(null);
+    addLog("Avvio enrichment...");
+    startTransition(async () => {
+      const msg = await triggerEnrichment();
+      if (msg === "started") {
+        setEnrichMsg("Enrichment in corso...");
+        addLog("Enrichment avviato! I numeri si aggiorneranno automaticamente.");
+      } else {
+        setEnrichMsg(msg);
+        addLog(`Enrichment: ${msg}`);
+      }
     });
   }
 
@@ -102,54 +167,107 @@ export function AdminDashboard() {
 
   const pageSize = 50;
   const totalPages = Math.ceil(total / pageSize);
+  const isProcessing = pipeline && prevPipeline && pipeline.pending_llm < prevPipeline.pending_llm;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Admin Nemovia</h1>
-        <button onClick={handleLogout} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-          <LogOut className="h-4 w-4" /> Esci
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setAutoRefresh((v) => !v)}
+            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+              autoRefresh ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+            }`}
+            title={autoRefresh ? "Auto-refresh attivo (ogni 10s)" : "Auto-refresh disattivato"}
+          >
+            {autoRefresh ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
+            Live
+            {autoRefresh && <span className="ml-0.5 h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />}
+          </button>
+          {lastUpdate && (
+            <span className="text-[10px] text-muted-foreground">
+              Aggiornato: {lastUpdate.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+            </span>
+          )}
+          <button onClick={handleLogout} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <LogOut className="h-4 w-4" /> Esci
+          </button>
+        </div>
       </div>
 
       {/* Pipeline stats */}
       {pipeline && (
         <div className="mb-6 rounded-xl bg-white p-4 shadow">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-bold">Pipeline Enrichment</h2>
             <div className="flex items-center gap-2">
-              {enrichMsg && <span className="text-xs text-green-600">{enrichMsg}</span>}
-              <button
-                onClick={() => {
-                  setEnrichMsg(null);
-                  startTransition(async () => {
-                    const msg = await triggerEnrichment();
-                    setEnrichMsg(msg === "started" ? "Enrichment avviato!" : msg);
-                    setTimeout(() => load(), 5000);
-                  });
-                }}
-                disabled={isPending}
-                className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : ""}`} />
-                Avvia Enrichment
-              </button>
+              <h2 className="text-sm font-bold">Pipeline Enrichment</h2>
+              {isProcessing && (
+                <span className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700">
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                  In elaborazione...
+                </span>
+              )}
+              {enrichMsg && (
+                <span className="text-xs text-green-600">{enrichMsg}</span>
+              )}
             </div>
+            <button
+              onClick={handleTriggerEnrich}
+              disabled={isPending}
+              className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : ""}`} />
+              Avvia Enrichment
+            </button>
           </div>
+
+          {/* Progress bar */}
+          {pipeline.total > 0 && (
+            <div className="mb-3">
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>Progresso analisi Gemini</span>
+                <span>{pipeline.total - pipeline.pending_geocode - pipeline.pending_llm} / {pipeline.total} ({Math.round(((pipeline.total - pipeline.pending_geocode - pipeline.pending_llm) / pipeline.total) * 100)}%)</span>
+              </div>
+              <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-1000"
+                  style={{ width: `${((pipeline.total - pipeline.pending_geocode - pipeline.pending_llm) / pipeline.total) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
             <PipelineStat label="Totali" value={pipeline.total} />
-            <PipelineStat label="Da geocodificare" value={pipeline.pending_geocode} color={pipeline.pending_geocode > 0 ? "text-yellow-600" : undefined} />
-            <PipelineStat label="Da analizzare (Gemini)" value={pipeline.pending_llm} color={pipeline.pending_llm > 0 ? "text-orange-600" : undefined} />
-            <PipelineStat label="Analizzate" value={pipeline.enriched} color="text-blue-600" />
-            <PipelineStat label="Con immagine" value={pipeline.with_image} color="text-purple-600" />
-            <PipelineStat label="Attive sul sito" value={pipeline.active} color="text-green-600" />
+            <PipelineStat label="Da geocodificare" value={pipeline.pending_geocode} color={pipeline.pending_geocode > 0 ? "text-yellow-600" : undefined} prev={prevPipeline?.pending_geocode} />
+            <PipelineStat label="Da analizzare (Gemini)" value={pipeline.pending_llm} color={pipeline.pending_llm > 0 ? "text-orange-600" : undefined} prev={prevPipeline?.pending_llm} />
+            <PipelineStat label="Analizzate" value={pipeline.enriched} color="text-blue-600" prev={prevPipeline?.enriched} />
+            <PipelineStat label="Con immagine" value={pipeline.with_image} color="text-purple-600" prev={prevPipeline?.with_image} />
+            <PipelineStat label="Attive sul sito" value={pipeline.active} color="text-green-600" prev={prevPipeline?.active} />
           </div>
+
           {pipeline.pending_llm > 0 && (
             <p className="mt-2 text-[11px] text-muted-foreground">
-              ~{Math.ceil(pipeline.pending_llm / 200)} run necessari per completare l&apos;analisi Gemini ({Math.ceil(pipeline.pending_llm / 200 / 2)} giorni con pg_cron 2x/day, o clicca &quot;Avvia Enrichment&quot; per velocizzare)
+              ~{Math.ceil(pipeline.pending_llm / 200)} run necessari · {Math.ceil(pipeline.pending_llm / 200 / 2)} giorni con pg_cron 2x/day · clicca &quot;Avvia Enrichment&quot; per velocizzare
             </p>
           )}
+        </div>
+      )}
+
+      {/* Activity log */}
+      {activityLog.length > 0 && (
+        <div className="mb-4 rounded-xl bg-gray-900 p-3 shadow">
+          <div className="flex items-center justify-between">
+            <h3 className="text-[11px] font-bold text-gray-400">Activity Log</h3>
+            <button onClick={() => setActivityLog([])} className="text-[10px] text-gray-500 hover:text-gray-300">Pulisci</button>
+          </div>
+          <div className="mt-1 max-h-24 overflow-y-auto font-mono text-[11px] text-green-400">
+            {activityLog.map((line, i) => (
+              <div key={i} className={i === 0 ? "font-semibold" : "text-green-400/70"}>{line}</div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -158,7 +276,7 @@ export function AdminDashboard() {
         {(["needs_review", "pending", "auto_approved", "admin_approved", "admin_rejected", "discarded", "all"] as const).map((s) => (
           <button
             key={s}
-            onClick={() => { setStatus(s); setPage(0); }}
+            onClick={() => { setStatus(s); setPage(0); loadTable(); }}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               status === s ? "bg-primary text-white" : "bg-white text-muted-foreground hover:bg-muted"
             }`}
@@ -336,17 +454,25 @@ export function AdminDashboard() {
         <EditModal
           sagraId={editId}
           onClose={() => setEditId(null)}
-          onSaved={() => { setEditId(null); load(); }}
+          onSaved={() => { setEditId(null); loadTable(); loadPipeline(); }}
         />
       )}
     </div>
   );
 }
 
-function PipelineStat({ label, value, color }: { label: string; value: number; color?: string }) {
+function PipelineStat({ label, value, color, prev }: { label: string; value: number; color?: string; prev?: number }) {
+  const diff = prev != null ? value - prev : 0;
   return (
     <div className="rounded-lg bg-muted/50 p-2 text-center">
-      <div className={`text-lg font-bold ${color ?? "text-foreground"}`}>{value}</div>
+      <div className={`text-lg font-bold ${color ?? "text-foreground"}`}>
+        {value}
+        {diff !== 0 && (
+          <span className={`ml-1 text-xs font-normal ${diff > 0 ? "text-green-500" : "text-red-400"}`}>
+            {diff > 0 ? "+" : ""}{diff}
+          </span>
+        )}
+      </div>
       <div className="text-[10px] text-muted-foreground">{label}</div>
     </div>
   );
