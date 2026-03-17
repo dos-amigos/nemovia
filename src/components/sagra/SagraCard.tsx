@@ -5,7 +5,7 @@ import * as m from "motion/react-m";
 import { Calendar, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FadeImage } from "@/components/animations/FadeImage";
-import { FoodIcon } from "@/lib/constants/food-icons";
+import { FoodIcons } from "@/lib/constants/food-icons";
 import { getFallbackImage, isLowQualityUrl } from "@/lib/fallback-images";
 import { formatDateRange } from "@/lib/utils";
 import { provinceSuffix } from "@/lib/constants/veneto";
@@ -81,9 +81,11 @@ export function SagraCard({ sagra, distanceKm }: SagraCardProps) {
           </Badge>
         )}
 
-        {/* Food type icon positioned bottom-right */}
-        <div className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/60 backdrop-blur-sm">
-          <FoodIcon foodTags={sagra.food_tags} featureTags={sagra.feature_tags} title={sagra.title} className="h-4 w-4" themed />
+        {/* Food type icons positioned bottom-right (up to 3) */}
+        <div className="absolute bottom-2 right-2 flex items-center gap-0.5">
+          <div className="flex items-center gap-0.5 rounded-full bg-white/60 px-1.5 py-1 backdrop-blur-sm">
+            <FoodIcons foodTags={sagra.food_tags} title={sagra.title} className="h-4 w-4" themed />
+          </div>
         </div>
       </m.div>
     </Link>

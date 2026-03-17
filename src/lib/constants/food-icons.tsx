@@ -319,3 +319,74 @@ export function FoodIcon({ foodTags, featureTags, title, className, style, theme
     </span>
   );
 }
+
+/**
+ * Get ALL unique categories for a set of food tags (up to 3).
+ * Returns categories in priority order, deduplicated.
+ */
+export function getAllCategories(
+  foodTags: string[] | null | undefined,
+  title?: string | null,
+): FoodCategory[] {
+  const categories = new Set<FoodCategory>();
+
+  if (foodTags && foodTags.length > 0) {
+    for (const tag of foodTags) {
+      const cat = TAG_TO_CATEGORY[tag] ?? "altro";
+      categories.add(cat);
+    }
+  }
+
+  // If no specific categories from tags, try title
+  if (categories.size === 0 || (categories.size === 1 && categories.has("altro"))) {
+    if (title) {
+      for (const [pattern, category] of TITLE_TO_CATEGORY) {
+        if (pattern.test(title)) {
+          categories.add(category);
+          break;
+        }
+      }
+    }
+  }
+
+  // If still nothing, return empty (NO icon, as per rules)
+  if (categories.size === 0) return [];
+
+  // Sort by priority and return up to 3
+  return [...categories]
+    .sort((a, b) => CATEGORY_PRIORITY.indexOf(a) - CATEGORY_PRIORITY.indexOf(b))
+    .slice(0, 3);
+}
+
+interface FoodIconsProps {
+  foodTags: string[] | null;
+  title?: string | null;
+  className?: string;
+  themed?: boolean;
+}
+
+/**
+ * Renders MULTIPLE food category icons (up to 3) side by side.
+ * Each icon gets its themed color. Shows nothing if no category matches.
+ */
+export function FoodIcons({ foodTags, title, className, themed }: FoodIconsProps) {
+  const categories = getAllCategories(foodTags, title);
+  if (categories.length === 0) return null;
+
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {categories.map((cat) => {
+        const IconFn = ICONS[cat];
+        return (
+          <span
+            key={cat}
+            style={themed ? { color: CATEGORY_COLORS[cat] } : undefined}
+            className="inline-flex"
+          >
+            <IconFn className={className} />
+          </span>
+        );
+      })}
+    </span>
+  );
+}

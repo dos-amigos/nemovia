@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MapPin, Calendar, ChevronRight } from "lucide-react";
 import { formatDateRange } from "@/lib/utils";
-import { FoodIcon } from "@/lib/constants/food-icons";
+import { FoodIcons } from "@/lib/constants/food-icons";
 import { getFallbackImage, isLowQualityUrl } from "@/lib/fallback-images";
 import { provinceSuffix } from "@/lib/constants/veneto";
 import type { MapMarkerData } from "@/lib/queries/types";
@@ -29,8 +29,8 @@ export default function MapMarkerPopup({ sagra }: MapMarkerPopupProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         {/* Food icon badge */}
-        <div className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/70 backdrop-blur-sm">
-          <FoodIcon foodTags={sagra.food_tags} title={sagra.title} className="h-4 w-4" themed />
+        <div className="absolute bottom-2 right-2 flex items-center gap-0.5 rounded-full bg-white/60 px-1.5 py-1 backdrop-blur-sm">
+          <FoodIcons foodTags={sagra.food_tags} title={sagra.title} className="h-4 w-4" themed />
         </div>
         {/* Free badge */}
         {sagra.is_free === true && (

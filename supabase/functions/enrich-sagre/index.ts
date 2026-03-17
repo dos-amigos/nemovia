@@ -132,7 +132,7 @@ const FEATURE_TAGS = ["Gratis", "Musica", "Artigianato", "Bambini", "Tradizional
 type FoodTag = typeof FOOD_TAGS[number];
 type FeatureTag = typeof FEATURE_TAGS[number];
 const BATCH_SIZE = 8;
-const MAX_DESC_CHARS = 250;
+const MAX_DESC_CHARS = 500;
 
 /**
  * Filter an array of tag strings to only those present in the allowed enum.
@@ -162,53 +162,68 @@ function chunkBatch<T>(items: T[], size: number): T[][] {
 }
 
 /**
- * Build the Italian-language Gemini prompt for a batch of events.
- * Includes is_sagra classification instruction (DQ-07/DQ-08).
+ * Build the comprehensive Gemini prompt for a batch of events.
+ * Does EVERYTHING in one pass: classify, clean title, create description,
+ * extract city/dates, assign tags, generate image query, confidence score.
  */
 function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
-  return `Sei un esperto di sagre italiane e gastronomia veneta. Per ogni evento nella lista JSON, genera:
-1. is_sagra: true se l'evento e una sagra, festa del cibo, o fiera gastronomica. false se e antiquariato, mostra, mercato generico, concerto, evento sportivo, o altro evento non gastronomico. Se l'evento ha una componente gastronomica significativa (cibo, degustazione, prodotti tipici), classificalo come sagra anche se ha altri elementi (musica, artigianato).
-2. food_tags: array con i tag alimentari pertinenti (max 3) scelti SOLO da: ${FOOD_TAGS.join(", ")}
-   ATTENZIONE alla gastronomia veneta:
-   - "Pinza" e "Pinzin" veneti sono FOCACCE/PANE, NON dolci! Usa tag "Pane".
-   - "Polenta" va in "Prodotti Tipici" o "Carne" se servita con carne.
-   - "Baccalà" e "Stoccafisso" vanno in "Pesce".
-   - "Asparago", "Radicchio", "Broccolo", "Carciofo", "Fagiolo" vanno in "Verdura".
-   - "Zucca" ha il suo tag dedicato "Zucca" (NON "Verdura").
-   - USA "Verdura" SOLO se il nome contiene un ortaggio specifico (asparago, radicchio, bisi, broccolo, carciofo, fagiolo, funghi). NON classificare come "Verdura" sagre generiche stagionali (es. "Festa di Primavera", "Sagra Paesana") — usa "Prodotti Tipici".
-   - "Gnocchi" vanno in "Prodotti Tipici".
-   - Se il cibo principale non rientra chiaramente in nessuna categoria specifica, usa "Prodotti Tipici".
-3. feature_tags: array con i tag caratteristici (max 2) scelti SOLO da: ${FEATURE_TAGS.join(", ")}
-   - "Giostre": usa SOLO per sagre/fiere grandi con luna park, giostre, attrazioni da fiera (es. Antica Fiera del Tresto, Antica Fiera del Soco). NON per sagre piccole o normali.
-4. enhanced_description: descrizione coinvolgente in italiano, max ${MAX_DESC_CHARS} caratteri, che menzioni il cibo principale e l'atmosfera
-5. unsplash_query: 2-4 parole IN INGLESE per cercare una FOTO DI CIBO su Unsplash. La foto DEVE mostrare CIBO o BEVANDE, mai persone, eventi, paesaggi o scene generiche.
-   REGOLA: estrai il SOGGETTO ALIMENTARE dal titolo e traduci in inglese. La query deve descrivere CIBO VISIBILE su un tavolo/piatto.
-   Esempi corretti:
-   - "Festa dell'Olio" → "olive oil pouring bread"
-   - "Sagra del Pesce" → "fresh seafood platter Mediterranean"
-   - "Festa della Zucca" → "pumpkin soup autumn dish"
-   - "Sagra della Pinza" → "Italian focaccia flatbread rustic" (pinza veneta = focaccia)
-   - "Sagra del Vino" → "wine glasses vineyard table" (MAI bottiglie)
-   - "Sagra degli Asparagi" → "fresh green asparagus dish"
-   - "Sagra dei Funghi" → "porcini mushroom Italian dish"
-   - "Sagra della Carne" → "grilled meat Italian barbecue"
-   - "Festa del Radicchio" → "radicchio red chicory salad"
-   - "Festa della Birra" → "craft beer glasses golden ale" (MAI "party" o "festival")
-   - "Sagra del Riso" → "Italian risotto rice dish"
-   - "Festa della Bufala" → "buffalo mozzarella fresh Italian"
-   - "Sagra del Baccalà" → "salt cod Italian traditional dish"
-   Se il titolo NON menziona un cibo specifico (es. "Sagra Paesana", "Festa di Primavera", "Festa della Salute"):
-   → cerca il CIBO più probabile servito all'evento: "Italian grilled sausage polenta" o "Italian cheese salami board" o "fresh pasta Italian rustic table"
-   VIETATO ASSOLUTAMENTE:
-   - Query generiche: "Italian food festival", "village celebration", "autumn harvest festival", "outdoor party", "countryside life market"
-   - Query senza cibo: "Italian village square", "spring blossoms", "traditional festival"
-   - Parole che portano a persone/eventi: "party", "celebration", "festival", "market", "outdoor"
-   OGNI query DEVE contenere almeno un ALIMENTO SPECIFICO (meat, cheese, wine, bread, fish, pasta, ecc.).
+  return `Sei un esperto di sagre italiane e gastronomia veneta. Per ogni evento nella lista JSON, analizza TUTTI i campi (title, location_text, description) e genera:
+
+1. **is_sagra**: true se è sagra/festa del cibo/fiera gastronomica con componente gastronomica. false se antiquariato, mostra, concerto puro, evento sportivo, mercato generico senza cibo.
+   SCARTA ANCHE: pagine di riepilogo ("Le sagre di agosto a Padova"), calendari, elenchi generici.
+
+2. **confidence**: numero 0-100. Quanto sei sicuro che questa sia una vera sagra specifica con dati corretti.
+   - 90-100: sagra vera, titolo chiaro, date presenti, luogo preciso
+   - 70-89: probabilmente sagra, qualche dato mancante
+   - 50-69: dubbio, potrebbe essere sagra o no
+   - 0-49: probabilmente NON è una sagra o dati troppo vaghi
+
+3. **clean_title**: titolo PULITO e CORTO. Regole:
+   - Rimuovi date, luoghi, info ripetitive dal titolo. "Sagra di San Giacomo il 17 agosto con polenta e baccalà in provincia di Venezia" → "Sagra di San Giacomo"
+   - "Sagra della Zucca di Tribano 2026" → "Sagra della Zucca"
+   - "Festa del Radicchio - Creazzo (VI) - 15-17 marzo" → "Festa del Radicchio"
+   - Se il titolo è già pulito ("Sagra della Zucca"), lascialo così
+   - Usa maiuscole corrette in italiano
+   - Max 80 caratteri
+
+4. **city**: il COMUNE/PAESE dove si svolge la sagra. Estrailo da titolo ("...a Tribano", "...di Creazzo", "– Caorle") o da location_text. NON usare il nome della provincia (Padova, Verona ecc.) se nel titolo c'è un paese specifico.
+
+5. **province_code**: codice provincia 2 lettere (BL/PD/RO/TV/VE/VI/VR) o null se non in Veneto.
+
+6. **start_date**: data inizio in formato YYYY-MM-DD. Estraila da titolo, description, o qualsiasi campo. Anno corrente = 2026 se non specificato. null se non determinabile.
+
+7. **end_date**: data fine YYYY-MM-DD. Se evento di un solo giorno = uguale a start_date. null se non determinabile.
+
+8. **food_tags**: array tag alimentari (max 3) SOLO da: ${FOOD_TAGS.join(", ")}
+   Regole gastronomia veneta:
+   - Pinza/Pinzin = "Pane" (NON dolci, è focaccia veneta)
+   - Baccalà/Stoccafisso = "Pesce"
+   - Asparago/Radicchio/Broccolo/Carciofo/Fagiolo/Bisi/Funghi = "Verdura"
+   - Zucca = "Zucca" (tag dedicato, NON Verdura)
+   - Gnocchi = "Prodotti Tipici"
+   - Polenta = "Prodotti Tipici" (o "Carne" se con carne)
+   - Se non chiaro = "Prodotti Tipici"
+   NOTA: se la sagra è vegetariana (zucca, asparagi, radicchio, verdure) aggiungi ANCHE "Verdura" come secondo tag.
+
+9. **feature_tags**: array (max 2) SOLO da: ${FEATURE_TAGS.join(", ")}
+   - "Giostre" SOLO per grandi fiere con luna park
+
+10. **description**: descrizione in italiano, SEMPRE presente, max 300 caratteri, coinvolgente e informativa.
+    - Se c'è description originale: RIFORMULALA in italiano corretto e coinvolgente
+    - Se non c'è description: CREANE una credibile. Es: "Vieni a gustare polenta e baccalà alla sagra di Salzano godendoti la fine dell'estate"
+    - Menziona il cibo principale, l'atmosfera, il luogo
+    - Se c'è un menu nella description, riportalo come elenco breve
+    - MAI lasciare vuota!
+
+11. **unsplash_query**: 2-4 parole IN INGLESE per cercare FOTO DI CIBO.
+    REGOLA: estrai il SOGGETTO ALIMENTARE dal titolo e traduci in inglese.
+    Esempi: "Sagra del Pesce" → "fresh seafood platter", "Festa della Zucca" → "pumpkin soup autumn", "Festa della Bufala" → "buffalo mozzarella fresh Italian", "Sagra del Baccalà" → "salt cod Italian dish"
+    VIETATO: "festival", "party", "celebration", "market", "outdoor", "village". OGNI query DEVE avere un ALIMENTO SPECIFICO.
 
 EVENTI:
 ${JSON.stringify(batch)}
 
-Rispondi con un array JSON, un oggetto per ogni evento con: id, is_sagra, food_tags, feature_tags, enhanced_description, unsplash_query.`;
+Rispondi con array JSON: [{id, is_sagra, confidence, clean_title, city, province_code, start_date, end_date, food_tags, feature_tags, description, unsplash_query}]`;
 }
 
 const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
@@ -284,14 +299,22 @@ interface SagraForLLM {
   title: string;
   location_text: string;
   description: string | null;
+  start_date: string | null;
+  end_date: string | null;
 }
 
 interface EnrichmentResult {
   id: string;
   is_sagra: boolean;
+  confidence: number;
+  clean_title: string;
+  city?: string;
+  province_code?: string;
+  start_date?: string;
+  end_date?: string;
   food_tags: string[];
   feature_tags: string[];
-  enhanced_description: string;
+  description: string;
   unsplash_query?: string;
 }
 
@@ -309,7 +332,6 @@ async function runGeocodePass(
     .from("sagre")
     .select("id, title, location_text")
     .eq("status", "pending_geocode")
-    .eq("is_active", true)
     .limit(GEOCODE_LIMIT)
     .order("created_at", { ascending: true });
 
@@ -435,9 +457,8 @@ async function runLLMPass(
   // Enrich both successfully geocoded sagre AND geocode-failed ones (tags/description are independent of GPS)
   const { data: rows } = await supabase
     .from("sagre")
-    .select("id, title, location_text, description")
+    .select("id, title, location_text, description, start_date, end_date")
     .in("status", ["pending_llm", "geocode_failed"])
-    .eq("is_active", true)
     .limit(LLM_LIMIT)
     .order("created_at", { ascending: true });
 
@@ -467,12 +488,18 @@ async function runLLMPass(
               properties: {
                 id: { type: "STRING" },
                 is_sagra: { type: "BOOLEAN" },
+                confidence: { type: "INTEGER" },
+                clean_title: { type: "STRING" },
+                city: { type: "STRING" },
+                province_code: { type: "STRING" },
+                start_date: { type: "STRING" },
+                end_date: { type: "STRING" },
                 food_tags: { type: "ARRAY", items: { type: "STRING" } },
                 feature_tags: { type: "ARRAY", items: { type: "STRING" } },
-                enhanced_description: { type: "STRING" },
+                description: { type: "STRING" },
                 unsplash_query: { type: "STRING" },
               },
-              required: ["id", "is_sagra", "food_tags", "feature_tags", "enhanced_description", "unsplash_query"],
+              required: ["id", "is_sagra", "confidence", "clean_title", "food_tags", "feature_tags", "description", "unsplash_query"],
             },
           },
         },
@@ -485,39 +512,84 @@ async function runLLMPass(
 
       // Write each enriched event back to DB
       for (const result of raw) {
-        // Check hardcoded blocklist FIRST (case-insensitive title match)
         const matchedSagra = batch.find((s: { id: string }) => s.id === result.id);
         const titleLower = (matchedSagra?.title ?? "").toLowerCase();
         const isBlocklisted = BLOCKLIST_TITLES.some((b: string) => titleLower.includes(b));
 
-        // Check is_sagra classification FIRST — deactivate non-sagre
-        if (result.is_sagra === false || isBlocklisted) {
+        const confidence = typeof result.confidence === "number" ? Math.min(100, Math.max(0, result.confidence)) : 50;
+
+        // NOT a sagra, or blocklisted, or confidence too low → discard
+        if (result.is_sagra === false || isBlocklisted || confidence < 30) {
           await supabase.from("sagre").update({
             is_active: false,
             status: "classified_non_sagra",
+            confidence,
+            review_status: "discarded",
             updated_at: new Date().toISOString(),
           }).eq("id", result.id);
           classified++;
-          console.log(`Non-sagra classified and deactivated: ${result.id}`);
+          console.log(`Discarded: ${matchedSagra?.title} (confidence=${confidence}, is_sagra=${result.is_sagra})`);
           continue;
         }
 
-        // Sagra (is_sagra === true or undefined for safety) — enrich as usual
+        // Valid sagra — enrich with all Gemini data
         const food_tags = validateTags(result.food_tags ?? [], FOOD_TAGS).slice(0, 3);
         const feature_tags = validateTags(result.feature_tags ?? [], FEATURE_TAGS).slice(0, 2);
-        const enhanced_description = truncateDescription(result.enhanced_description ?? "");
+        const description = (result.description ?? "").slice(0, 500) || null;
         const unsplash_query = (result.unsplash_query ?? "").slice(0, 60) || null;
+        const clean_title = (result.clean_title ?? "").slice(0, 100) || matchedSagra?.title || "";
 
-        await supabase.from("sagre").update({
+        // Determine if this sagra has enough data to be active
+        const hasDate = !!(result.start_date || matchedSagra?.start_date);
+        const isHighConfidence = confidence >= 70;
+
+        // Review status: auto_approved if high confidence + has date, else needs_review
+        let review_status: string;
+        if (isHighConfidence && hasDate) {
+          review_status = "auto_approved";
+        } else {
+          review_status = "needs_review";
+        }
+
+        const updateData: Record<string, unknown> = {
+          title: clean_title,
           food_tags,
           feature_tags,
-          enhanced_description,
+          enhanced_description: description,
+          source_description: description, // Also set source_description for detail page
           unsplash_query,
+          confidence,
+          review_status,
+          is_active: review_status === "auto_approved",
           status: "enriched",
           updated_at: new Date().toISOString(),
-        }).eq("id", result.id);
+        };
 
+        // Update city if Gemini found a more specific one
+        if (result.city && result.city.length > 2) {
+          updateData.location_text = result.city;
+        }
+
+        // Update province if Gemini detected it
+        if (result.province_code && /^(BL|PD|RO|TV|VE|VI|VR)$/i.test(result.province_code)) {
+          updateData.province = result.province_code.toUpperCase();
+        }
+
+        // Update dates if Gemini extracted them and sagra didn't have them
+        if (result.start_date && /^\d{4}-\d{2}-\d{2}$/.test(result.start_date)) {
+          if (!matchedSagra?.start_date) {
+            updateData.start_date = result.start_date;
+          }
+        }
+        if (result.end_date && /^\d{4}-\d{2}-\d{2}$/.test(result.end_date)) {
+          if (!matchedSagra?.end_date) {
+            updateData.end_date = result.end_date;
+          }
+        }
+
+        await supabase.from("sagre").update(updateData).eq("id", result.id);
         enriched++;
+        console.log(`Enriched: "${clean_title}" conf=${confidence} review=${review_status}`);
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
@@ -843,8 +915,8 @@ async function runUnsplashPass(
     .from("sagre")
     .select("id, title, food_tags, image_url, unsplash_query")
     .is("image_url", null)
-    .eq("is_active", true)
     .eq("status", "enriched")
+    .eq("review_status", "auto_approved")
     .order("created_at", { ascending: true })
     .limit(UNSPLASH_LIMIT);
 
@@ -855,7 +927,7 @@ async function runUnsplashPass(
     .from("sagre")
     .select("id, title, food_tags, image_url, unsplash_query")
     .not("image_url", "is", null)
-    .eq("is_active", true)
+    .eq("review_status", "auto_approved")
     .eq("status", "enriched")
     .order("created_at", { ascending: true })
     .limit(UNSPLASH_LIMIT);
