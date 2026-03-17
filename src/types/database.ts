@@ -19,6 +19,9 @@ export interface Sagra {
   source_url: string | null;
   is_free: boolean | null;
   price_info: string | null;
+  confidence: number | null;
+  review_status: string | null;
+  is_active: boolean;
   status: string;
   content_hash: string;
   source_id: string | null;
