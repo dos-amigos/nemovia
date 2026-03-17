@@ -160,3 +160,69 @@ export async function getStatusCounts(): Promise<Record<string, number>> {
 
   return counts;
 }
+
+/** Get pipeline stats — how many are in each enrichment stage */
+export async function getPipelineStats(): Promise<{
+  total: number;
+  pending_geocode: number;
+  pending_llm: number;
+  enriched: number;
+  with_image: number;
+  active: number;
+}> {
+  if (!(await isAdmin())) throw new Error("Unauthorized");
+  const db = createAdminClient();
+
+  const [total, pgeo, pllm, enr, img, active] = await Promise.all([
+    db.from("sagre").select("id", { count: "exact", head: true }),
+    db.from("sagre").select("id", { count: "exact", head: true }).eq("status", "pending_geocode"),
+    db.from("sagre").select("id", { count: "exact", head: true }).in("status", ["pending_llm", "geocode_failed"]),
+    db.from("sagre").select("id", { count: "exact", head: true }).eq("status", "enriched"),
+    db.from("sagre").select("id", { count: "exact", head: true }).not("image_url", "is", null),
+    db.from("sagre").select("id", { count: "exact", head: true }).eq("is_active", true),
+  ]);
+
+  return {
+    total: total.count ?? 0,
+    pending_geocode: pgeo.count ?? 0,
+    pending_llm: pllm.count ?? 0,
+    enriched: enr.count ?? 0,
+    with_image: img.count ?? 0,
+    active: active.count ?? 0,
+  };
+}
+
+/** Trigger enrich-sagre edge function */
+export async function triggerEnrichment(): Promise<string> {
+  if (!(await isAdmin())) throw new Error("Unauthorized");
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+  const res = await fetch(`${url}/functions/v1/enrich-sagre`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) return `Errore: ${res.status} ${res.statusText}`;
+  const data = await res.json();
+  return data.status ?? "triggered";
+}
+
+/** Get last enrichment logs from scrape_logs table */
+export async function getLastEnrichmentLogs(limit: number = 5) {
+  if (!(await isAdmin())) throw new Error("Unauthorized");
+  const db = createAdminClient();
+
+  const { data } = await db
+    .from("scrape_logs")
+    .select("id, source, started_at, completed_at, sagre_found, sagre_inserted, sagre_updated, error_message")
+    .eq("source", "enrich-sagre")
+    .order("started_at", { ascending: false })
+    .limit(limit);
+
+  return data ?? [];
+}

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   getAdminSagre,
   getStatusCounts,
+  getPipelineStats,
+  triggerEnrichment,
   approveAction,
   rejectAction,
   bulkApproveAutoAction,
@@ -12,7 +14,7 @@ import {
   type ReviewStatus,
 } from "./actions";
 import { EditModal } from "./EditModal";
-import { Check, X, ExternalLink, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, X, ExternalLink, LogOut, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { FoodIcons } from "@/lib/constants/food-icons";
 
 type SagraRow = Awaited<ReturnType<typeof getAdminSagre>>["data"][number];
@@ -52,14 +54,17 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [editId, setEditId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [pipeline, setPipeline] = useState<Awaited<ReturnType<typeof getPipelineStats>> | null>(null);
+  const [enrichMsg, setEnrichMsg] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
-    Promise.all([getAdminSagre(status, page), getStatusCounts()])
-      .then(([result, c]) => {
+    Promise.all([getAdminSagre(status, page), getStatusCounts(), getPipelineStats()])
+      .then(([result, c, p]) => {
         setRows(result.data);
         setTotal(result.total);
         setCounts(c);
+        setPipeline(p);
       })
       .finally(() => setLoading(false));
   }, [status, page]);
@@ -107,6 +112,46 @@ export function AdminDashboard() {
           <LogOut className="h-4 w-4" /> Esci
         </button>
       </div>
+
+      {/* Pipeline stats */}
+      {pipeline && (
+        <div className="mb-6 rounded-xl bg-white p-4 shadow">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-bold">Pipeline Enrichment</h2>
+            <div className="flex items-center gap-2">
+              {enrichMsg && <span className="text-xs text-green-600">{enrichMsg}</span>}
+              <button
+                onClick={() => {
+                  setEnrichMsg(null);
+                  startTransition(async () => {
+                    const msg = await triggerEnrichment();
+                    setEnrichMsg(msg === "started" ? "Enrichment avviato!" : msg);
+                    setTimeout(() => load(), 5000);
+                  });
+                }}
+                disabled={isPending}
+                className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : ""}`} />
+                Avvia Enrichment
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+            <PipelineStat label="Totali" value={pipeline.total} />
+            <PipelineStat label="Da geocodificare" value={pipeline.pending_geocode} color={pipeline.pending_geocode > 0 ? "text-yellow-600" : undefined} />
+            <PipelineStat label="Da analizzare (Gemini)" value={pipeline.pending_llm} color={pipeline.pending_llm > 0 ? "text-orange-600" : undefined} />
+            <PipelineStat label="Analizzate" value={pipeline.enriched} color="text-blue-600" />
+            <PipelineStat label="Con immagine" value={pipeline.with_image} color="text-purple-600" />
+            <PipelineStat label="Attive sul sito" value={pipeline.active} color="text-green-600" />
+          </div>
+          {pipeline.pending_llm > 0 && (
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              ~{Math.ceil(pipeline.pending_llm / 200)} run necessari per completare l&apos;analisi Gemini ({Math.ceil(pipeline.pending_llm / 200 / 2)} giorni con pg_cron 2x/day, o clicca &quot;Avvia Enrichment&quot; per velocizzare)
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Status filter tabs */}
       <div className="mb-4 flex flex-wrap gap-2">
@@ -294,6 +339,15 @@ export function AdminDashboard() {
           onSaved={() => { setEditId(null); load(); }}
         />
       )}
+    </div>
+  );
+}
+
+function PipelineStat({ label, value, color }: { label: string; value: number; color?: string }) {
+  return (
+    <div className="rounded-lg bg-muted/50 p-2 text-center">
+      <div className={`text-lg font-bold ${color ?? "text-foreground"}`}>{value}</div>
+      <div className="text-[10px] text-muted-foreground">{label}</div>
     </div>
   );
 }
