@@ -23,15 +23,20 @@ type PipelineData = Awaited<ReturnType<typeof getPipelineStats>>;
 /** Derive a human-readable reason for the review status */
 function getReason(row: SagraRow): string {
   const parts: string[] = [];
-  if (row.confidence == null) parts.push("Non ancora analizzata da Gemini");
+
+  // Pipeline stage
+  if (row.status === "pending_geocode") parts.push("In coda geocoding");
+  else if (row.status === "pending_llm" || row.status === "geocode_failed") parts.push("In coda Gemini");
+  else if (row.status === "duplicate") parts.push("Duplicato");
+  else if (row.confidence == null) parts.push("In attesa di analisi");
   else {
-    if (row.confidence < 30) parts.push("Confidence troppo bassa (<30)");
+    // Has been analyzed by Gemini
+    if (row.status === "classified_non_sagra") parts.push("Non è una sagra");
+    if (row.confidence < 30) parts.push("Confidence troppo bassa (" + row.confidence + ")");
     else if (row.confidence < 70) parts.push("Confidence media (" + row.confidence + ")");
+    else parts.push("Confidence alta (" + row.confidence + ")");
     if (!row.start_date) parts.push("Senza data");
-    if (!row.enhanced_description) parts.push("Senza descrizione");
-    if (!row.food_tags || row.food_tags.length === 0) parts.push("Senza food tags");
-    if (!row.image_url) parts.push("Senza immagine");
-    if (row.confidence >= 70 && row.start_date) parts.push("Confidence alta + ha data");
+    if (row.confidence >= 70 && row.start_date) parts.push("OK");
   }
   return parts.join(" · ") || "—";
 }
