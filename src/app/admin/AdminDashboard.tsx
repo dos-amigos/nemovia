@@ -62,6 +62,9 @@ export function AdminDashboard() {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [activityLog, setActivityLog] = useState<string[]>([]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [loopRunning, setLoopRunning] = useState(false);
+  const [loopRun, setLoopRun] = useState(0);
+  const loopAbortRef = useRef(false);
 
   const addLog = useCallback((msg: string) => {
     const time = new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -143,6 +146,7 @@ export function AdminDashboard() {
     });
   }
 
+  // Single run
   function handleTriggerEnrich() {
     setEnrichMsg(null);
     addLog("Avvio enrichment...");
@@ -156,6 +160,65 @@ export function AdminDashboard() {
         addLog(`Enrichment: ${msg}`);
       }
     });
+  }
+
+  // Loop: trigger → wait 150s → check if work left → repeat
+  async function startEnrichLoop() {
+    loopAbortRef.current = false;
+    setLoopRunning(true);
+    setLoopRun(0);
+
+    let run = 0;
+    while (!loopAbortRef.current) {
+      run++;
+      setLoopRun(run);
+      addLog(`--- Run #${run} avviato ---`);
+      setEnrichMsg(`Run #${run} in corso...`);
+
+      const msg = await triggerEnrichment();
+      if (msg !== "started") {
+        addLog(`Run #${run} errore: ${msg}`);
+        break;
+      }
+
+      // Wait 150s for the run to complete (Supabase edge fn budget ~120s + margin)
+      for (let waited = 0; waited < 150; waited += 10) {
+        if (loopAbortRef.current) break;
+        await new Promise((r) => setTimeout(r, 10_000));
+        loadPipeline();
+      }
+
+      if (loopAbortRef.current) {
+        addLog("Loop fermato dall'utente.");
+        break;
+      }
+
+      // Check if there's still work
+      const stats = await getPipelineStats();
+      setPipeline(stats);
+      const remaining = stats.pending_geocode + stats.pending_llm;
+      addLog(`Run #${run} completato. Rimanenti: ${remaining} (geo: ${stats.pending_geocode}, llm: ${stats.pending_llm})`);
+
+      if (remaining === 0) {
+        addLog("Tutte le sagre processate!");
+        setEnrichMsg("Completato!");
+        break;
+      }
+
+      // Brief pause before next run
+      addLog("Pausa 10s prima del prossimo run...");
+      await new Promise((r) => setTimeout(r, 10_000));
+    }
+
+    setLoopRunning(false);
+    setEnrichMsg(null);
+    loadTable();
+    loadPipeline();
+  }
+
+  function stopEnrichLoop() {
+    loopAbortRef.current = true;
+    addLog("Fermando il loop...");
   }
 
   function handleLogout() {
@@ -213,14 +276,34 @@ export function AdminDashboard() {
                 <span className="text-xs text-green-600">{enrichMsg}</span>
               )}
             </div>
-            <button
-              onClick={handleTriggerEnrich}
-              disabled={isPending}
-              className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : ""}`} />
-              Avvia Enrichment
-            </button>
+            {loopRunning ? (
+              <button
+                onClick={stopEnrichLoop}
+                className="flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+              >
+                <Pause className="h-3.5 w-3.5" />
+                Ferma (Run #{loopRun})
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleTriggerEnrich}
+                  disabled={isPending}
+                  className="flex items-center gap-1 rounded-lg border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : ""}`} />
+                  1 Run
+                </button>
+                <button
+                  onClick={() => startEnrichLoop()}
+                  disabled={isPending}
+                  className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
+                >
+                  <Play className="h-3.5 w-3.5" />
+                  Processa Tutto
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Progress bar */}
