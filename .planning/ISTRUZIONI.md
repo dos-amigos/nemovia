@@ -261,3 +261,6 @@ Divieti assoluti — **MAI** violare:
 - **Province**: SEMPRE codice 2 lettere (BL/PD/RO/TV/VE/VR/VI). Non-Veneto → disattivato.
 - **Dedup**: 3 livelli (scraper hash, DB normalized_title, applicativo). Vedi `PIPELINE.md`.
 - **Pipeline completa**: Vedi `PIPELINE.md` per regole ferree su scraping/qualita'/date/province.
+- **MAI script locali** — Tutto il scraping deve funzionare anche a PC spento. Edge Functions per Deno-compatibili, GitHub Actions per script Node.js (axios, npm packages).
+- **MAI scraping Meta (FB/IG) da Supabase** — usare GitHub Actions o servizi terzi (Apify). Proteggere IP Supabase.
+- **Fonti immagini**: Unsplash (primario) → Pexels (fallback) → immagini locali (ultimo fallback). Cascata in enrich-sagre Pass 3.

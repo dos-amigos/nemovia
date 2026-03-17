@@ -10,10 +10,10 @@
 ### Stack e Infrastruttura Esistente
 - **Framework**: Next.js 15, Tailwind v4, Shadcn/UI
 - **Database**: Supabase (PostGIS + pg_trgm)
-- **Scraping attuale**: Cheerio in Supabase Edge Functions (scrape-sagre, enrich-sagre)
-- **Fonti attive (9)**: assosagre, venetoinfesta, solosagre, sagritaly, eventiesagre, itinerarinelgusto + custom: sagretoday, trovasagre, sagriamo
-- **Pipeline**: pg_cron — scrape 2x/day, enrich 2x/day, expire 1x/day, batch 200/run
-- **Immagini**: Unsplash API (assegnate in enrich-sagre Pass 3)
+- **Scraping attuale**: Cheerio in Edge Functions + Node.js scripts via GitHub Actions
+- **Fonti attive (12)**: assosagre, venetoinfesta, solosagre, sagritaly, eventiesagre, itinerarinelgusto + sagretoday, trovasagre, sagriamo + cheventi, facebook, tavily
+- **Pipeline**: pg_cron (Edge Functions) + GitHub Actions (Node.js scripts)
+- **Immagini**: Unsplash → Pexels → local fallback (cascata in enrich-sagre Pass 3)
 - **Deploy**: Vercel (nemovia.it)
 
 ### Versioni Completate
@@ -61,83 +61,35 @@
 
 ## COSA E' DA FARE
 
-### Fase 1: Tavily Search — Discovery Nuove Sagre (FREE TIER)
-
-**Obiettivo**: Usare Tavily Search API (1000 crediti/mese gratis) per scoprire sagre che le 6 fonti attuali non coprono.
-
-**Decisioni prese**:
-- Tavily NON sostituisce Cheerio — è un layer di discovery aggiuntivo
-- Free tier: 1000 crediti/mese, 1 credito = 1 search
-- Output: title, url, snippet (NON dati strutturati)
-- Servirà parsing dello snippet per estrarre nome/luogo/date (best effort)
-
-**Tasks**:
-- [ ] Creare account Tavily e ottenere API key
-- [ ] Aggiungere TAVILY_API_KEY a .env e Vercel env vars
-- [ ] Creare Edge Function `discover-sagre` che:
-  - Cerca `"sagra [mese] [anno] Veneto"` per ogni mese futuro
-  - Cerca `"sagra [provincia]"` per ogni provincia veneta
-  - Filtra risultati duplicati (già presenti in DB)
-  - Salva nuove sagre con source="tavily" e status="discovered"
-- [ ] Parsing degli snippet Tavily per estrarre:
-  - Nome sagra (dal title)
-  - Luogo/provincia (dal snippet o title)
-  - Date (dal snippet, best effort)
-  - URL fonte originale
-- [ ] Aggiungere job pg_cron per discover-sagre (1x/giorno? 1x/settimana?)
-- [ ] Decidere: le sagre "discovered" vanno in homepage o servono validazione manuale?
-- [ ] Monitorare consumo crediti (max 1000/mese)
-
-**Note tecniche**:
-- Tavily API: `POST https://api.tavily.com/search`
-- Body: `{ "query": "...", "search_depth": "basic", "max_results": 10 }`
-- Response: `{ results: [{ title, url, content, score }] }`
+### Fase 1: Tavily Search — COMPLETATA (sessione 7)
+- [x] Account Tavily creato, API key in .env + GitHub Secrets
+- [x] Script Node.js `scripts/discover-tavily.mjs` (non Edge Function — usa npm deps)
+- [x] Parsing snippet per title/city/dates, strict isFoodEvent filter su titolo
+- [x] 14 search/run × ogni 3 giorni = ~140 crediti/mese (budget OK)
+- [x] Sagre inserite con is_active=true, status=pending_geocode
+- [x] GitHub Actions cron ogni 3 giorni
 
 ---
 
-### Fase 2: Facebook Graph API — Sagre da Pagine/Eventi FB
+### Fase 2: Fonti Esterne (Facebook + Tavily + cheventi) — COMPLETATA
 
-**Obiettivo**: Integrare la Graph API di Meta per pescare eventi sagra da pagine Facebook di Pro Loco e organizzatori. Legale, entro i limiti API.
+**Implementato sessione 7 (2026-03-17):**
+- [x] **Pexels Image API** in enrich-sagre Pass 3 (cascata Unsplash→Pexels→title fallback)
+- [x] **scrape-cheventi** Edge Function — JSON-LD, GPS coords, isFoodEvent filter, deployed
+- [x] **discover-tavily.mjs** — Node.js script, 14 search/run, strict title filter, 33 sagre inserite
+- [x] **scrape-facebook.mjs** — Node.js script, facebook-event-scraper npm, 4 pagine Pro Loco
+- [x] **GitHub Actions workflow** — `.github/workflows/scrape-external.yml` (facebook daily, tavily ogni 3gg)
+- [x] ARCHITETTURA.md + ISTRUZIONI.md aggiornati con nuove regole
 
-**Decisioni prese**:
-- Graph API è l'unica via legale e sostenibile per dati FB/IG
-- Dati disponibili: nome, date (start/end), luogo (nome + coordinate), descrizione, cover photo
-- Gratis ma rate limited (~200 chiamate/ora)
-- Richiede Facebook App approvata
+**Da fare:**
+- [ ] Utente: impostare GitHub Secrets (NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, TAVILY_API)
+- [ ] pg_cron migration per scrape-cheventi (2x/day)
 
-**Tasks**:
-- [ ] Creare Facebook App su developers.facebook.com
-  - [ ] Tipo: Business app
-  - [ ] Permessi richiesti: pages_read_engagement, pages_read_user_content
-  - [ ] Ottenere App Review (se necessario per pagine pubbliche)
-- [ ] Ottenere Page Access Token (long-lived)
-- [ ] Aggiungere FB_ACCESS_TOKEN a .env e Vercel env vars
-- [ ] Ricercare: quali endpoint servono?
-  - `GET /{page-id}/events` — eventi di una pagina
-  - `GET /search?type=event&q=sagra` — cerca eventi (se disponibile)
-  - Verificare se serve `GET /search?type=page&q=pro+loco+veneto` per trovare pagine
-- [ ] Creare lista seed di pagine FB Pro Loco venete (manuale iniziale)
-- [ ] Creare Edge Function `discover-fb-sagre` che:
-  - Per ogni pagina Pro Loco nella lista seed, fetch eventi futuri
-  - Estrae: nome, date, luogo, descrizione, cover photo URL
-  - Deduplica contro sagre esistenti in DB
-  - Salva con source="facebook"
-- [ ] Mapping campi FB → tabella sagre:
-  - `event.name` → `nome`
-  - `event.start_time` / `event.end_time` → `data_inizio` / `data_fine`
-  - `event.place.name` → `luogo`
-  - `event.place.location.latitude/longitude` → `lat` / `lng`
-  - `event.description` → `descrizione`
-  - `event.cover.source` → `image_url`
-- [ ] Gestire token refresh (long-lived token dura 60 giorni)
-- [ ] Aggiungere job pg_cron (1x/giorno)
-- [ ] Valutare: serve anche Instagram Graph API? (stessi eventi spesso cross-postati)
-
-**Note tecniche**:
-- Graph API base URL: `https://graph.facebook.com/v19.0/`
-- Rate limit: 200 chiamate/ora per app
-- Long-lived token: richiede exchange via endpoint OAuth
-- Instagram Graph API usa stessi token se pagina FB è collegata a account IG Business
+**Note:**
+- Facebook Graph API Events è MORTA (riservata a Marketing Partners). Usiamo facebook-event-scraper npm.
+- Tavily: 1000 crediti/mese free, ~14 per run, budget OK per ogni 3 giorni
+- MAI scraping Meta da Supabase Edge Functions — solo GitHub Actions (Azure IPs)
+- MAI script locali — tutto deve girare con PC spento
 
 ---
 
@@ -158,8 +110,8 @@
 
 ### Fase 5: Nuove Fonti Scraping (ricerca completata 2026-03-13)
 
-**TIER 1 — Alta priorità, scrapabili con Cheerio:**
-1. **cheventi.it** — JSON-LD con Schema.org Event (date, coordinate, prezzi). 50-100+ eventi. MIGLIOR FONTE.
+**TIER 1 — Alta priorità:**
+1. **cheventi.it** — [x] IMPLEMENTATO (sessione 7). Edge Function, JSON-LD, GPS coords. 6+ sagre food.
 2. **venetoedintorni.it** — Server-rendered, filtro `tipo=sagre`. 20-50 sagre.
 3. **culturaveneto.it** — DB ufficiale Regione Veneto. 412 voci. Molto autorevole.
 4. **giraitalia.it** — Liste semplici per provincia/mese. 50-200+ (verificare freschezza dati).
@@ -179,9 +131,14 @@
 - **UNPLI Veneto Pro Loco** — facebook.com/unpliveneto.proloco
 - **Pro Loco Verona** (9.848 like) — facebook.com/prolocoverona/
 
+**TIER 3 — Fonti esterne (Node.js via GitHub Actions):**
+10. **Tavily Search** — [x] IMPLEMENTATO (sessione 7). Discovery, 33 sagre qualità, ogni 3 giorni.
+11. **Facebook events** — [x] IMPLEMENTATO (sessione 7). facebook-event-scraper, yield basso. Daily.
+12. **Instagram/Apify** — [ ] Pianificato. Apify scraper ($5 free/month) + Gemini Vision OCR per locandine.
+
 ### Fase 6: Valutazioni Future
+- [ ] Instagram/Apify + Gemini Vision OCR pipeline
 - [ ] Valutare LLM (GPT-4o-mini) per parsing HTML ambiguo come alternativa a Cheerio
-- [ ] Valutare Apify ($49/mese) come backup se Graph API ha limitazioni eccessive
 
 ---
 
@@ -317,6 +274,19 @@
 ---
 
 ## Log Sessioni
+
+### 2026-03-17 (sessione 7) — Pexels images + cheventi + Tavily + Facebook + GitHub Actions
+- **Pexels Image API in enrich-sagre**: cascata Unsplash→Pexels→title fallback. 250 req/ora combinati.
+- **scrape-cheventi Edge Function**: JSON-LD parsing, GPS coords, isFoodEvent filter. 6 sagre inserite con coordinate.
+- **discover-tavily.mjs**: Node.js, 14 search/run, strict title filter, 33 sagre qualità inserite.
+- **scrape-facebook.mjs**: Node.js, facebook-event-scraper npm, 4 pagine Pro Loco. Yield basso (pochi usano FB Events).
+- **GitHub Actions workflow**: `.github/workflows/scrape-external.yml` — facebook daily, tavily ogni 3 giorni.
+- **Facebook Graph API**: CONFERMATO MORTA — Events API riservata a Marketing Partners dal 2018.
+- **Regole nuove**: MAI script locali (tutto con PC spento), MAI scraping Meta da Supabase (proteggere IP).
+- **ARCHITETTURA.md + ISTRUZIONI.md**: aggiornati con nuove fonti, regole, env vars.
+- **Tavily bug fix**: rimosso `country`/`topic` params (causavano HTTP 400), strict title-only isFoodEvent (evita junk).
+- Commits: 41be21a (Pexels images), 0f6bbbc (cheventi + facebook), 57cd6c4 (Tavily)
+- **DA FARE**: GitHub Secrets (utente), pg_cron per scrape-cheventi, Instagram/Apify
 
 ### 2026-03-16 (sessione 6) — INTERROTTA: Piano Pexels come seconda fonte immagini
 - **TASK IN CORSO**: Aggiungere Pexels Image API come seconda fonte immagini nel Pass 3 di enrich-sagre

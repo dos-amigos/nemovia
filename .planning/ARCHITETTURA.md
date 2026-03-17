@@ -16,7 +16,8 @@
 | Mappe | Leaflet + react-leaflet | 1.9.4 / 5.0.0 |
 | Componenti UI | Shadcn/UI + Radix-UI + Lucide-react | 0.577 |
 | Backend/DB | Supabase (PostGIS + pg_trgm) | supabase-js 2.98.0 |
-| API esterne | Unsplash (immagini), Pexels (video), Google Gemini (LLM), Nominatim (geocoding) | |
+| API esterne | Unsplash + Pexels (immagini), Pexels (video), Google Gemini (LLM), Nominatim (geocoding), Tavily (discovery) | |
+| Scraping esterno | GitHub Actions (cron per script Node.js: Facebook, Tavily) | |
 | Test | Vitest, ESLint 9 | 4.0.18 |
 
 ---
@@ -160,6 +161,16 @@ supabase/
 | scrape-sagretoday | Ogni 30 min | 1 provincia a rotazione (7 totali) |
 | scrape-trovasagre | 07:15, 19:15 | Fonte trovasagre |
 | scrape-sagriamo | 07:20, 19:20 | Fonte sagriamo |
+| scrape-cheventi | 08:00, 20:00 | Fonte cheventi.it (JSON-LD con GPS) |
+
+### GitHub Actions Cron (`.github/workflows/scrape-external.yml`)
+
+| Job | Orario | Script |
+|-----|--------|--------|
+| scrape-facebook | 08:00 UTC daily | `scripts/scrape-facebook.mjs` |
+| discover-tavily | 10:00 UTC ogni 3 giorni | `scripts/discover-tavily.mjs` |
+
+> **REGOLA**: Script che non possono girare come Edge Function (dipendenze npm non-Deno come axios) vanno in GitHub Actions, MAI come script locali sul PC dello sviluppatore. Il sito deve funzionare anche a PC spento.
 
 ---
 
@@ -190,7 +201,26 @@ Pipeline 3 passi con budget temporale 120s:
 - API JSON paginata
 - Scorre tutte le pagine disponibili
 
+### scrape-cheventi
+- JSON-LD con coordinate GPS (skip geocoding → `status: pending_llm`)
+- 7 province Veneto in una sola invocazione
+- Filtro `isFoodEvent()` per escludere concerti/mostre/teatro
+
 > **Nota**: le Edge Function usano copie inline delle funzioni pure (Deno non importa da `src/`). Timeout: 60s (free) / 150s (pro).
+
+### Script Node.js (GitHub Actions)
+
+#### scrape-facebook.mjs
+- Usa `facebook-event-scraper` npm (axios, non Deno-compatibile)
+- Scrapa pagine Facebook pubbliche Pro Loco venete
+- Dedup via `find_duplicate_sagra()` RPC
+- Resa bassa: pagine Pro Loco usano poco Facebook Events
+
+#### discover-tavily.mjs
+- Tavily Search API (1000 crediti/mese free, 14 crediti per run)
+- Cerca "sagra festa enogastronomica {provincia} Veneto {mese} {anno}"
+- Filtra risultati: solo titoli con keyword food
+- Discovery layer: trova sagre su siti non scrappati (blog, Pro Loco, giornali)
 
 ---
 
@@ -320,7 +350,8 @@ Pipeline 3 passi con budget temporale 120s:
 | NEXT_PUBLIC_SUPABASE_URL | .env + Vercel | URL progetto Supabase |
 | NEXT_PUBLIC_SUPABASE_ANON_KEY | .env + Vercel | Chiave anonima Supabase |
 | UNSPLASH_ACCESS_KEY | .env + Vercel | API Unsplash (immagini) |
-| PEXELS_API_KEY | .env + Vercel | API Pexels (video hero) |
+| PEXELS_API_KEY | .env + Vercel + Supabase secrets | API Pexels (video hero + immagini fallback) |
+| TAVILY_API | .env + GitHub Secrets | API Tavily (discovery sagre) |
 | gemini_api_key | Supabase secrets | Per Edge Functions (Gemini LLM) |
 | project_url | Supabase secrets | Per pg_cron invocazioni |
 | anon_key | Supabase secrets | Per pg_cron autenticazione |
