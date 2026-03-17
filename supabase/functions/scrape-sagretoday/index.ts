@@ -266,7 +266,7 @@ async function upsertEvent(
     price_info:    event.priceInfo,
     is_free:       event.isFree,
     sources:       [sourceName],
-    is_active:     true,
+    is_active:     false,
     status:        "pending_geocode",
     content_hash:  event.contentHash,
   }).select("id").single();
@@ -284,7 +284,7 @@ async function upsertEvent(
         price_info:    event.priceInfo,
         is_free:       event.isFree,
         sources:       [sourceName],
-        is_active:     true,
+        is_active:     false,
         status:        "pending_geocode",
         content_hash:  event.contentHash + Date.now().toString(36),
       }).select("id").single();

@@ -280,7 +280,7 @@ async function upsertEvent(
     price_info:    event.priceInfo,
     is_free:       event.isFree,
     sources:       [sourceName],
-    is_active:     true,
+    is_active:     false,
     status:        hasCoords ? "pending_llm" : "pending_geocode",
     content_hash:  event.contentHash,
   };
