@@ -47,7 +47,7 @@ export async function getAdminSagre(
 
   let query = db
     .from("sagre")
-    .select("id, title, slug, location_text, province, start_date, end_date, food_tags, feature_tags, image_url, source_url, confidence, review_status, is_active, is_free, enhanced_description, status, created_at", { count: "exact" })
+    .select("id, title, slug, location_text, province, start_date, end_date, food_tags, feature_tags, image_url, source_url, source_id, confidence, review_status, is_active, is_free, enhanced_description, status, created_at", { count: "exact" })
     .order("created_at", { ascending: false })
     .range(page * pageSize, (page + 1) * pageSize - 1);
 

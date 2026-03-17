@@ -17,6 +17,22 @@ import { FoodIcons } from "@/lib/constants/food-icons";
 
 type SagraRow = Awaited<ReturnType<typeof getAdminSagre>>["data"][number];
 
+/** Derive a human-readable reason for the review status */
+function getReason(row: SagraRow): string {
+  const parts: string[] = [];
+  if (row.confidence == null) parts.push("Non ancora analizzata da Gemini");
+  else {
+    if (row.confidence < 30) parts.push("Confidence troppo bassa (<30)");
+    else if (row.confidence < 70) parts.push("Confidence media (" + row.confidence + ")");
+    if (!row.start_date) parts.push("Senza data");
+    if (!row.enhanced_description) parts.push("Senza descrizione");
+    if (!row.food_tags || row.food_tags.length === 0) parts.push("Senza food tags");
+    if (!row.image_url) parts.push("Senza immagine");
+    if (row.confidence >= 70 && row.start_date) parts.push("Confidence alta + ha data");
+  }
+  return parts.join(" · ") || "—";
+}
+
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   pending: { label: "In attesa", color: "bg-yellow-100 text-yellow-800" },
   auto_approved: { label: "Auto approvate", color: "bg-blue-100 text-blue-800" },
@@ -136,6 +152,8 @@ export function AdminDashboard() {
                 <th className="px-3 py-2">Date</th>
                 <th className="px-3 py-2">Conf.</th>
                 <th className="px-3 py-2">Stato</th>
+                <th className="px-3 py-2">Motivo</th>
+                <th className="px-3 py-2">Fonte</th>
                 <th className="px-3 py-2">Tags</th>
                 <th className="px-3 py-2">Img</th>
                 <th className="px-3 py-2">Azioni</th>
@@ -171,12 +189,23 @@ export function AdminDashboard() {
                       {STATUS_LABELS[row.review_status ?? ""]?.label ?? row.review_status}
                     </span>
                   </td>
+                  <td className="max-w-[200px] px-3 py-2 text-[11px] text-muted-foreground">
+                    {getReason(row)}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-[11px] text-muted-foreground">
+                    {row.source_id ? row.source_id.replace(/^scrape-/, "").replace(/-/g, " ") : "—"}
+                  </td>
                   <td className="px-3 py-2">
                     <FoodIcons foodTags={row.food_tags} title={row.title} className="h-4 w-4" themed />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="group/img relative px-3 py-2">
                     {row.image_url ? (
-                      <img src={row.image_url} alt="" className="h-8 w-12 rounded object-cover" />
+                      <>
+                        <img src={row.image_url} alt="" className="h-8 w-12 rounded object-cover" />
+                        <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 group-hover/img:block">
+                          <img src={row.image_url} alt="" className="h-40 w-60 rounded-lg object-cover shadow-xl" />
+                        </div>
+                      </>
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
