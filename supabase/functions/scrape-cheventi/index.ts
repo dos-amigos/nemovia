@@ -76,6 +76,25 @@ function generateContentHash(title: string, city: string, startDate: string | nu
 
 // --- Noise / non-sagra filters ---
 
+/** Decode HTML entities like &#8211; &#8217; &amp; etc. */
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&#(\d+);/g, (_m, code) => String.fromCharCode(parseInt(code, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_m, code) => String.fromCharCode(parseInt(code, 16)))
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&ndash;/g, "–")
+    .replace(/&mdash;/g, "—")
+    .replace(/&rsquo;/g, "'")
+    .replace(/&lsquo;/g, "'")
+    .replace(/&rdquo;/g, "\u201D")
+    .replace(/&ldquo;/g, "\u201C")
+    .replace(/&nbsp;/g, " ");
+}
+
 function isNoiseTitle(title: string): boolean {
   if (!title || title.length < 5 || title.length > 150) return true;
   const t = title.toLowerCase();
@@ -133,6 +152,67 @@ const PROVINCE_MAP: Record<string, string> = {
   belluno: "BL", padova: "PD", rovigo: "RO", treviso: "TV",
   venezia: "VE", verona: "VR", vicenza: "VI",
 };
+
+// Province capitals — if location_text is one of these, title might have a better city
+const PROVINCE_CAPITALS = new Set([
+  "belluno", "padova", "rovigo", "treviso", "venezia", "vicenza", "verona",
+]);
+
+/**
+ * Extract the actual town/city from the sagra title.
+ * Italian patterns:
+ *   "Sagra del Radicchio a Creazzo"  → "Creazzo"
+ *   "Festa della Zucca di Tribano"   → "Tribano"
+ *   "Sagra del Pesce – Caorle"       → "Caorle"
+ *   "Festa delle Ciliegie a Zovon di Vò" → "Zovon di Vò"
+ *
+ * Returns null if no specific town found.
+ */
+function extractCityFromTitle(title: string): string | null {
+  // Pattern 1: "... a CityName" (most reliable — "a" = "at/in")
+  // Matches: "a Tribano", "a Zovon di Vò", "a San Giovanni Lupatoto"
+  const patternA = title.match(
+    /\ba\s+([A-ZÀ-Ú][a-zà-ú]+(?:\s+(?:di|del|della|delle|dei|d['']\s*|in|al|sul|sopra|sotto)\s+[A-ZÀ-Ú][a-zà-ú]+)*(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*)\s*$/i
+  );
+  if (patternA) return patternA[1].trim();
+
+  // Pattern 2: "... – CityName" or "... - CityName" at end of title
+  const patternDash = title.match(
+    /\s*[–—-]\s+([A-ZÀ-Ú][a-zà-ú]+(?:\s+(?:di|del|della|delle|dei|d['']\s*)\s+[A-ZÀ-Ú][a-zà-ú]+)*(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*)\s*$/
+  );
+  if (patternDash) return patternDash[1].trim();
+
+  // Pattern 3: last "di CityName" when it looks like a location (capitalized, end of title)
+  // But NOT "di San Giuseppe" (saint names) unless it's clearly a town
+  const patternDi = title.match(
+    /\bdi\s+([A-ZÀ-Ú][a-zà-ú]+(?:\s+(?:di|del|della|d['']\s*)\s+[A-ZÀ-Ú][a-zà-ú]+)*(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*)\s*$/i
+  );
+  if (patternDi) {
+    const candidate = patternDi[1].trim();
+    // Skip saint names and food names that aren't towns
+    if (!/^(San\s|Santa\s|Santo\s|S\.\s)/i.test(candidate) || candidate.split(/\s+/).length > 2) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * If location_text is a generic province name/capital, try to get a more specific
+ * city from the title. This prevents all sagre being geocoded to province center.
+ */
+function refineCityFromTitle(locationText: string, title: string): string {
+  const locLower = locationText.toLowerCase().trim();
+  // Only refine if location is a province capital (generic)
+  if (!PROVINCE_CAPITALS.has(locLower)) return locationText;
+
+  const cityFromTitle = extractCityFromTitle(title);
+  if (cityFromTitle && cityFromTitle.toLowerCase() !== locLower) {
+    return cityFromTitle;
+  }
+  return locationText;
+}
 
 // --- HTTP fetch helper ---
 
@@ -280,7 +360,7 @@ function parseCheventiJsonLd(html: string, provinceName: string): NormalizedEven
 
         if (!event) continue;
 
-        const title = String(event.name || "").trim();
+        const title = decodeHtmlEntities(String(event.name || "").trim());
         if (!title) continue;
         if (isNoiseTitle(title)) continue;
 
@@ -293,8 +373,12 @@ function parseCheventiJsonLd(html: string, provinceName: string): NormalizedEven
           const loc = event.location;
           city = loc.address?.addressLocality || loc.name || "";
         }
-        city = city.trim();
+        city = decodeHtmlEntities(city.trim());
         if (!city) city = provinceName;
+
+        // CRITICAL: if city is just the province name (e.g. "Padova"),
+        // extract the actual town from the title (e.g. "Festa della Zucca di Tribano" → "Tribano")
+        city = refineCityFromTitle(city, title);
 
         // Extract dates (ISO 8601 → date only)
         let startDate: string | null = null;
@@ -367,6 +451,65 @@ function parseCheventiJsonLd(html: string, provinceName: string): NormalizedEven
   return events;
 }
 
+// --- Detail scraping: fetch description from cheventi detail pages ---
+
+async function scrapeDetailPages(supabase: SupabaseClient, timeBudgetMs: number): Promise<{ scraped: number; updated: number }> {
+  const startedAt = Date.now();
+  let scraped = 0;
+  let updated = 0;
+
+  // Get cheventi sagre that have source_url but no description yet
+  const { data: sagre } = await supabase
+    .from("sagre")
+    .select("id, source_url")
+    .eq("is_active", true)
+    .not("source_url", "is", null)
+    .is("source_description", null)
+    .contains("sources", ["cheventi"])
+    .limit(15);
+
+  if (!sagre || sagre.length === 0) return { scraped: 0, updated: 0 };
+
+  for (const sagra of sagre) {
+    if (Date.now() - startedAt > timeBudgetMs) break;
+    if (!sagra.source_url) continue;
+
+    const html = await fetchWithTimeout(sagra.source_url, 10_000);
+    if (!html) continue;
+    scraped++;
+
+    const $ = cheerio.load(html);
+
+    // Extract description from .entry-content
+    const content = $(".entry-content");
+    // Remove scripts, styles, nav elements
+    content.find("script, style, nav, .sharedaddy, .jp-relatedposts").remove();
+    let description = content.text().trim();
+
+    // Clean up whitespace
+    description = description.replace(/\s+/g, " ").trim();
+
+    if (description && description.length > 10) {
+      // Truncate to 2000 chars
+      if (description.length > 2000) description = description.slice(0, 2000);
+
+      await supabase
+        .from("sagre")
+        .update({
+          source_description: decodeHtmlEntities(description),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", sagra.id);
+      updated++;
+    }
+
+    // Politeness delay
+    await new Promise(r => setTimeout(r, 1500));
+  }
+
+  return { scraped, updated };
+}
+
 // --- Main scraping logic ---
 
 const PROVINCES = ["belluno", "padova", "rovigo", "treviso", "venezia", "vicenza", "verona"];
@@ -400,6 +543,15 @@ async function scrapeCheventi(supabase: SupabaseClient): Promise<void> {
 
       // Politeness delay between province pages
       await new Promise(r => setTimeout(r, 1500));
+    }
+
+    // Phase 2: Detail scraping (use remaining time budget)
+    const elapsed = Date.now() - startedAt;
+    const remainingMs = Math.max(0, 90_000 - elapsed); // 90s total budget
+    if (remainingMs > 10_000) {
+      console.log(`[cheventi] Phase 2: detail scraping (${Math.round(remainingMs / 1000)}s remaining)`);
+      const details = await scrapeDetailPages(supabase, remainingMs);
+      console.log(`[cheventi] Details: scraped=${details.scraped}, updated=${details.updated}`);
     }
 
     await logRun(supabase, "success", totalFound, totalInserted, totalMerged, null, startedAt);

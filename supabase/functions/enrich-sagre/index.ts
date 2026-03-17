@@ -219,7 +219,64 @@ const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
 
 interface SagraForGeocode {
   id: string;
+  title: string;
   location_text: string;
+}
+
+// Province capitals — if location_text is one of these, title might have a better city
+const PROVINCE_CAPITALS = new Set([
+  "belluno", "padova", "rovigo", "treviso", "venezia", "vicenza", "verona",
+]);
+
+/**
+ * Extract the actual town/city from the sagra title.
+ * Italian patterns:
+ *   "Sagra del Radicchio a Creazzo"  → "Creazzo"
+ *   "Festa della Zucca di Tribano"   → "Tribano"
+ *   "Sagra del Pesce – Caorle"       → "Caorle"
+ *   "Festa delle Ciliegie a Zovon di Vò" → "Zovon di Vò"
+ */
+function extractCityFromTitle(title: string): string | null {
+  // Pattern 1: "... a CityName" (most reliable — "a" = "at/in")
+  const patternA = title.match(
+    /\ba\s+([A-ZÀ-Ú][a-zà-ú]+(?:\s+(?:di|del|della|delle|dei|d['']\s*|in|al|sul|sopra|sotto)\s+[A-ZÀ-Ú][a-zà-ú]+)*(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*)\s*$/i
+  );
+  if (patternA) return patternA[1].trim();
+
+  // Pattern 2: "... – CityName" or "... - CityName" at end
+  const patternDash = title.match(
+    /\s*[–—-]\s+([A-ZÀ-Ú][a-zà-ú]+(?:\s+(?:di|del|della|delle|dei|d['']\s*)\s+[A-ZÀ-Ú][a-zà-ú]+)*(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*)\s*$/
+  );
+  if (patternDash) return patternDash[1].trim();
+
+  // Pattern 3: last "di CityName" at end of title
+  const patternDi = title.match(
+    /\bdi\s+([A-ZÀ-Ú][a-zà-ú]+(?:\s+(?:di|del|della|d['']\s*)\s+[A-ZÀ-Ú][a-zà-ú]+)*(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*)\s*$/i
+  );
+  if (patternDi) {
+    const candidate = patternDi[1].trim();
+    if (!/^(San\s|Santa\s|Santo\s|S\.\s)/i.test(candidate) || candidate.split(/\s+/).length > 2) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * If location_text is a generic province capital, try to extract a more
+ * specific city from the title. Prevents all sagre being geocoded to province center.
+ */
+function refineCityFromTitle(locationText: string, title: string): string {
+  const locLower = locationText.toLowerCase().trim();
+  if (!PROVINCE_CAPITALS.has(locLower)) return locationText;
+
+  const cityFromTitle = extractCityFromTitle(title);
+  if (cityFromTitle && cityFromTitle.toLowerCase() !== locLower) {
+    console.log(`[geocode] Refined city: "${locationText}" → "${cityFromTitle}" (from title: "${title}")`);
+    return cityFromTitle;
+  }
+  return locationText;
 }
 
 interface SagraForLLM {
@@ -250,7 +307,7 @@ async function runGeocodePass(
 
   const { data: rows } = await supabase
     .from("sagre")
-    .select("id, location_text")
+    .select("id, title, location_text")
     .eq("status", "pending_geocode")
     .eq("is_active", true)
     .limit(GEOCODE_LIMIT)
@@ -259,7 +316,9 @@ async function runGeocodePass(
   if (!rows?.length) return { geocoded, failed };
 
   for (const sagra of rows as SagraForGeocode[]) {
-    const city = cleanCityName(sagra.location_text ?? "");
+    // CRITICAL: if location_text is a province capital, extract actual town from title
+    const refinedLocation = refineCityFromTitle(sagra.location_text ?? "", sagra.title ?? "");
+    const city = cleanCityName(refinedLocation);
     if (!city) {
       // Cannot geocode — move to LLM pass anyway
       await supabase.from("sagre").update({
@@ -307,12 +366,17 @@ async function runGeocodePass(
             // so non-null result = definitely Veneto
             if (province) {
               // Veneto sagra — geocode and continue to LLM enrichment
-              await supabase.from("sagre").update({
+              const updateData: Record<string, unknown> = {
                 location: `SRID=4326;POINT(${lon} ${lat})`,  // PostGIS WKT: LON LAT order
                 province: province,
                 status: "pending_llm",
                 updated_at: new Date().toISOString(),
-              }).eq("id", sagra.id);
+              };
+              // Also update location_text if we refined it from title
+              if (refinedLocation !== (sagra.location_text ?? "")) {
+                updateData.location_text = refinedLocation;
+              }
+              await supabase.from("sagre").update(updateData).eq("id", sagra.id);
               geocoded++;
             } else {
               // Non-Veneto sagra — deactivate it
