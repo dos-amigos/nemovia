@@ -167,7 +167,7 @@ function chunkBatch<T>(items: T[], size: number): T[][] {
  * extract city/dates, assign tags, generate image query, confidence score.
  */
 function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
-  return `Sei un esperto di sagre italiane e gastronomia veneta. Per ogni evento nella lista JSON, analizza TUTTI i campi (title, location_text, description) e genera:
+  return `Sei un esperto di sagre italiane e gastronomia veneta. Per ogni evento nella lista JSON, analizza TUTTI i campi (title, location_text, description, source_description) e genera:
 
 1. **is_sagra**: true SOLO se è UN SINGOLO evento specifico (sagra/festa del cibo/fiera gastronomica) con nome proprio, luogo preciso e data.
    false se:
@@ -213,12 +213,19 @@ function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
 9. **feature_tags**: array (max 2) SOLO da: ${FEATURE_TAGS.join(", ")}
    - "Giostre" SOLO per grandi fiere con luna park
 
-10. **description**: descrizione in italiano, SEMPRE presente, max 300 caratteri, coinvolgente e informativa.
-    - Se c'è description originale: RIFORMULALA in italiano corretto e coinvolgente
-    - Se non c'è description: CREANE una credibile. Es: "Vieni a gustare polenta e baccalà alla sagra di Salzano godendoti la fine dell'estate"
-    - Menziona il cibo principale, l'atmosfera, il luogo
-    - Se c'è un menu nella description, riportalo come elenco breve
-    - MAI lasciare vuota!
+10. **description**: descrizione in italiano, SEMPRE presente, max 1000 caratteri, coinvolgente e RICCA DI DETTAGLI.
+    REGOLA FONDAMENTALE: NON perdere informazioni utili dalla description originale. Riformula in italiano corretto ma CONSERVA:
+    - Orari di apertura (es. "dalle 09:00 alle 19:00")
+    - Indirizzo/via (es. "Via Piave e Viale Europa")
+    - Menu/piatti specifici (es. "polenta e baccalà, grigliate, fritture")
+    - Programma/attività (es. "mercatino, musica dal vivo, giochi per bambini")
+    - Contatti (telefono, email, pagina Facebook)
+    - Numero edizione (es. "19ª edizione")
+    - Prezzo/ingresso (es. "ingresso libero", "€15 cena completa")
+    - Organizzatore (es. "Pro Loco di Onigo")
+    Se la description originale è vuota o assente: CREANE una credibile basata su titolo e luogo.
+    MAI inventare dettagli specifici (menu, orari, prezzi) se non sono nella description originale.
+    MAI lasciare vuota!
 
 11. **unsplash_query**: 2-4 parole IN INGLESE per cercare FOTO DI CIBO.
     REGOLA: estrai il SOGGETTO ALIMENTARE dal titolo e traduci in inglese.
@@ -304,6 +311,7 @@ interface SagraForLLM {
   title: string;
   location_text: string;
   description: string | null;
+  source_description: string | null;
   start_date: string | null;
   end_date: string | null;
 }
@@ -466,7 +474,7 @@ async function runLLMPass(
   // Enrich both successfully geocoded sagre AND geocode-failed ones (tags/description are independent of GPS)
   const { data: rows } = await supabase
     .from("sagre")
-    .select("id, title, location_text, description, start_date, end_date")
+    .select("id, title, location_text, description, source_description, start_date, end_date")
     .in("status", ["pending_llm", "geocode_failed"])
     .limit(LLM_LIMIT)
     .order("created_at", { ascending: true });
@@ -558,7 +566,7 @@ async function runLLMPass(
         // Valid sagra — enrich with all Gemini data
         const food_tags = validateTags(result.food_tags ?? [], FOOD_TAGS).slice(0, 3);
         const feature_tags = validateTags(result.feature_tags ?? [], FEATURE_TAGS).slice(0, 2);
-        const description = (result.description ?? "").slice(0, 500) || null;
+        const description = (result.description ?? "").slice(0, 1500) || null;
         const unsplash_query = (result.unsplash_query ?? "").slice(0, 60) || null;
         const clean_title = (result.clean_title ?? "").slice(0, 100) || matchedSagra?.title || "";
 
@@ -579,7 +587,7 @@ async function runLLMPass(
           food_tags,
           feature_tags,
           enhanced_description: description,
-          source_description: description, // Also set source_description for detail page
+          // DO NOT overwrite source_description — it contains the original rich text from the source
           unsplash_query,
           confidence,
           review_status,
