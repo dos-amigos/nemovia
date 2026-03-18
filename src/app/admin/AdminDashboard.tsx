@@ -7,11 +7,15 @@ import {
   getStatusCounts,
   getPipelineStats,
   triggerEnrichment,
+  triggerEdgeFunction,
   approveAction,
   rejectAction,
   bulkApproveAutoAction,
   logoutAction,
   getEnrichLogs,
+  getCronJobs,
+  toggleCronJob,
+  getDbDiagnostics,
   getSourcesOverview,
   getExternalSources,
   addExternalSource,
@@ -20,6 +24,8 @@ import {
   type ReviewStatus,
   type SourceOverview,
   type ExternalSource,
+  type CronJob,
+  type DbDiagnostics,
 } from "./actions";
 import { EditModal } from "./EditModal";
 import { Check, X, ExternalLink, LogOut, ChevronLeft, ChevronRight, RefreshCw, Play, Pause, Plus, Trash2, Power } from "lucide-react";
@@ -81,6 +87,10 @@ export function AdminDashboard() {
   const [showSourceMgmt, setShowSourceMgmt] = useState(false);
   const [newSource, setNewSource] = useState({ type: "instagram", name: "", url: "", notes: "" });
   const [sourceMsg, setSourceMsg] = useState<string | null>(null);
+  const [cronJobs, setCronJobs] = useState<CronJob[]>([]);
+  const [diagnostics, setDiagnostics] = useState<DbDiagnostics | null>(null);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [triggerMsg, setTriggerMsg] = useState<Record<string, string>>({});
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [loopRunning, setLoopRunning] = useState(false);
   const [loopRun, setLoopRun] = useState(0);
@@ -123,6 +133,7 @@ export function AdminDashboard() {
     });
     getEnrichLogs(5).then(setEnrichLogs).catch(() => {});
     getSourcesOverview().then(setSourcesOverview).catch(() => {});
+    getCronJobs().then(setCronJobs).catch(() => {});
   }, [addLog]);
 
   // Initial load
@@ -592,6 +603,160 @@ export function AdminDashboard() {
         </div>
       )}
 
+      {/* Cron Jobs + Trigger Scrapers */}
+      {cronJobs.length > 0 && (
+        <div className="mb-4 rounded-xl bg-white p-4 shadow">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-bold">Cron Jobs & Trigger Manuale</h2>
+            <button
+              onClick={() => {
+                setShowDiagnostics((v) => !v);
+                if (!showDiagnostics) getDbDiagnostics().then(setDiagnostics).catch(() => {});
+              }}
+              className="flex items-center gap-1 rounded-lg border border-primary/30 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/5"
+            >
+              Diagnostica DB
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px]">
+              <thead>
+                <tr className="border-b text-left text-[10px] font-medium text-muted-foreground">
+                  <th className="pb-1.5 pr-3">Job</th>
+                  <th className="pb-1.5 pr-3">Schedule</th>
+                  <th className="pb-1.5 pr-3">Stato</th>
+                  <th className="pb-1.5 pr-3">Ultimo run</th>
+                  <th className="pb-1.5 pr-3">Risultato</th>
+                  <th className="pb-1.5">Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cronJobs.map((job) => {
+                  const fn = job.jobname.replace(/-morning|-evening|-midday|-midnight/g, "");
+                  return (
+                    <tr key={job.jobname} className="border-b last:border-0">
+                      <td className="py-1.5 pr-3 font-medium font-mono text-[10px]">{job.jobname}</td>
+                      <td className="py-1.5 pr-3 font-mono text-[10px] text-muted-foreground">{job.schedule}</td>
+                      <td className="py-1.5 pr-3">
+                        {job.active ? (
+                          <span className="inline-flex items-center gap-0.5 text-green-600">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> On
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">Off</span>
+                        )}
+                      </td>
+                      <td className="py-1.5 pr-3 whitespace-nowrap">
+                        {job.last_run ? timeAgo(job.last_run) : <span className="text-gray-400">Mai</span>}
+                      </td>
+                      <td className="py-1.5 pr-3">
+                        {job.last_status ? (
+                          <span className={`text-[10px] font-medium ${job.last_status === "succeeded" ? "text-green-600" : "text-red-500"}`}>
+                            {job.last_status}
+                          </span>
+                        ) : "—"}
+                      </td>
+                      <td className="py-1.5">
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={async () => {
+                              await toggleCronJob(job.jobname, !job.active);
+                              getCronJobs().then(setCronJobs);
+                              addLog(`Cron ${job.jobname}: ${!job.active ? "attivato" : "disattivato"}`);
+                            }}
+                            title={job.active ? "Disattiva" : "Attiva"}
+                            className={`rounded p-1 text-[10px] ${job.active ? "text-orange-500 hover:bg-orange-50" : "text-green-600 hover:bg-green-50"}`}
+                          >
+                            <Power className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={async () => {
+                              setTriggerMsg((prev) => ({ ...prev, [fn]: "..." }));
+                              addLog(`Trigger manuale: ${fn}`);
+                              const msg = await triggerEdgeFunction(fn);
+                              setTriggerMsg((prev) => ({ ...prev, [fn]: msg === "started" ? "avviato" : msg }));
+                              addLog(`${fn}: ${msg}`);
+                              setTimeout(() => setTriggerMsg((prev) => { const n = { ...prev }; delete n[fn]; return n; }), 5000);
+                            }}
+                            title={`Trigger ${fn}`}
+                            className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/20"
+                          >
+                            {triggerMsg[fn] ?? "Run"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-2 text-[10px] text-muted-foreground">
+            GitHub Actions (facebook, instagram, tavily) si triggerano da <a href="https://github.com/dos-amigos/nemovia/actions" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">GitHub Actions</a> → Run workflow
+          </p>
+        </div>
+      )}
+
+      {/* DB Diagnostics (expandable) */}
+      {showDiagnostics && diagnostics && (
+        <div className="mb-4 rounded-xl bg-white p-4 shadow">
+          <h2 className="mb-3 text-sm font-bold">Diagnostica Database</h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+            <DiagStat label="Totali" value={diagnostics.total_sagre} />
+            <DiagStat label="Attive" value={diagnostics.active_sagre} color="text-green-600" />
+            <DiagStat label="Con data futura" value={diagnostics.future_sagre} color="text-blue-600" />
+            <DiagStat label="Scadute" value={diagnostics.expired_sagre} color="text-red-500" />
+            <DiagStat label="Senza data" value={diagnostics.no_date_sagre} color="text-yellow-600" />
+            <DiagStat label="Senza provincia" value={diagnostics.no_province} color="text-orange-500" />
+            <DiagStat label="Attive senza img" value={diagnostics.no_image} color="text-purple-600" />
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {/* By source */}
+            <div>
+              <h3 className="mb-1 text-[11px] font-bold text-muted-foreground">Per Fonte</h3>
+              <div className="space-y-0.5 text-[11px]">
+                {diagnostics.by_source.slice(0, 15).map((s) => (
+                  <div key={s.source} className="flex justify-between">
+                    <span className="truncate pr-2">{s.source}</span>
+                    <span className="font-mono font-bold">{s.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* By review status */}
+            <div>
+              <h3 className="mb-1 text-[11px] font-bold text-muted-foreground">Per Review Status</h3>
+              <div className="space-y-0.5 text-[11px]">
+                {diagnostics.by_review_status.map((s) => (
+                  <div key={s.status} className="flex justify-between">
+                    <span>{STATUS_LABELS[s.status]?.label ?? s.status}</span>
+                    <span className="font-mono font-bold">{s.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* By province */}
+            <div>
+              <h3 className="mb-1 text-[11px] font-bold text-muted-foreground">Attive per Provincia</h3>
+              <div className="space-y-0.5 text-[11px]">
+                {diagnostics.by_province.map((p) => (
+                  <div key={p.province} className="flex justify-between">
+                    <span>{p.province}</span>
+                    <span className="font-mono font-bold">{p.count}</span>
+                  </div>
+                ))}
+                {diagnostics.by_province.length === 0 && (
+                  <span className="text-muted-foreground">Nessuna sagra attiva</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Status filter tabs */}
       <div className="mb-4 flex flex-wrap gap-2">
         {(["needs_review", "pending", "auto_approved", "admin_approved", "admin_rejected", "discarded", "all"] as const).map((s) => (
@@ -808,6 +973,15 @@ function PipelineStat({ label, value, color, prev }: { label: string; value: num
           </span>
         )}
       </div>
+      <div className="text-[10px] text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function DiagStat({ label, value, color }: { label: string; value: number; color?: string }) {
+  return (
+    <div className="rounded-lg bg-muted/50 p-2 text-center">
+      <div className={`text-lg font-bold ${color ?? "text-foreground"}`}>{value}</div>
       <div className="text-[10px] text-muted-foreground">{label}</div>
     </div>
   );

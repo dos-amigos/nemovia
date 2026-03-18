@@ -253,6 +253,164 @@ export async function getEnrichLogs(limit: number = 10) {
 }
 
 // ============================================================
+// System control: pg_cron, scrapers, diagnostics
+// ============================================================
+
+export type CronJob = {
+  jobname: string;
+  schedule: string;
+  active: boolean;
+  last_run: string | null;
+  last_status: string | null;
+};
+
+/** Get pg_cron job statuses via raw SQL */
+export async function getCronJobs(): Promise<CronJob[]> {
+  if (!(await isAdmin())) throw new Error("Unauthorized");
+  const db = createAdminClient();
+
+  // Query cron.job for schedules + cron.job_run_details for last run
+  const { data, error } = await db.rpc("get_cron_jobs");
+  if (error) {
+    // RPC might not exist yet — try direct query as fallback
+    console.error("get_cron_jobs RPC error:", error.message);
+    return [];
+  }
+  return (data ?? []) as CronJob[];
+}
+
+/** Toggle a pg_cron job active/inactive */
+export async function toggleCronJob(jobname: string, active: boolean): Promise<{ ok: boolean; error?: string }> {
+  if (!(await isAdmin())) throw new Error("Unauthorized");
+  const db = createAdminClient();
+
+  const action = active ? "cron.schedule" : "cron.unschedule";
+  // Use ALTER to toggle — simpler than unschedule/reschedule
+  const { error } = await db.rpc("toggle_cron_job", { job_name: jobname, is_active: active });
+  if (error) {
+    console.error(`toggle_cron_job error:`, error.message);
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
+}
+
+/** Trigger any edge function by name */
+export async function triggerEdgeFunction(functionName: string): Promise<string> {
+  if (!(await isAdmin())) throw new Error("Unauthorized");
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+  try {
+    const res = await fetch(`${url}/functions/v1/${functionName}`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ trigger: "admin" }),
+    });
+
+    if (!res.ok) return `Errore: ${res.status} ${res.statusText}`;
+    return "started";
+  } catch (e) {
+    return `Errore: ${(e as Error).message}`;
+  }
+}
+
+/** Trigger GitHub Actions workflow */
+export async function triggerGitHubAction(script: string): Promise<string> {
+  if (!(await isAdmin())) throw new Error("Unauthorized");
+
+  // GitHub PAT needed for workflow_dispatch — use service-level approach
+  // For now, we can't trigger GH Actions from server without a PAT
+  // Instead, we document this limitation
+  return "not_available";
+}
+
+export type DbDiagnostics = {
+  total_sagre: number;
+  active_sagre: number;
+  future_sagre: number;
+  expired_sagre: number;
+  no_date_sagre: number;
+  no_province: number;
+  no_image: number;
+  by_source: { source: string; count: number }[];
+  by_review_status: { status: string; count: number }[];
+  by_province: { province: string; count: number }[];
+};
+
+/** Full DB diagnostics for admin panel */
+export async function getDbDiagnostics(): Promise<DbDiagnostics> {
+  if (!(await isAdmin())) throw new Error("Unauthorized");
+  const db = createAdminClient();
+  const today = new Date().toISOString().split("T")[0];
+
+  const [total, active, future, expired, noDate, noProv, noImg] = await Promise.all([
+    db.from("sagre").select("id", { count: "exact", head: true }),
+    db.from("sagre").select("id", { count: "exact", head: true }).eq("is_active", true),
+    db.from("sagre").select("id", { count: "exact", head: true }).gte("end_date", today),
+    db.from("sagre").select("id", { count: "exact", head: true }).lt("end_date", today),
+    db.from("sagre").select("id", { count: "exact", head: true }).is("start_date", null),
+    db.from("sagre").select("id", { count: "exact", head: true }).is("province", null),
+    db.from("sagre").select("id", { count: "exact", head: true }).is("image_url", null).eq("is_active", true),
+  ]);
+
+  // Source breakdown — get source_id counts
+  const { data: sourceRows } = await db
+    .from("sagre")
+    .select("source_id")
+    .not("source_id", "is", null);
+
+  const sourceCounts = new Map<string, number>();
+  for (const r of sourceRows ?? []) {
+    const s = (r.source_id as string) ?? "unknown";
+    sourceCounts.set(s, (sourceCounts.get(s) ?? 0) + 1);
+  }
+  const bySource = [...sourceCounts.entries()]
+    .map(([source, count]) => ({ source, count }))
+    .sort((a, b) => b.count - a.count);
+
+  // Province breakdown for active sagre
+  const { data: provRows } = await db
+    .from("sagre")
+    .select("province")
+    .eq("is_active", true)
+    .not("province", "is", null);
+
+  const provCounts = new Map<string, number>();
+  for (const r of provRows ?? []) {
+    const p = (r.province as string) ?? "?";
+    provCounts.set(p, (provCounts.get(p) ?? 0) + 1);
+  }
+  const byProvince = [...provCounts.entries()]
+    .map(([province, count]) => ({ province, count }))
+    .sort((a, b) => b.count - a.count);
+
+  // Review status breakdown
+  const statuses = ["pending", "auto_approved", "needs_review", "admin_approved", "admin_rejected", "discarded"];
+  const statusCounts: { status: string; count: number }[] = [];
+  for (const s of statuses) {
+    const { count } = await db.from("sagre").select("id", { count: "exact", head: true }).eq("review_status", s);
+    statusCounts.push({ status: s, count: count ?? 0 });
+  }
+
+  return {
+    total_sagre: total.count ?? 0,
+    active_sagre: active.count ?? 0,
+    future_sagre: future.count ?? 0,
+    expired_sagre: expired.count ?? 0,
+    no_date_sagre: noDate.count ?? 0,
+    no_province: noProv.count ?? 0,
+    no_image: noImg.count ?? 0,
+    by_source: bySource,
+    by_review_status: statusCounts,
+    by_province: byProvince,
+  };
+}
+
+// ============================================================
 // Source monitoring & management
 // ============================================================
 
