@@ -124,6 +124,13 @@ function parseTavilyResult(result, province) {
   if (/\b(calendario|esplora|elenco|risposte del modulo|\[xls\]|\[pdf\]|media kit)\b/i.test(tLow)) return null;
   if (/\b(tutti gli|tutte le|scopri le|guida a|le migliori)\b/i.test(tLow)) return null;
 
+  // Skip aggregator/article titles — NOT a specific sagra
+  // These are roundup articles listing many events, not a single event page
+  if (/\b(sagre|eventi|feste|fiere|festival)\s+(ed?|e|del|della|dei|delle|in|nel|nella|di)\s+(eventi|sagre|feste|fiere|festival|veneto|italia|padova|verona|vicenza|treviso|venezia|rovigo|belluno)\b/i.test(tLow)) return null;
+  if (/\beventi\s+enogastronomic/i.test(tLow)) return null;
+  if (/\b(le\s+sagre|le\s+feste|gli\s+eventi)\s+(di|del|della|da|vicino|più)\b/i.test(tLow)) return null;
+  if (/\b(cosa\s+fare|dove\s+andare|weekend|week\s*end)\b/i.test(tLow)) return null;
+
   // Must have food keyword in TITLE (not just snippet) to be a specific sagra
   if (!isFoodEvent(title)) return null;
 

@@ -169,8 +169,13 @@ function chunkBatch<T>(items: T[], size: number): T[][] {
 function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
   return `Sei un esperto di sagre italiane e gastronomia veneta. Per ogni evento nella lista JSON, analizza TUTTI i campi (title, location_text, description) e genera:
 
-1. **is_sagra**: true se è sagra/festa del cibo/fiera gastronomica con componente gastronomica. false se antiquariato, mostra, concerto puro, evento sportivo, mercato generico senza cibo.
-   SCARTA ANCHE: pagine di riepilogo ("Le sagre di agosto a Padova"), calendari, elenchi generici.
+1. **is_sagra**: true SOLO se è UN SINGOLO evento specifico (sagra/festa del cibo/fiera gastronomica) con nome proprio, luogo preciso e data.
+   false se:
+   - Antiquariato, mostra, concerto puro, evento sportivo, mercato generico senza cibo
+   - Articoli/pagine che ELENCANO più eventi ("Le sagre di agosto a Padova", "Eventi enogastronomici di aprile", "Sagre ed Eventi Veneto")
+   - Calendari, guide, roundup, "cosa fare questo weekend", "le migliori sagre di..."
+   - Titoli con PLURALE generico: "Sagre e feste", "Fiere e festival", "Eventi enogastronomici"
+   REGOLA CHIAVE: una vera sagra ha UN nome specifico ("Sagra della Zucca", "Festa del Baccalà"), NON un titolo che descrive una categoria di eventi.
 
 2. **confidence**: numero 0-100. Quanto sei sicuro che questa sia una vera sagra specifica con dati corretti.
    - 90-100: sagra vera, titolo chiaro, date presenti, luogo preciso
@@ -517,14 +522,22 @@ async function runLLMPass(
 
       const raw = JSON.parse(response.text) as EnrichmentResult[];
 
-      // Hardcoded blocklist: events that are NOT sagre regardless of LLM classification
-      const BLOCKLIST_TITLES = ["vinitaly"];
+      // Blocklist: events that are NOT sagre regardless of LLM classification
+      const BLOCKLIST_TITLES = ["vinitaly", "wine&food", "prowein"];
+      // Pattern blocklist: aggregator/article titles
+      const BLOCKLIST_PATTERNS = [
+        /\b(sagre|eventi|feste|fiere)\s+(ed?|e|del|in|nel)\s+(eventi|sagre|feste|veneto|italia)/i,
+        /\beventi\s+enogastronomic/i,
+        /\b(le\s+sagre|le\s+feste|gli\s+eventi)\s+(di|del|da|più)\b/i,
+        /\b(cosa\s+fare|dove\s+andare)\b/i,
+      ];
 
       // Write each enriched event back to DB
       for (const result of raw) {
         const matchedSagra = batch.find((s: { id: string }) => s.id === result.id);
         const titleLower = (matchedSagra?.title ?? "").toLowerCase();
-        const isBlocklisted = BLOCKLIST_TITLES.some((b: string) => titleLower.includes(b));
+        const isBlocklisted = BLOCKLIST_TITLES.some((b: string) => titleLower.includes(b))
+          || BLOCKLIST_PATTERNS.some((p: RegExp) => p.test(titleLower));
 
         const confidence = typeof result.confidence === "number" ? Math.min(100, Math.max(0, result.confidence)) : 50;
 

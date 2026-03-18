@@ -47,6 +47,13 @@ export function isNoiseTitle(title: string): boolean {
   // NEW: Newsletter/signup noise
   if (/newsletter|iscriviti|registrati/i.test(t)) return true;
 
+  // Aggregator/article titles — NOT a specific sagra
+  // "Sagre ed Eventi Veneto", "Eventi enogastronomici di aprile", "Le sagre di agosto"
+  if (/\b(sagre|eventi|feste|fiere|festival)\s+(ed?|e|del|della|dei|in|nel)\s+(eventi|sagre|feste|fiere|veneto|italia)/i.test(t)) return true;
+  if (/\beventi\s+enogastronomic/i.test(t)) return true;
+  if (/\b(le\s+sagre|le\s+feste|gli\s+eventi)\s+(di|del|della|da|vicino|più)\b/i.test(t)) return true;
+  if (/\b(cosa\s+fare|dove\s+andare|weekend|week\s*end)\b/i.test(t)) return true;
+
   return false;
 }
 
@@ -65,9 +72,11 @@ export function isNonSagraTitle(title: string): boolean {
   if (!title || title.length === 0) return false;
   const t = title.toLowerCase();
 
-  // Whitelist: if title contains sagra/festa/food keywords, NEVER reject
+  // Whitelist: if title contains SPECIFIC sagra/food keywords, don't reject.
+  // But PLURAL forms ("sagre", "feste", "eventi") are often article/listing titles,
+  // so only whitelist SINGULAR forms or specific food items.
   if (
-    /\b(sagra|sagre|festa|feste|gastronomic|enogastronomic|degustazion|polenta|baccal[aà]|pesce|gnocch|risott|tortel|formagg|asparag|radicchi|funghi|vino|birra|griglia)/i.test(
+    /\b(sagra|festa\s+d[ei]l|degustazion|polenta|baccal[aà]|pesce|gnocch|risott|tortel|formagg|asparag|radicchi|funghi|birra|griglia)/i.test(
       t
     )
   ) {
