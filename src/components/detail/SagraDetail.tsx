@@ -32,7 +32,12 @@ export default function SagraDetail({ sagra, videoUrl }: SagraDetailProps) {
   const lat = hasLocation ? sagra.location!.coordinates[1] : null;
   const lng = hasLocation ? sagra.location!.coordinates[0] : null;
 
-  const description = sagra.source_description ?? sagra.enhanced_description ?? sagra.description;
+  const rawDescription = sagra.enhanced_description ?? sagra.source_description ?? sagra.description;
+  // Strip markdown artifacts (##, **, *) that may leak from Gemini or Tavily snippets
+  const description = rawDescription
+    ?.replace(/^#+\s*/gm, "")
+    .replace(/\*{1,2}([^*]+)\*{1,2}/g, "$1")
+    .trim() || null;
   const fallback = getFallbackImage(sagra.id, sagra.food_tags, sagra.title, description);
   const hasGoodImage = sagra.image_url && !isLowQualityUrl(sagra.image_url);
   const imageSrc = hasGoodImage ? sagra.image_url! : fallback;

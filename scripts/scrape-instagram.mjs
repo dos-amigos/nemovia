@@ -357,7 +357,7 @@ async function main() {
       source_url: post.url || null,
       source_description: result.description || post.caption?.slice(0, 500) || null,
       sources: ["instagram"],
-      is_active: true,
+      is_active: false,
       status: "pending_geocode",
       content_hash: contentHash,
       province: province,
