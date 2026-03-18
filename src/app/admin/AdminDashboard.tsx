@@ -28,32 +28,12 @@ import {
   type DbDiagnostics,
 } from "./actions";
 import { EditModal } from "./EditModal";
-import { Check, X, ExternalLink, LogOut, ChevronLeft, ChevronRight, RefreshCw, Play, Pause, Plus, Trash2, Power } from "lucide-react";
+import { Check, X, ExternalLink, LogOut, ChevronLeft, ChevronRight, RefreshCw, Play, Pause, Plus, Trash2, Power, LayoutDashboard, BarChart3, List } from "lucide-react";
 import { FoodIcons } from "@/lib/constants/food-icons";
 
 type SagraRow = Awaited<ReturnType<typeof getAdminSagre>>["data"][number];
 type PipelineData = Awaited<ReturnType<typeof getPipelineStats>>;
-
-/** Derive a human-readable reason for the review status */
-function getReason(row: SagraRow): string {
-  const parts: string[] = [];
-
-  // Pipeline stage
-  if (row.status === "pending_geocode") parts.push("In coda geocoding");
-  else if (row.status === "pending_llm" || row.status === "geocode_failed") parts.push("In coda Gemini");
-  else if (row.status === "duplicate") parts.push("Duplicato");
-  else if (row.confidence == null) parts.push("In attesa di analisi");
-  else {
-    // Has been analyzed by Gemini
-    if (row.status === "classified_non_sagra") parts.push("Non è una sagra");
-    if (row.confidence < 30) parts.push("Confidence troppo bassa (" + row.confidence + ")");
-    else if (row.confidence < 70) parts.push("Confidence media (" + row.confidence + ")");
-    else parts.push("Confidence alta (" + row.confidence + ")");
-    if (!row.start_date) parts.push("Senza data");
-    if (row.confidence >= 70 && row.start_date) parts.push("OK");
-  }
-  return parts.join(" · ") || "—";
-}
+type View = "dashboard" | "dettagli" | "sagre";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   pending: { label: "In attesa", color: "bg-yellow-100 text-yellow-800" },
@@ -64,8 +44,53 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   discarded: { label: "Scartate", color: "bg-gray-100 text-gray-500" },
 };
 
+function getReason(row: SagraRow): string {
+  if (row.status === "pending_geocode") return "In coda geocoding";
+  if (row.status === "pending_llm" || row.status === "geocode_failed") return "In coda Gemini";
+  if (row.status === "duplicate") return "Duplicato";
+  if (row.status === "classified_non_sagra") return "Non e' una sagra";
+  if (row.confidence == null) return "In attesa di analisi";
+  const parts: string[] = [];
+  if (row.confidence < 30) parts.push("Confidence " + row.confidence);
+  else if (row.confidence < 70) parts.push("Confidence " + row.confidence);
+  else parts.push("OK (" + row.confidence + ")");
+  if (!row.start_date) parts.push("Senza data");
+  return parts.join(" · ");
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "adesso";
+  if (mins < 60) return `${mins}m fa`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h fa`;
+  return `${Math.floor(hrs / 24)}g fa`;
+}
+
+// =============================================================================
+// Main component
+// =============================================================================
+
 export function AdminDashboard() {
   const router = useRouter();
+  const [view, setView] = useState<View>("dashboard");
+
+  // Shared state
+  const [pipeline, setPipeline] = useState<PipelineData | null>(null);
+  const [prevPipeline, setPrevPipeline] = useState<PipelineData | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [isPending, startTransition] = useTransition();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [enrichLogs, setEnrichLogs] = useState<any[]>([]);
+  const [sourcesOverview, setSourcesOverview] = useState<SourceOverview[]>([]);
+  const [cronJobs, setCronJobs] = useState<CronJob[]>([]);
+  const [loopRunning, setLoopRunning] = useState(false);
+  const [enrichMsg, setEnrichMsg] = useState<string | null>(null);
+
+  // Sagre view state
   const [status, setStatus] = useState<ReviewStatus | "all">("needs_review");
   const [rows, setRows] = useState<SagraRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -73,312 +98,365 @@ export function AdminDashboard() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [editId, setEditId] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const [pipeline, setPipeline] = useState<PipelineData | null>(null);
-  const [prevPipeline, setPrevPipeline] = useState<PipelineData | null>(null);
-  const [enrichMsg, setEnrichMsg] = useState<string | null>(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [activityLog, setActivityLog] = useState<string[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [enrichLogs, setEnrichLogs] = useState<any[]>([]);
-  const [sourcesOverview, setSourcesOverview] = useState<SourceOverview[]>([]);
+
+  // Dettagli view state
+  const [diagnostics, setDiagnostics] = useState<DbDiagnostics | null>(null);
   const [extSources, setExtSources] = useState<ExternalSource[]>([]);
   const [showSourceMgmt, setShowSourceMgmt] = useState(false);
   const [newSource, setNewSource] = useState({ type: "instagram", name: "", url: "", notes: "" });
   const [sourceMsg, setSourceMsg] = useState<string | null>(null);
-  const [cronJobs, setCronJobs] = useState<CronJob[]>([]);
-  const [diagnostics, setDiagnostics] = useState<DbDiagnostics | null>(null);
-  const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [triggerMsg, setTriggerMsg] = useState<Record<string, string>>({});
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [loopRunning, setLoopRunning] = useState(false);
-  const [loopRun, setLoopRun] = useState(0);
-  const loopAbortRef = useRef(false);
 
-  const addLog = useCallback((msg: string) => {
-    const time = new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-    setActivityLog((prev) => [`[${time}] ${msg}`, ...prev].slice(0, 20));
+  // Load pipeline stats
+  const loadPipeline = useCallback(() => {
+    getPipelineStats().then((p) => {
+      setPipeline((prev) => { if (prev) setPrevPipeline(prev); return p; });
+      setLastUpdate(new Date());
+    });
+    getEnrichLogs(6).then(setEnrichLogs).catch(() => {});
+    getSourcesOverview().then(setSourcesOverview).catch(() => {});
+    getCronJobs().then(setCronJobs).catch(() => {});
   }, []);
 
-  // Load table data (only on filter/page change)
   const loadTable = useCallback(() => {
     setLoading(true);
     Promise.all([getAdminSagre(status, page), getStatusCounts()])
-      .then(([result, c]) => {
-        setRows(result.data);
-        setTotal(result.total);
-        setCounts(c);
-      })
+      .then(([result, c]) => { setRows(result.data); setTotal(result.total); setCounts(c); })
       .finally(() => setLoading(false));
   }, [status, page]);
 
-  // Load pipeline stats (lightweight, called frequently)
-  const loadPipeline = useCallback(() => {
-    getPipelineStats().then((p) => {
-      setPipeline((prev) => {
-        if (prev) {
-          setPrevPipeline(prev);
-          const diffs: string[] = [];
-          if (p.pending_llm < prev.pending_llm) diffs.push(`Gemini: ${prev.pending_llm - p.pending_llm} analizzate`);
-          if (p.enriched > prev.enriched) diffs.push(`+${p.enriched - prev.enriched} enriched`);
-          if (p.active > prev.active) diffs.push(`+${p.active - prev.active} attive`);
-          if (p.with_image > prev.with_image) diffs.push(`+${p.with_image - prev.with_image} immagini`);
-          if (p.pending_geocode < prev.pending_geocode) diffs.push(`${prev.pending_geocode - p.pending_geocode} geocodificate`);
-          if (diffs.length > 0) addLog(diffs.join(", "));
-        }
-        return p;
-      });
-      setLastUpdate(new Date());
-    });
-    getEnrichLogs(5).then(setEnrichLogs).catch(() => {});
-    getSourcesOverview().then(setSourcesOverview).catch(() => {});
-    getCronJobs().then(setCronJobs).catch(() => {});
-  }, [addLog]);
+  useEffect(() => { loadPipeline(); loadTable(); }, [loadPipeline, loadTable]);
 
-  // Initial load
-  useEffect(() => { loadTable(); loadPipeline(); }, [loadTable, loadPipeline]);
-
-  // Auto-refresh pipeline stats every 10s
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (autoRefresh) {
-      intervalRef.current = setInterval(() => {
-        loadPipeline();
-        // Also refresh table counts
-        getStatusCounts().then(setCounts);
-      }, 10_000);
+      intervalRef.current = setInterval(() => { loadPipeline(); getStatusCounts().then(setCounts); }, 10_000);
     }
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [autoRefresh, loadPipeline]);
 
-  function handleApprove(id: string) {
-    startTransition(async () => {
-      await approveAction(id);
-      loadTable();
-      loadPipeline();
-    });
-  }
-
-  function handleReject(id: string) {
-    startTransition(async () => {
-      await rejectAction(id);
-      loadTable();
-      loadPipeline();
-    });
-  }
-
-  function handleBulkApprove() {
-    if (!confirm("Approvare tutte le sagre auto_approved?")) return;
-    startTransition(async () => {
-      const count = await bulkApproveAutoAction();
-      addLog(`Bulk approve: ${count} sagre approvate`);
-      loadTable();
-      loadPipeline();
-    });
-  }
-
-  // Single run
+  // Enrichment actions
   function handleTriggerEnrich() {
-    setEnrichMsg(null);
-    addLog("Avvio enrichment...");
     startTransition(async () => {
       const msg = await triggerEnrichment();
-      if (msg === "started") {
-        setEnrichMsg("Enrichment in corso...");
-        addLog("Enrichment avviato! I numeri si aggiorneranno automaticamente.");
-      } else {
-        setEnrichMsg(msg);
-        addLog(`Enrichment: ${msg}`);
-      }
+      setEnrichMsg(msg === "started" ? "Avviato" : msg);
+      setTimeout(() => setEnrichMsg(null), 5000);
     });
   }
 
-  // Loop mode: trigger with loop=true, server self-chains — no browser needed
   async function startEnrichLoop() {
     setLoopRunning(true);
-    setLoopRun(1);
-    addLog("--- Avvio loop server-side (continua anche a browser chiuso) ---");
-    setEnrichMsg("Loop avviato — la funzione si auto-richiama finché c'è lavoro");
-
-    const msg = await triggerEnrichment(true); // loop=true
-    if (msg !== "started") {
-      addLog(`Errore avvio: ${msg}`);
-      setLoopRunning(false);
-      setEnrichMsg(null);
-      return;
-    }
-    addLog("Primo run avviato. Il server continuerà automaticamente.");
-  }
-
-  function stopEnrichLoop() {
-    // Note: can't truly stop server-side loop from client, but we stop UI tracking
-    setLoopRunning(false);
-    setLoopRun(0);
-    setEnrichMsg(null);
-    addLog("Monitoraggio loop fermato (il run corrente completerà sul server).");
+    setEnrichMsg("Loop avviato — il server continua automaticamente");
+    const msg = await triggerEnrichment(true);
+    if (msg !== "started") { setLoopRunning(false); setEnrichMsg(msg); }
   }
 
   function handleLogout() {
-    startTransition(async () => {
-      await logoutAction();
-      router.refresh();
-    });
+    startTransition(async () => { await logoutAction(); router.refresh(); });
   }
 
-  const pageSize = 50;
-  const totalPages = Math.ceil(total / pageSize);
-  const isProcessing = pipeline && prevPipeline && pipeline.pending_llm < prevPipeline.pending_llm;
+  // Derived state for dashboard
+  const isWorking = enrichLogs.length > 0 && enrichLogs[0]?.completed_at &&
+    (Date.now() - new Date(enrichLogs[0].completed_at).getTime()) < 180_000;
+  const lastEnrichAgo = enrichLogs[0]?.completed_at ? timeAgo(enrichLogs[0].completed_at) : null;
+  const pendingTotal = (pipeline?.pending_geocode ?? 0) + (pipeline?.pending_llm ?? 0);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Admin Nemovia</h1>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setAutoRefresh((v) => !v)}
-            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
-              autoRefresh ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
-            }`}
-            title={autoRefresh ? "Auto-refresh attivo (ogni 10s)" : "Auto-refresh disattivato"}
-          >
-            {autoRefresh ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
-            Live
-            {autoRefresh && <span className="ml-0.5 h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />}
-          </button>
+    <div className="flex h-screen">
+      {/* Sidebar */}
+      <nav className="flex w-48 flex-col border-r bg-gray-50">
+        <div className="border-b px-4 py-4">
+          <h1 className="text-lg font-bold">Nemovia</h1>
+          <p className="text-[10px] text-muted-foreground">Pannello Admin</p>
+        </div>
+        <div className="flex flex-1 flex-col gap-1 p-2">
+          {([
+            { id: "dashboard" as View, label: "Dashboard", icon: LayoutDashboard },
+            { id: "dettagli" as View, label: "Dettagli", icon: BarChart3 },
+            { id: "sagre" as View, label: "Gestione Sagre", icon: List },
+          ]).map((item) => (
+            <button
+              key={item.id}
+              onClick={() => { setView(item.id); if (item.id === "sagre") loadTable(); if (item.id === "dettagli") getDbDiagnostics().then(setDiagnostics).catch(() => {}); }}
+              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                view === item.id ? "bg-primary text-white" : "text-muted-foreground hover:bg-gray-200"
+              }`}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <div className="border-t p-2">
+          <div className="flex items-center justify-between px-2 py-1">
+            <button
+              onClick={() => setAutoRefresh((v) => !v)}
+              className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                autoRefresh ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-500"
+              }`}
+            >
+              {autoRefresh ? <Play className="h-2.5 w-2.5" /> : <Pause className="h-2.5 w-2.5" />}
+              Live
+              {autoRefresh && <span className="ml-0.5 h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />}
+            </button>
+            <button onClick={handleLogout} className="text-xs text-muted-foreground hover:text-foreground">
+              <LogOut className="h-3.5 w-3.5" />
+            </button>
+          </div>
           {lastUpdate && (
-            <span className="text-[10px] text-muted-foreground">
-              Aggiornato: {lastUpdate.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-            </span>
+            <p className="px-2 text-[9px] text-muted-foreground">
+              {lastUpdate.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+            </p>
           )}
-          <button onClick={handleLogout} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <LogOut className="h-4 w-4" /> Esci
-          </button>
+        </div>
+      </nav>
+
+      {/* Main content */}
+      <main className="flex-1 overflow-y-auto bg-gray-100/50 p-6">
+        {view === "dashboard" && (
+          <DashboardView
+            pipeline={pipeline}
+            isWorking={isWorking}
+            lastEnrichAgo={lastEnrichAgo}
+            pendingTotal={pendingTotal}
+            enrichMsg={enrichMsg}
+            loopRunning={loopRunning}
+            isPending={isPending}
+            enrichLogs={enrichLogs}
+            sourcesOverview={sourcesOverview}
+            counts={counts}
+            onTriggerEnrich={handleTriggerEnrich}
+            onStartLoop={startEnrichLoop}
+            onStopLoop={() => { setLoopRunning(false); setEnrichMsg(null); }}
+          />
+        )}
+        {view === "dettagli" && (
+          <DettagliView
+            pipeline={pipeline}
+            prevPipeline={prevPipeline}
+            enrichLogs={enrichLogs}
+            sourcesOverview={sourcesOverview}
+            cronJobs={cronJobs}
+            diagnostics={diagnostics}
+            extSources={extSources}
+            showSourceMgmt={showSourceMgmt}
+            newSource={newSource}
+            sourceMsg={sourceMsg}
+            triggerMsg={triggerMsg}
+            onSetShowSourceMgmt={(v) => { setShowSourceMgmt(v); if (v) getExternalSources().then(setExtSources); }}
+            onSetNewSource={setNewSource}
+            onAddSource={async () => {
+              if (!newSource.name.trim() || !newSource.url.trim()) return;
+              setSourceMsg(null);
+              const res = await addExternalSource(newSource.type, newSource.name.trim(), newSource.url.trim(), newSource.notes.trim() || undefined);
+              if (res.ok) {
+                setNewSource({ type: newSource.type, name: "", url: "", notes: "" });
+                setSourceMsg("Aggiunta!");
+                getExternalSources().then(setExtSources);
+                getSourcesOverview().then(setSourcesOverview);
+              } else { setSourceMsg(res.error ?? "Errore"); }
+            }}
+            onToggleSource={async (id, active) => { await toggleExternalSource(id, active); getExternalSources().then(setExtSources); getSourcesOverview().then(setSourcesOverview); }}
+            onDeleteSource={async (id) => { await deleteExternalSource(id); getExternalSources().then(setExtSources); getSourcesOverview().then(setSourcesOverview); }}
+            onToggleCron={async (name, active) => { await toggleCronJob(name, active); getCronJobs().then(setCronJobs); }}
+            onTriggerFn={async (fn) => {
+              setTriggerMsg((p) => ({ ...p, [fn]: "..." }));
+              const msg = await triggerEdgeFunction(fn);
+              setTriggerMsg((p) => ({ ...p, [fn]: msg === "started" ? "avviato" : msg }));
+              setTimeout(() => setTriggerMsg((p) => { const n = { ...p }; delete n[fn]; return n; }), 5000);
+            }}
+            onRefreshDiag={() => getDbDiagnostics().then(setDiagnostics)}
+          />
+        )}
+        {view === "sagre" && (
+          <SagreView
+            rows={rows} total={total} page={page} counts={counts} status={status}
+            loading={loading} isPending={isPending} editId={editId}
+            onSetStatus={(s) => { setStatus(s); setPage(0); }}
+            onSetPage={setPage}
+            onApprove={(id) => startTransition(async () => { await approveAction(id); loadTable(); loadPipeline(); })}
+            onReject={(id) => startTransition(async () => { await rejectAction(id); loadTable(); loadPipeline(); })}
+            onBulkApprove={() => { if (!confirm("Approvare tutte le auto_approved?")) return; startTransition(async () => { await bulkApproveAutoAction(); loadTable(); loadPipeline(); }); }}
+            onEdit={(id) => setEditId(id)}
+            onCloseEdit={() => setEditId(null)}
+            onSaved={() => { setEditId(null); loadTable(); loadPipeline(); }}
+            onRefresh={loadTable}
+          />
+        )}
+      </main>
+    </div>
+  );
+}
+
+// =============================================================================
+// DASHBOARD VIEW — Overview chiaro
+// =============================================================================
+
+function DashboardView({
+  pipeline, isWorking, lastEnrichAgo, pendingTotal, enrichMsg, loopRunning, isPending,
+  enrichLogs, sourcesOverview, counts,
+  onTriggerEnrich, onStartLoop, onStopLoop,
+}: {
+  pipeline: PipelineData | null;
+  isWorking: boolean;
+  lastEnrichAgo: string | null;
+  pendingTotal: number;
+  enrichMsg: string | null;
+  loopRunning: boolean;
+  isPending: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  enrichLogs: any[];
+  sourcesOverview: SourceOverview[];
+  counts: Record<string, number>;
+  onTriggerEnrich: () => void;
+  onStartLoop: () => void;
+  onStopLoop: () => void;
+}) {
+  if (!pipeline) return <div className="py-20 text-center text-muted-foreground">Caricamento...</div>;
+
+  // Determine system status
+  const hasErrors = enrichLogs.some((l) => l.error_message);
+  const systemStatus = isWorking
+    ? { label: "Pipeline in corso", color: "bg-blue-500", pulse: true }
+    : pendingTotal > 0
+      ? { label: "In coda — avvia enrichment", color: "bg-yellow-500", pulse: false }
+      : pipeline.active > 0
+        ? { label: "Tutto OK", color: "bg-green-500", pulse: false }
+        : { label: "Nessuna sagra attiva", color: "bg-red-500", pulse: false };
+
+  // Sources with errors
+  const errorSources = sourcesOverview.filter((s) => s.last_status === "error");
+  const recentSources = sourcesOverview.filter((s) => s.last_scraped_at).sort((a, b) =>
+    new Date(b.last_scraped_at!).getTime() - new Date(a.last_scraped_at!).getTime()
+  );
+
+  return (
+    <div className="mx-auto max-w-4xl space-y-6">
+      {/* System status banner */}
+      <div className="rounded-2xl bg-white p-6 shadow">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className={`h-4 w-4 rounded-full ${systemStatus.color} ${systemStatus.pulse ? "animate-pulse" : ""}`} />
+            <div>
+              <h2 className="text-xl font-bold">{systemStatus.label}</h2>
+              <p className="text-sm text-muted-foreground">
+                {lastEnrichAgo ? `Ultimo enrichment: ${lastEnrichAgo}` : "Nessun enrichment recente"}
+                {enrichMsg && <span className="ml-2 text-blue-600">{enrichMsg}</span>}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {loopRunning ? (
+              <button onClick={onStopLoop} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">
+                <Pause className="mr-1 inline h-4 w-4" /> Ferma
+              </button>
+            ) : (
+              <>
+                <button onClick={onTriggerEnrich} disabled={isPending} className="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-gray-50 disabled:opacity-50">
+                  <RefreshCw className={`mr-1 inline h-4 w-4 ${isPending ? "animate-spin" : ""}`} /> 1 Run
+                </button>
+                <button onClick={onStartLoop} disabled={isPending} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50">
+                  <Play className="mr-1 inline h-4 w-4" /> Processa Tutto
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Pipeline stats */}
-      {pipeline && (
-        <div className="mb-6 rounded-xl bg-white p-4 shadow">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold">Pipeline Enrichment</h2>
-              {isProcessing && (
-                <span className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700">
-                  <RefreshCw className="h-3 w-3 animate-spin" />
-                  In elaborazione...
-                </span>
-              )}
-              {enrichMsg && (
-                <span className="text-xs text-green-600">{enrichMsg}</span>
-              )}
-            </div>
-            {loopRunning ? (
-              <button
-                onClick={stopEnrichLoop}
-                className="flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
-              >
-                <Pause className="h-3.5 w-3.5" />
-                Ferma (Run #{loopRun})
-              </button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleTriggerEnrich}
-                  disabled={isPending}
-                  className="flex items-center gap-1 rounded-lg border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 disabled:opacity-50"
-                >
-                  <RefreshCw className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : ""}`} />
-                  1 Run
-                </button>
-                <button
-                  onClick={() => startEnrichLoop()}
-                  disabled={isPending}
-                  className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
-                >
-                  <Play className="h-3.5 w-3.5" />
-                  Processa Tutto
-                </button>
-              </div>
-            )}
+      {/* Key metrics — 4 big numbers */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <MetricCard label="Attive sul sito" value={pipeline.active} color="text-green-600" big />
+        <MetricCard label="In coda" value={pendingTotal} color={pendingTotal > 0 ? "text-orange-500" : "text-gray-400"} big />
+        <MetricCard label="Con immagine" value={pipeline.with_image} color="text-purple-600" big />
+        <MetricCard label="Totali nel DB" value={pipeline.total} big />
+      </div>
+
+      {/* Progress bar */}
+      {pipeline.total > 0 && (
+        <div className="rounded-xl bg-white p-4 shadow">
+          <div className="mb-2 flex justify-between text-sm">
+            <span className="font-medium">Progresso analisi</span>
+            <span className="text-muted-foreground">
+              {pipeline.total - pendingTotal} / {pipeline.total} ({Math.round(((pipeline.total - pendingTotal) / pipeline.total) * 100)}%)
+            </span>
           </div>
-
-          {/* Progress bar */}
-          {pipeline.total > 0 && (
-            <div className="mb-3">
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                <span>Progresso analisi Gemini</span>
-                <span>{pipeline.total - pipeline.pending_geocode - pipeline.pending_llm} / {pipeline.total} ({Math.round(((pipeline.total - pipeline.pending_geocode - pipeline.pending_llm) / pipeline.total) * 100)}%)</span>
-              </div>
-              <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-primary transition-all duration-1000"
-                  style={{ width: `${((pipeline.total - pipeline.pending_geocode - pipeline.pending_llm) / pipeline.total) * 100}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-            <PipelineStat label="Totali" value={pipeline.total} />
-            <PipelineStat label="Da geocodificare" value={pipeline.pending_geocode} color={pipeline.pending_geocode > 0 ? "text-yellow-600" : undefined} prev={prevPipeline?.pending_geocode} />
-            <PipelineStat label="Da analizzare (Gemini)" value={pipeline.pending_llm} color={pipeline.pending_llm > 0 ? "text-orange-600" : undefined} prev={prevPipeline?.pending_llm} />
-            <PipelineStat label="Analizzate" value={pipeline.enriched} color="text-blue-600" prev={prevPipeline?.enriched} />
-            <PipelineStat label="Con immagine" value={pipeline.with_image} color="text-purple-600" prev={prevPipeline?.with_image} />
-            <PipelineStat label="Attive sul sito" value={pipeline.active} color="text-green-600" prev={prevPipeline?.active} />
+          <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200">
+            <div className="h-full rounded-full bg-primary transition-all duration-1000"
+              style={{ width: `${((pipeline.total - pendingTotal) / pipeline.total) * 100}%` }} />
           </div>
-
-          {pipeline.pending_llm > 0 && (
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              ~{Math.ceil(pipeline.pending_llm / 200)} run necessari · {Math.ceil(pipeline.pending_llm / 200 / 2)} giorni con pg_cron 2x/day · clicca &quot;Avvia Enrichment&quot; per velocizzare
+          {pendingTotal > 0 && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {pipeline.pending_geocode} da geocodificare + {pipeline.pending_llm} da analizzare (Gemini)
             </p>
           )}
         </div>
       )}
 
-      {/* Activity log */}
-      {activityLog.length > 0 && (
-        <div className="mb-4 rounded-xl bg-gray-900 p-3 shadow">
-          <div className="flex items-center justify-between">
-            <h3 className="text-[11px] font-bold text-gray-400">Activity Log</h3>
-            <button onClick={() => setActivityLog([])} className="text-[10px] text-gray-500 hover:text-gray-300">Pulisci</button>
-          </div>
-          <div className="mt-1 max-h-24 overflow-y-auto font-mono text-[11px] text-green-400">
-            {activityLog.map((line, i) => (
-              <div key={i} className={i === 0 ? "font-semibold" : "text-green-400/70"}>{line}</div>
+      {/* Two columns: review status + recent scraper activity */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* Review status summary */}
+        <div className="rounded-xl bg-white p-4 shadow">
+          <h3 className="mb-3 text-sm font-bold">Stato Review</h3>
+          <div className="space-y-2">
+            {Object.entries(STATUS_LABELS).map(([key, { label, color }]) => (
+              <div key={key} className="flex items-center justify-between">
+                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${color}`}>{label}</span>
+                <span className="font-mono text-sm font-bold">{counts[key] ?? 0}</span>
+              </div>
             ))}
           </div>
         </div>
-      )}
 
-      {/* Enrich run logs */}
+        {/* Recent scraper activity */}
+        <div className="rounded-xl bg-white p-4 shadow">
+          <h3 className="mb-3 text-sm font-bold">Ultima attivit&agrave; fonti</h3>
+          <div className="space-y-1.5 text-xs">
+            {recentSources.slice(0, 8).map((s) => (
+              <div key={s.name} className="flex items-center justify-between">
+                <span className="font-medium">{s.display_name}</span>
+                <div className="flex items-center gap-2">
+                  {s.last_inserted != null && s.last_inserted > 0 && (
+                    <span className="text-green-600">+{s.last_inserted}</span>
+                  )}
+                  <span className="text-muted-foreground">{s.last_scraped_at ? timeAgo(s.last_scraped_at) : "mai"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          {errorSources.length > 0 && (
+            <div className="mt-3 rounded-lg bg-red-50 p-2 text-xs text-red-600">
+              {errorSources.length} fonte/i con errori: {errorSources.map((s) => s.display_name).join(", ")}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Last enrichment runs — compact */}
       {enrichLogs.length > 0 && (
-        <div className="mb-4 rounded-xl bg-gray-900 p-3 shadow">
-          <h3 className="text-[11px] font-bold text-gray-400 mb-1">Ultimi Run Enrichment</h3>
-          <div className="overflow-x-auto font-mono text-[10px] text-gray-300">
+        <div className="rounded-xl bg-white p-4 shadow">
+          <h3 className="mb-2 text-sm font-bold">Ultimi run enrichment</h3>
+          <div className="overflow-x-auto text-xs">
             <table className="w-full">
               <thead>
-                <tr className="text-gray-500">
-                  <th className="pr-3 text-left">Completato</th>
-                  <th className="pr-3 text-right">Durata</th>
-                  <th className="pr-3 text-right">Geocod</th>
-                  <th className="pr-3 text-right">Geo fail</th>
-                  <th className="pr-3 text-right">LLM</th>
-                  <th className="pr-3 text-right">Scartate</th>
-                  <th className="text-left">Errore</th>
+                <tr className="border-b text-left text-[10px] text-muted-foreground">
+                  <th className="pb-1 pr-3">Quando</th>
+                  <th className="pb-1 pr-3 text-right">Durata</th>
+                  <th className="pb-1 pr-3 text-right">Geocod</th>
+                  <th className="pb-1 pr-3 text-right">LLM</th>
+                  <th className="pb-1 pr-3 text-right">Scartate</th>
+                  <th className="pb-1">Errore</th>
                 </tr>
               </thead>
               <tbody>
                 {enrichLogs.map((log, i) => (
-                  <tr key={i} className={log.error_message ? "text-red-400" : ""}>
-                    <td className="pr-3">{log.completed_at ? new Date(log.completed_at).toLocaleTimeString("it-IT") : "—"}</td>
-                    <td className="pr-3 text-right">{log.duration_ms ? `${(log.duration_ms / 1000).toFixed(0)}s` : "—"}</td>
-                    <td className="pr-3 text-right text-cyan-400">{log.geocoded_count ?? 0}</td>
-                    <td className="pr-3 text-right text-orange-400">{log.geocode_failed ?? 0}</td>
-                    <td className="pr-3 text-right text-green-400">{log.llm_count ?? 0}</td>
-                    <td className="pr-3 text-right text-red-400">{log.skipped_count ?? 0}</td>
-                    <td className="truncate max-w-[200px] text-red-400">{log.error_message ?? ""}</td>
+                  <tr key={i} className={log.error_message ? "text-red-500" : ""}>
+                    <td className="py-1 pr-3">{log.completed_at ? timeAgo(log.completed_at) : "—"}</td>
+                    <td className="py-1 pr-3 text-right font-mono">{log.duration_ms ? `${(log.duration_ms / 1000).toFixed(0)}s` : "—"}</td>
+                    <td className="py-1 pr-3 text-right font-mono text-cyan-600">{log.geocoded_count ?? 0}</td>
+                    <td className="py-1 pr-3 text-right font-mono text-green-600">{log.llm_count ?? 0}</td>
+                    <td className="py-1 pr-3 text-right font-mono text-red-400">{log.skipped_count ?? 0}</td>
+                    <td className="max-w-[200px] truncate py-1 text-red-500">{log.error_message ?? ""}</td>
                   </tr>
                 ))}
               </tbody>
@@ -386,215 +464,158 @@ export function AdminDashboard() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Source monitoring panel */}
-      {sourcesOverview.length > 0 && (
-        <div className="mb-4 rounded-xl bg-white p-4 shadow">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-bold">Stato Fonti ({sourcesOverview.length})</h2>
-            <button
-              onClick={() => {
-                setShowSourceMgmt((v) => !v);
-                if (!showSourceMgmt) getExternalSources().then(setExtSources).catch(() => {});
-              }}
-              className="flex items-center gap-1 rounded-lg border border-primary/30 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/5"
-            >
-              <Plus className="h-3 w-3" />
-              Gestisci Fonti
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-[11px]">
-              <thead>
-                <tr className="border-b text-left text-[10px] font-medium text-muted-foreground">
-                  <th className="pb-1.5 pr-3">Fonte</th>
-                  <th className="pb-1.5 pr-3">Tipo</th>
-                  <th className="pb-1.5 pr-3">Stato</th>
-                  <th className="pb-1.5 pr-3">Ultimo scrape</th>
-                  <th className="pb-1.5 pr-2 text-right">Trovate</th>
-                  <th className="pb-1.5 pr-2 text-right">Inserite</th>
-                  <th className="pb-1.5 pr-2 text-right">Merged</th>
-                  <th className="pb-1.5 pr-2 text-right">Durata</th>
-                  <th className="pb-1.5">Errore</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sourcesOverview.map((s) => {
-                  const ago = s.last_scraped_at ? timeAgo(s.last_scraped_at) : null;
-                  return (
-                    <tr key={s.name} className={`border-b last:border-0 ${s.last_status === "error" ? "bg-red-50" : ""}`}>
-                      <td className="py-1.5 pr-3 font-medium">{s.display_name}</td>
-                      <td className="py-1.5 pr-3">
-                        <span className={`inline-block rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase ${
-                          s.type === "web" ? "bg-blue-100 text-blue-700" :
-                          s.type === "api" ? "bg-purple-100 text-purple-700" :
-                          s.type === "instagram" ? "bg-pink-100 text-pink-700" :
-                          s.type === "facebook" ? "bg-indigo-100 text-indigo-700" :
-                          s.type === "search" ? "bg-amber-100 text-amber-700" :
-                          "bg-gray-100 text-gray-600"
-                        }`}>{s.type}</span>
-                      </td>
-                      <td className="py-1.5 pr-3">
-                        {s.is_active ? (
-                          <span className="inline-flex items-center gap-0.5 text-green-600">
-                            <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Attivo
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">Disattivato</span>
-                        )}
-                      </td>
-                      <td className="py-1.5 pr-3 whitespace-nowrap">
-                        {ago ? (
-                          <span title={new Date(s.last_scraped_at!).toLocaleString("it-IT")}>{ago}</span>
-                        ) : (
-                          <span className="text-gray-400">Mai</span>
-                        )}
-                      </td>
-                      <td className="py-1.5 pr-2 text-right font-mono">{s.last_found ?? "—"}</td>
-                      <td className="py-1.5 pr-2 text-right font-mono text-green-600">{s.last_inserted ?? "—"}</td>
-                      <td className="py-1.5 pr-2 text-right font-mono text-blue-600">{s.last_merged ?? "—"}</td>
-                      <td className="py-1.5 pr-2 text-right font-mono">{s.last_duration_ms ? `${(s.last_duration_ms / 1000).toFixed(0)}s` : "—"}</td>
-                      <td className="max-w-[180px] truncate py-1.5 text-red-500">{s.last_error ?? ""}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+function MetricCard({ label, value, color, big }: { label: string; value: number; color?: string; big?: boolean }) {
+  return (
+    <div className="rounded-xl bg-white p-4 shadow text-center">
+      <div className={`${big ? "text-3xl" : "text-xl"} font-bold ${color ?? "text-foreground"}`}>{value}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+// =============================================================================
+// DETTAGLI VIEW — Monitoring avanzato
+// =============================================================================
+
+function DettagliView({
+  pipeline, prevPipeline, enrichLogs, sourcesOverview, cronJobs, diagnostics,
+  extSources, showSourceMgmt, newSource, sourceMsg, triggerMsg,
+  onSetShowSourceMgmt, onSetNewSource, onAddSource, onToggleSource, onDeleteSource,
+  onToggleCron, onTriggerFn, onRefreshDiag,
+}: {
+  pipeline: PipelineData | null;
+  prevPipeline: PipelineData | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  enrichLogs: any[];
+  sourcesOverview: SourceOverview[];
+  cronJobs: CronJob[];
+  diagnostics: DbDiagnostics | null;
+  extSources: ExternalSource[];
+  showSourceMgmt: boolean;
+  newSource: { type: string; name: string; url: string; notes: string };
+  sourceMsg: string | null;
+  triggerMsg: Record<string, string>;
+  onSetShowSourceMgmt: (v: boolean) => void;
+  onSetNewSource: (v: { type: string; name: string; url: string; notes: string }) => void;
+  onAddSource: () => void;
+  onToggleSource: (id: string, active: boolean) => void;
+  onDeleteSource: (id: string) => void;
+  onToggleCron: (name: string, active: boolean) => void;
+  onTriggerFn: (fn: string) => void;
+  onRefreshDiag: () => void;
+}) {
+  return (
+    <div className="mx-auto max-w-6xl space-y-4">
+      <h2 className="text-xl font-bold">Dettagli Pipeline</h2>
+
+      {/* Pipeline stats grid */}
+      {pipeline && (
+        <div className="rounded-xl bg-white p-4 shadow">
+          <h3 className="mb-3 text-sm font-bold">Pipeline Enrichment</h3>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+            <PipelineStat label="Totali" value={pipeline.total} />
+            <PipelineStat label="Da geocodificare" value={pipeline.pending_geocode} color={pipeline.pending_geocode > 0 ? "text-yellow-600" : undefined} prev={prevPipeline?.pending_geocode} />
+            <PipelineStat label="Da analizzare" value={pipeline.pending_llm} color={pipeline.pending_llm > 0 ? "text-orange-600" : undefined} prev={prevPipeline?.pending_llm} />
+            <PipelineStat label="Analizzate" value={pipeline.enriched} color="text-blue-600" prev={prevPipeline?.enriched} />
+            <PipelineStat label="Con immagine" value={pipeline.with_image} color="text-purple-600" prev={prevPipeline?.with_image} />
+            <PipelineStat label="Attive" value={pipeline.active} color="text-green-600" prev={prevPipeline?.active} />
           </div>
         </div>
       )}
 
-      {/* Source management panel (expandable) */}
-      {showSourceMgmt && (
-        <div className="mb-4 rounded-xl bg-white p-4 shadow">
-          <h2 className="mb-3 text-sm font-bold">Gestione Fonti Esterne</h2>
+      {/* Stato Fonti */}
+      <div className="rounded-xl bg-white p-4 shadow">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-bold">Stato Fonti ({sourcesOverview.length})</h3>
+          <button onClick={() => onSetShowSourceMgmt(!showSourceMgmt)}
+            className="flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/5">
+            <Plus className="h-3 w-3" /> Gestisci Fonti
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-[11px]">
+            <thead>
+              <tr className="border-b text-left text-[10px] text-muted-foreground">
+                <th className="pb-1.5 pr-3">Fonte</th>
+                <th className="pb-1.5 pr-3">Tipo</th>
+                <th className="pb-1.5 pr-3">Stato</th>
+                <th className="pb-1.5 pr-3">Ultimo</th>
+                <th className="pb-1.5 pr-2 text-right">Trovate</th>
+                <th className="pb-1.5 pr-2 text-right">Inserite</th>
+                <th className="pb-1.5 pr-2 text-right">Merged</th>
+                <th className="pb-1.5 pr-2 text-right">Durata</th>
+                <th className="pb-1.5">Errore</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sourcesOverview.map((s) => (
+                <tr key={s.name} className={`border-b last:border-0 ${s.last_status === "error" ? "bg-red-50" : ""}`}>
+                  <td className="py-1.5 pr-3 font-medium">{s.display_name}</td>
+                  <td className="py-1.5 pr-3">
+                    <span className={`inline-block rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase ${
+                      s.type === "web" ? "bg-blue-100 text-blue-700" : s.type === "api" ? "bg-purple-100 text-purple-700" :
+                      s.type === "instagram" ? "bg-pink-100 text-pink-700" : s.type === "facebook" ? "bg-indigo-100 text-indigo-700" :
+                      s.type === "search" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600"
+                    }`}>{s.type}</span>
+                  </td>
+                  <td className="py-1.5 pr-3">{s.is_active ? <span className="text-green-600">Attivo</span> : <span className="text-gray-400">Off</span>}</td>
+                  <td className="py-1.5 pr-3 whitespace-nowrap">{s.last_scraped_at ? timeAgo(s.last_scraped_at) : "Mai"}</td>
+                  <td className="py-1.5 pr-2 text-right font-mono">{s.last_found ?? "—"}</td>
+                  <td className="py-1.5 pr-2 text-right font-mono text-green-600">{s.last_inserted ?? "—"}</td>
+                  <td className="py-1.5 pr-2 text-right font-mono text-blue-600">{s.last_merged ?? "—"}</td>
+                  <td className="py-1.5 pr-2 text-right font-mono">{s.last_duration_ms ? `${(s.last_duration_ms / 1000).toFixed(0)}s` : "—"}</td>
+                  <td className="max-w-[180px] truncate py-1.5 text-red-500">{s.last_error ?? ""}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-          {/* Add new source form */}
+      {/* Source management */}
+      {showSourceMgmt && (
+        <div className="rounded-xl bg-white p-4 shadow">
+          <h3 className="mb-3 text-sm font-bold">Gestione Fonti Esterne</h3>
           <div className="mb-4 flex flex-wrap items-end gap-2 rounded-lg bg-muted/30 p-3">
             <div>
               <label className="mb-0.5 block text-[10px] font-medium text-muted-foreground">Tipo</label>
-              <select
-                value={newSource.type}
-                onChange={(e) => setNewSource({ ...newSource, type: e.target.value })}
-                className="rounded border px-2 py-1.5 text-xs"
-              >
-                <option value="instagram">Instagram</option>
-                <option value="facebook">Facebook</option>
-                <option value="rss">RSS</option>
-                <option value="other">Altro</option>
+              <select value={newSource.type} onChange={(e) => onSetNewSource({ ...newSource, type: e.target.value })} className="rounded border px-2 py-1.5 text-xs">
+                <option value="instagram">Instagram</option><option value="facebook">Facebook</option><option value="rss">RSS</option><option value="other">Altro</option>
               </select>
             </div>
-            <div className="flex-1 min-w-[150px]">
+            <div className="min-w-[150px] flex-1">
               <label className="mb-0.5 block text-[10px] font-medium text-muted-foreground">Nome</label>
-              <input
-                value={newSource.name}
-                onChange={(e) => setNewSource({ ...newSource, name: e.target.value })}
-                placeholder="Pro Loco Treviso"
-                className="w-full rounded border px-2 py-1.5 text-xs"
-              />
+              <input value={newSource.name} onChange={(e) => onSetNewSource({ ...newSource, name: e.target.value })} placeholder="Pro Loco Treviso" className="w-full rounded border px-2 py-1.5 text-xs" />
             </div>
-            <div className="flex-[2] min-w-[200px]">
+            <div className="min-w-[200px] flex-[2]">
               <label className="mb-0.5 block text-[10px] font-medium text-muted-foreground">URL</label>
-              <input
-                value={newSource.url}
-                onChange={(e) => setNewSource({ ...newSource, url: e.target.value })}
-                placeholder="https://www.instagram.com/prolocotreviso/"
-                className="w-full rounded border px-2 py-1.5 text-xs"
-              />
+              <input value={newSource.url} onChange={(e) => onSetNewSource({ ...newSource, url: e.target.value })} placeholder="https://www.instagram.com/..." className="w-full rounded border px-2 py-1.5 text-xs" />
             </div>
-            <div className="flex-1 min-w-[120px]">
-              <label className="mb-0.5 block text-[10px] font-medium text-muted-foreground">Note</label>
-              <input
-                value={newSource.notes}
-                onChange={(e) => setNewSource({ ...newSource, notes: e.target.value })}
-                placeholder="Opzionale"
-                className="w-full rounded border px-2 py-1.5 text-xs"
-              />
-            </div>
-            <button
-              onClick={async () => {
-                if (!newSource.name.trim() || !newSource.url.trim()) return;
-                setSourceMsg(null);
-                const res = await addExternalSource(newSource.type, newSource.name.trim(), newSource.url.trim(), newSource.notes.trim() || undefined);
-                if (res.ok) {
-                  setNewSource({ type: newSource.type, name: "", url: "", notes: "" });
-                  setSourceMsg("Aggiunta!");
-                  getExternalSources().then(setExtSources);
-                  getSourcesOverview().then(setSourcesOverview);
-                } else {
-                  setSourceMsg(res.error ?? "Errore");
-                }
-              }}
-              className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary/90"
-            >
-              <Plus className="inline h-3.5 w-3.5 mr-0.5" />
-              Aggiungi
+            <button onClick={onAddSource} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary/90">
+              <Plus className="mr-0.5 inline h-3.5 w-3.5" /> Aggiungi
             </button>
             {sourceMsg && <span className="text-xs text-muted-foreground">{sourceMsg}</span>}
           </div>
-
-          {/* External sources list */}
           {extSources.length > 0 && (
             <table className="w-full text-[11px]">
-              <thead>
-                <tr className="border-b text-left text-[10px] font-medium text-muted-foreground">
-                  <th className="pb-1.5 pr-3">Tipo</th>
-                  <th className="pb-1.5 pr-3">Nome</th>
-                  <th className="pb-1.5 pr-3">URL</th>
-                  <th className="pb-1.5 pr-3">Note</th>
-                  <th className="pb-1.5 pr-3">Stato</th>
-                  <th className="pb-1.5">Azioni</th>
-                </tr>
-              </thead>
+              <thead><tr className="border-b text-left text-[10px] text-muted-foreground">
+                <th className="pb-1.5 pr-3">Tipo</th><th className="pb-1.5 pr-3">Nome</th><th className="pb-1.5 pr-3">URL</th><th className="pb-1.5 pr-3">Stato</th><th className="pb-1.5">Azioni</th>
+              </tr></thead>
               <tbody>
                 {extSources.map((s) => (
                   <tr key={s.id} className="border-b last:border-0">
-                    <td className="py-1.5 pr-3">
-                      <span className={`inline-block rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase ${
-                        s.type === "instagram" ? "bg-pink-100 text-pink-700" :
-                        s.type === "facebook" ? "bg-indigo-100 text-indigo-700" :
-                        "bg-gray-100 text-gray-600"
-                      }`}>{s.type}</span>
-                    </td>
+                    <td className="py-1.5 pr-3"><span className={`rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase ${s.type === "instagram" ? "bg-pink-100 text-pink-700" : s.type === "facebook" ? "bg-indigo-100 text-indigo-700" : "bg-gray-100 text-gray-600"}`}>{s.type}</span></td>
                     <td className="py-1.5 pr-3 font-medium">{s.name}</td>
-                    <td className="max-w-[250px] truncate py-1.5 pr-3">
-                      <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{s.url}</a>
-                    </td>
-                    <td className="py-1.5 pr-3 text-muted-foreground">{s.notes ?? ""}</td>
-                    <td className="py-1.5 pr-3">
-                      {s.is_active ? (
-                        <span className="text-green-600">Attivo</span>
-                      ) : (
-                        <span className="text-gray-400">Off</span>
-                      )}
-                    </td>
-                    <td className="py-1.5">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={async () => {
-                            await toggleExternalSource(s.id, !s.is_active);
-                            getExternalSources().then(setExtSources);
-                            getSourcesOverview().then(setSourcesOverview);
-                          }}
-                          title={s.is_active ? "Disattiva" : "Attiva"}
-                          className={`rounded p-1 ${s.is_active ? "text-orange-500 hover:bg-orange-50" : "text-green-600 hover:bg-green-50"}`}
-                        >
-                          <Power className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={async () => {
-                            if (!confirm(`Eliminare "${s.name}"?`)) return;
-                            await deleteExternalSource(s.id);
-                            getExternalSources().then(setExtSources);
-                            getSourcesOverview().then(setSourcesOverview);
-                          }}
-                          title="Elimina"
-                          className="rounded p-1 text-red-500 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
+                    <td className="max-w-[250px] truncate py-1.5 pr-3"><a href={s.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{s.url}</a></td>
+                    <td className="py-1.5 pr-3">{s.is_active ? <span className="text-green-600">On</span> : <span className="text-gray-400">Off</span>}</td>
+                    <td className="py-1.5"><div className="flex gap-1">
+                      <button onClick={() => onToggleSource(s.id, !s.is_active)} className={`rounded p-1 ${s.is_active ? "text-orange-500" : "text-green-600"}`}><Power className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => { if (confirm(`Eliminare "${s.name}"?`)) onDeleteSource(s.id); }} className="rounded p-1 text-red-500"><Trash2 className="h-3.5 w-3.5" /></button>
+                    </div></td>
                   </tr>
                 ))}
               </tbody>
@@ -603,185 +624,120 @@ export function AdminDashboard() {
         </div>
       )}
 
-      {/* Cron Jobs + Trigger Scrapers */}
+      {/* Cron jobs */}
       {cronJobs.length > 0 && (
-        <div className="mb-4 rounded-xl bg-white p-4 shadow">
+        <div className="rounded-xl bg-white p-4 shadow">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-bold">Cron Jobs & Trigger Manuale</h2>
-            <button
-              onClick={() => {
-                setShowDiagnostics((v) => !v);
-                if (!showDiagnostics) getDbDiagnostics().then(setDiagnostics).catch(() => {});
-              }}
-              className="flex items-center gap-1 rounded-lg border border-primary/30 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/5"
-            >
-              Diagnostica DB
-            </button>
+            <h3 className="text-sm font-bold">Cron Jobs</h3>
+            <button onClick={onRefreshDiag} className="rounded-lg border px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/5">Diagnostica DB</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-[11px]">
-              <thead>
-                <tr className="border-b text-left text-[10px] font-medium text-muted-foreground">
-                  <th className="pb-1.5 pr-3">Job</th>
-                  <th className="pb-1.5 pr-3">Schedule</th>
-                  <th className="pb-1.5 pr-3">Stato</th>
-                  <th className="pb-1.5 pr-3">Ultimo run</th>
-                  <th className="pb-1.5 pr-3">Risultato</th>
-                  <th className="pb-1.5">Azioni</th>
-                </tr>
-              </thead>
+              <thead><tr className="border-b text-left text-[10px] text-muted-foreground">
+                <th className="pb-1.5 pr-3">Job</th><th className="pb-1.5 pr-3">Schedule</th><th className="pb-1.5 pr-3">Stato</th>
+                <th className="pb-1.5 pr-3">Ultimo run</th><th className="pb-1.5 pr-3">Risultato</th><th className="pb-1.5">Azioni</th>
+              </tr></thead>
               <tbody>
                 {cronJobs.map((job) => {
                   const fn = job.jobname.replace(/-morning|-evening|-midday|-midnight/g, "");
                   return (
                     <tr key={job.jobname} className="border-b last:border-0">
-                      <td className="py-1.5 pr-3 font-medium font-mono text-[10px]">{job.jobname}</td>
+                      <td className="py-1.5 pr-3 font-mono text-[10px]">{job.jobname}</td>
                       <td className="py-1.5 pr-3 font-mono text-[10px] text-muted-foreground">{job.schedule}</td>
-                      <td className="py-1.5 pr-3">
-                        {job.active ? (
-                          <span className="inline-flex items-center gap-0.5 text-green-600">
-                            <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> On
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">Off</span>
-                        )}
-                      </td>
-                      <td className="py-1.5 pr-3 whitespace-nowrap">
-                        {job.last_run ? timeAgo(job.last_run) : <span className="text-gray-400">Mai</span>}
-                      </td>
-                      <td className="py-1.5 pr-3">
-                        {job.last_status ? (
-                          <span className={`text-[10px] font-medium ${job.last_status === "succeeded" ? "text-green-600" : "text-red-500"}`}>
-                            {job.last_status}
-                          </span>
-                        ) : "—"}
-                      </td>
-                      <td className="py-1.5">
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={async () => {
-                              await toggleCronJob(job.jobname, !job.active);
-                              getCronJobs().then(setCronJobs);
-                              addLog(`Cron ${job.jobname}: ${!job.active ? "attivato" : "disattivato"}`);
-                            }}
-                            title={job.active ? "Disattiva" : "Attiva"}
-                            className={`rounded p-1 text-[10px] ${job.active ? "text-orange-500 hover:bg-orange-50" : "text-green-600 hover:bg-green-50"}`}
-                          >
-                            <Power className="h-3 w-3" />
-                          </button>
-                          <button
-                            onClick={async () => {
-                              setTriggerMsg((prev) => ({ ...prev, [fn]: "..." }));
-                              addLog(`Trigger manuale: ${fn}`);
-                              const msg = await triggerEdgeFunction(fn);
-                              setTriggerMsg((prev) => ({ ...prev, [fn]: msg === "started" ? "avviato" : msg }));
-                              addLog(`${fn}: ${msg}`);
-                              setTimeout(() => setTriggerMsg((prev) => { const n = { ...prev }; delete n[fn]; return n; }), 5000);
-                            }}
-                            title={`Trigger ${fn}`}
-                            className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/20"
-                          >
-                            {triggerMsg[fn] ?? "Run"}
-                          </button>
-                        </div>
-                      </td>
+                      <td className="py-1.5 pr-3">{job.active ? <span className="text-green-600">On</span> : <span className="text-gray-400">Off</span>}</td>
+                      <td className="py-1.5 pr-3">{job.last_run ? timeAgo(job.last_run) : "Mai"}</td>
+                      <td className="py-1.5 pr-3"><span className={`text-[10px] ${job.last_status === "succeeded" ? "text-green-600" : "text-red-500"}`}>{job.last_status ?? "—"}</span></td>
+                      <td className="py-1.5"><div className="flex gap-1">
+                        <button onClick={() => onToggleCron(job.jobname, !job.active)} className={`rounded p-1 ${job.active ? "text-orange-500" : "text-green-600"}`}><Power className="h-3 w-3" /></button>
+                        <button onClick={() => onTriggerFn(fn)} className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/20">{triggerMsg[fn] ?? "Run"}</button>
+                      </div></td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-          <p className="mt-2 text-[10px] text-muted-foreground">
-            GitHub Actions (facebook, instagram, tavily) si triggerano da <a href="https://github.com/dos-amigos/nemovia/actions" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">GitHub Actions</a> → Run workflow
-          </p>
         </div>
       )}
 
-      {/* DB Diagnostics (expandable) */}
-      {showDiagnostics && diagnostics && (
-        <div className="mb-4 rounded-xl bg-white p-4 shadow">
-          <h2 className="mb-3 text-sm font-bold">Diagnostica Database</h2>
+      {/* DB Diagnostics */}
+      {diagnostics && (
+        <div className="rounded-xl bg-white p-4 shadow">
+          <h3 className="mb-3 text-sm font-bold">Diagnostica Database</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
             <DiagStat label="Totali" value={diagnostics.total_sagre} />
             <DiagStat label="Attive" value={diagnostics.active_sagre} color="text-green-600" />
-            <DiagStat label="Con data futura" value={diagnostics.future_sagre} color="text-blue-600" />
+            <DiagStat label="Data futura" value={diagnostics.future_sagre} color="text-blue-600" />
             <DiagStat label="Scadute" value={diagnostics.expired_sagre} color="text-red-500" />
             <DiagStat label="Senza data" value={diagnostics.no_date_sagre} color="text-yellow-600" />
             <DiagStat label="Senza provincia" value={diagnostics.no_province} color="text-orange-500" />
-            <DiagStat label="Attive senza img" value={diagnostics.no_image} color="text-purple-600" />
+            <DiagStat label="Senza img" value={diagnostics.no_image} color="text-purple-600" />
           </div>
-
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {/* By source */}
-            <div>
-              <h3 className="mb-1 text-[11px] font-bold text-muted-foreground">Per Fonte</h3>
-              <div className="space-y-0.5 text-[11px]">
-                {diagnostics.by_source.slice(0, 15).map((s) => (
-                  <div key={s.source} className="flex justify-between">
-                    <span className="truncate pr-2">{s.source}</span>
-                    <span className="font-mono font-bold">{s.count}</span>
-                  </div>
-                ))}
-              </div>
+            <div><h4 className="mb-1 text-[11px] font-bold text-muted-foreground">Per Fonte</h4>
+              <div className="space-y-0.5 text-[11px]">{diagnostics.by_source.slice(0, 12).map((s) => (
+                <div key={s.source} className="flex justify-between"><span className="truncate pr-2">{s.source}</span><span className="font-mono font-bold">{s.count}</span></div>
+              ))}</div>
             </div>
-
-            {/* By review status */}
-            <div>
-              <h3 className="mb-1 text-[11px] font-bold text-muted-foreground">Per Review Status</h3>
-              <div className="space-y-0.5 text-[11px]">
-                {diagnostics.by_review_status.map((s) => (
-                  <div key={s.status} className="flex justify-between">
-                    <span>{STATUS_LABELS[s.status]?.label ?? s.status}</span>
-                    <span className="font-mono font-bold">{s.count}</span>
-                  </div>
-                ))}
-              </div>
+            <div><h4 className="mb-1 text-[11px] font-bold text-muted-foreground">Per Review Status</h4>
+              <div className="space-y-0.5 text-[11px]">{diagnostics.by_review_status.map((s) => (
+                <div key={s.status} className="flex justify-between"><span>{STATUS_LABELS[s.status]?.label ?? s.status}</span><span className="font-mono font-bold">{s.count}</span></div>
+              ))}</div>
             </div>
-
-            {/* By province */}
-            <div>
-              <h3 className="mb-1 text-[11px] font-bold text-muted-foreground">Attive per Provincia</h3>
-              <div className="space-y-0.5 text-[11px]">
-                {diagnostics.by_province.map((p) => (
-                  <div key={p.province} className="flex justify-between">
-                    <span>{p.province}</span>
-                    <span className="font-mono font-bold">{p.count}</span>
-                  </div>
-                ))}
-                {diagnostics.by_province.length === 0 && (
-                  <span className="text-muted-foreground">Nessuna sagra attiva</span>
-                )}
-              </div>
+            <div><h4 className="mb-1 text-[11px] font-bold text-muted-foreground">Attive per Provincia</h4>
+              <div className="space-y-0.5 text-[11px]">{diagnostics.by_province.length > 0 ? diagnostics.by_province.map((p) => (
+                <div key={p.province} className="flex justify-between"><span>{p.province}</span><span className="font-mono font-bold">{p.count}</span></div>
+              )) : <span className="text-muted-foreground">Nessuna</span>}</div>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// =============================================================================
+// SAGRE VIEW — Gestione sagre
+// =============================================================================
+
+function SagreView({
+  rows, total, page, counts, status, loading, isPending, editId,
+  onSetStatus, onSetPage, onApprove, onReject, onBulkApprove, onEdit, onCloseEdit, onSaved, onRefresh,
+}: {
+  rows: SagraRow[]; total: number; page: number; counts: Record<string, number>;
+  status: ReviewStatus | "all"; loading: boolean; isPending: boolean; editId: string | null;
+  onSetStatus: (s: ReviewStatus | "all") => void;
+  onSetPage: (p: number | ((p: number) => number)) => void;
+  onApprove: (id: string) => void; onReject: (id: string) => void; onBulkApprove: () => void;
+  onEdit: (id: string) => void; onCloseEdit: () => void; onSaved: () => void; onRefresh: () => void;
+}) {
+  const pageSize = 50;
+  const totalPages = Math.ceil(total / pageSize);
+
+  // Load on status change
+  useEffect(() => { onRefresh(); }, [status, page]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div className="mx-auto max-w-7xl space-y-4">
+      <h2 className="text-xl font-bold">Gestione Sagre</h2>
 
       {/* Status filter tabs */}
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
         {(["needs_review", "pending", "auto_approved", "admin_approved", "admin_rejected", "discarded", "all"] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => { setStatus(s); setPage(0); loadTable(); }}
+          <button key={s} onClick={() => onSetStatus(s)}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-              status === s ? "bg-primary text-white" : "bg-white text-muted-foreground hover:bg-muted"
-            }`}
-          >
+              status === s ? "bg-primary text-white" : "bg-white text-muted-foreground hover:bg-muted shadow-sm"
+            }`}>
             {s === "all" ? "Tutte" : STATUS_LABELS[s]?.label ?? s}
-            {s !== "all" && counts[s] != null && (
-              <span className="ml-1 opacity-70">({counts[s]})</span>
-            )}
+            {s !== "all" && counts[s] != null && <span className="ml-1 opacity-70">({counts[s]})</span>}
           </button>
         ))}
       </div>
 
       {/* Bulk actions */}
       {status === "auto_approved" && (counts.auto_approved ?? 0) > 0 && (
-        <button
-          onClick={handleBulkApprove}
-          disabled={isPending}
-          className="mb-4 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
-        >
+        <button onClick={onBulkApprove} disabled={isPending}
+          className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50">
           Approva tutte le auto_approved ({counts.auto_approved})
         </button>
       )}
@@ -796,16 +752,9 @@ export function AdminDashboard() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/50 text-left text-xs font-medium text-muted-foreground">
-                <th className="px-3 py-2">Titolo</th>
-                <th className="px-3 py-2">Luogo</th>
-                <th className="px-3 py-2">Date</th>
-                <th className="px-3 py-2">Conf.</th>
-                <th className="px-3 py-2">Stato</th>
-                <th className="px-3 py-2">Motivo</th>
-                <th className="px-3 py-2">Fonte</th>
-                <th className="px-3 py-2">Tags</th>
-                <th className="px-3 py-2">Img</th>
-                <th className="px-3 py-2">Azioni</th>
+                <th className="px-3 py-2">Titolo</th><th className="px-3 py-2">Luogo</th><th className="px-3 py-2">Date</th>
+                <th className="px-3 py-2">Conf.</th><th className="px-3 py-2">Stato</th><th className="px-3 py-2">Motivo</th>
+                <th className="px-3 py-2">Fonte</th><th className="px-3 py-2">Tags</th><th className="px-3 py-2">Img</th><th className="px-3 py-2">Azioni</th>
               </tr>
             </thead>
             <tbody>
@@ -817,93 +766,43 @@ export function AdminDashboard() {
                     {row.province && <span className="ml-1 text-muted-foreground">({row.province})</span>}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 text-xs">
-                    {row.start_date ?? "—"}
-                    {row.end_date && row.end_date !== row.start_date && (
-                      <span className="text-muted-foreground"> → {row.end_date}</span>
-                    )}
+                    {row.start_date ?? "—"}{row.end_date && row.end_date !== row.start_date && <span className="text-muted-foreground"> → {row.end_date}</span>}
                   </td>
-                  <td className="px-3 py-2">
-                    {row.confidence != null ? (
-                      <span className={`font-mono text-xs font-bold ${
-                        row.confidence >= 70 ? "text-green-600" : row.confidence >= 40 ? "text-yellow-600" : "text-red-500"
-                      }`}>
-                        {row.confidence}
-                      </span>
-                    ) : "—"}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                      STATUS_LABELS[row.review_status ?? ""]?.color ?? "bg-gray-100 text-gray-500"
-                    }`}>
-                      {STATUS_LABELS[row.review_status ?? ""]?.label ?? row.review_status}
-                    </span>
-                  </td>
-                  <td className="max-w-[200px] px-3 py-2 text-[11px] text-muted-foreground">
-                    {getReason(row)}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-[11px] text-muted-foreground">
-                    {row.source_id ? row.source_id.replace(/^scrape-/, "").replace(/-/g, " ") : "—"}
-                  </td>
-                  <td className="px-3 py-2">
-                    <FoodIcons foodTags={row.food_tags} title={row.title} className="h-4 w-4" themed />
-                  </td>
+                  <td className="px-3 py-2">{row.confidence != null ? (
+                    <span className={`font-mono text-xs font-bold ${row.confidence >= 70 ? "text-green-600" : row.confidence >= 40 ? "text-yellow-600" : "text-red-500"}`}>{row.confidence}</span>
+                  ) : "—"}</td>
+                  <td className="px-3 py-2"><span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_LABELS[row.review_status ?? ""]?.color ?? "bg-gray-100 text-gray-500"}`}>
+                    {STATUS_LABELS[row.review_status ?? ""]?.label ?? row.review_status}
+                  </span></td>
+                  <td className="max-w-[200px] px-3 py-2 text-[11px] text-muted-foreground">{getReason(row)}</td>
+                  <td className="whitespace-nowrap px-3 py-2 text-[11px] text-muted-foreground">{row.source_id ? row.source_id.replace(/^scrape-/, "").replace(/-/g, " ") : "—"}</td>
+                  <td className="px-3 py-2"><FoodIcons foodTags={row.food_tags} title={row.title} className="h-4 w-4" themed /></td>
                   <td className="group/img relative px-3 py-2">
                     {row.image_url ? (
                       <>
-                        <img src={row.image_url} alt="" className="h-8 w-12 rounded object-cover"
-                          onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextElementSibling?.classList.remove("hidden"); }}
-                        />
-                        <span className="hidden text-xs text-red-400">✗</span>
+                        <img src={row.image_url} alt="" className="h-8 w-12 rounded object-cover" onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextElementSibling?.classList.remove("hidden"); }} />
+                        <span className="hidden text-xs text-red-400">x</span>
                         <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 group-hover/img:block">
                           <img src={row.image_url} alt="" className="h-40 w-60 rounded-lg object-cover shadow-xl" />
                         </div>
                       </>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
+                    ) : <span className="text-xs text-muted-foreground">—</span>}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2">
                     <div className="flex items-center gap-1">
                       {row.review_status !== "admin_approved" && (
-                        <button
-                          onClick={() => handleApprove(row.id)}
-                          disabled={isPending}
-                          title="Approva"
-                          className="rounded p-1 text-green-600 hover:bg-green-50 disabled:opacity-50"
-                        >
-                          <Check className="h-4 w-4" />
-                        </button>
+                        <button onClick={() => onApprove(row.id)} disabled={isPending} title="Approva" className="rounded p-1 text-green-600 hover:bg-green-50 disabled:opacity-50"><Check className="h-4 w-4" /></button>
                       )}
                       {row.review_status !== "admin_rejected" && row.review_status !== "discarded" && (
-                        <button
-                          onClick={() => handleReject(row.id)}
-                          disabled={isPending}
-                          title="Rifiuta"
-                          className="rounded p-1 text-red-500 hover:bg-red-50 disabled:opacity-50"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
+                        <button onClick={() => onReject(row.id)} disabled={isPending} title="Rifiuta" className="rounded p-1 text-red-500 hover:bg-red-50 disabled:opacity-50"><X className="h-4 w-4" /></button>
                       )}
-                      <button
-                        onClick={() => setEditId(row.id)}
-                        title="Modifica"
-                        className="rounded p-1 text-blue-600 hover:bg-blue-50"
-                      >
+                      <button onClick={() => onEdit(row.id)} title="Modifica" className="rounded p-1 text-blue-600 hover:bg-blue-50">
                         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                         </svg>
                       </button>
                       {row.source_url && (
-                        <a
-                          href={row.source_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title="Fonte"
-                          className="rounded p-1 text-muted-foreground hover:bg-muted"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
+                        <a href={row.source_url} target="_blank" rel="noopener noreferrer" title="Fonte" className="rounded p-1 text-muted-foreground hover:bg-muted"><ExternalLink className="h-4 w-4" /></a>
                       )}
                     </div>
                   </td>
@@ -916,50 +815,25 @@ export function AdminDashboard() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">{total} sagre totali</span>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">{total} sagre</span>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={page === 0}
-              className="rounded p-1 hover:bg-muted disabled:opacity-30"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
+            <button onClick={() => onSetPage((p: number) => Math.max(0, p - 1))} disabled={page === 0} className="rounded p-1 hover:bg-muted disabled:opacity-30"><ChevronLeft className="h-5 w-5" /></button>
             <span className="text-sm">{page + 1} / {totalPages}</span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              disabled={page >= totalPages - 1}
-              className="rounded p-1 hover:bg-muted disabled:opacity-30"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
+            <button onClick={() => onSetPage((p: number) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} className="rounded p-1 hover:bg-muted disabled:opacity-30"><ChevronRight className="h-5 w-5" /></button>
           </div>
         </div>
       )}
 
       {/* Edit modal */}
-      {editId && (
-        <EditModal
-          sagraId={editId}
-          onClose={() => setEditId(null)}
-          onSaved={() => { setEditId(null); loadTable(); loadPipeline(); }}
-        />
-      )}
+      {editId && <EditModal sagraId={editId} onClose={onCloseEdit} onSaved={onSaved} />}
     </div>
   );
 }
 
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return "adesso";
-  if (mins < 60) return `${mins}m fa`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h fa`;
-  const days = Math.floor(hrs / 24);
-  return `${days}g fa`;
-}
+// =============================================================================
+// Helper components
+// =============================================================================
 
 function PipelineStat({ label, value, color, prev }: { label: string; value: number; color?: string; prev?: number }) {
   const diff = prev != null ? value - prev : 0;
@@ -967,11 +841,7 @@ function PipelineStat({ label, value, color, prev }: { label: string; value: num
     <div className="rounded-lg bg-muted/50 p-2 text-center">
       <div className={`text-lg font-bold ${color ?? "text-foreground"}`}>
         {value}
-        {diff !== 0 && (
-          <span className={`ml-1 text-xs font-normal ${diff > 0 ? "text-green-500" : "text-red-400"}`}>
-            {diff > 0 ? "+" : ""}{diff}
-          </span>
-        )}
+        {diff !== 0 && <span className={`ml-1 text-xs font-normal ${diff > 0 ? "text-green-500" : "text-red-400"}`}>{diff > 0 ? "+" : ""}{diff}</span>}
       </div>
       <div className="text-[10px] text-muted-foreground">{label}</div>
     </div>
