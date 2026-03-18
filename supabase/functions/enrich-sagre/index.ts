@@ -574,14 +574,28 @@ async function runLLMPass(
         const unsplash_query = (result.unsplash_query ?? "").slice(0, 60) || null;
         const clean_title = (result.clean_title ?? "").slice(0, 100) || matchedSagra?.title || "";
 
-        // Determine if this sagra has enough data to be active
-        const hasDate = !!(result.start_date || matchedSagra?.start_date);
+        // Determine if this sagra qualifies for auto-approval
+        const effectiveStartDate = result.start_date || matchedSagra?.start_date || null;
+        const effectiveEndDate = result.end_date || matchedSagra?.end_date || null;
+        const hasDate = !!effectiveStartDate;
         const isHighConfidence = confidence >= 70;
 
-        // Review status: auto_approved if high confidence + has date, else needs_review
+        // Province: must be a valid Veneto province to auto-approve
+        const effectiveProvince = (result.province_code?.toUpperCase() || matchedSagra?.province || null) as string | null;
+        const isVeneto = !!effectiveProvince && /^(BL|PD|RO|TV|VE|VI|VR)$/.test(effectiveProvince);
+
+        // Date: must not be expired (end_date >= today, or start_date >= today if no end_date)
+        const today = new Date().toISOString().split("T")[0];
+        const checkDate = effectiveEndDate || effectiveStartDate;
+        const isFuture = !!checkDate && checkDate >= today;
+
+        // Review status: auto_approved ONLY if ALL conditions met
         let review_status: string;
-        if (isHighConfidence && hasDate) {
+        if (isHighConfidence && hasDate && isVeneto && isFuture) {
           review_status = "auto_approved";
+        } else if (!isVeneto && hasDate && isHighConfidence) {
+          // High confidence but wrong region → discard silently
+          review_status = "discarded";
         } else {
           review_status = "needs_review";
         }
@@ -595,7 +609,7 @@ async function runLLMPass(
           unsplash_query,
           confidence,
           review_status,
-          is_active: review_status === "auto_approved",
+          is_active: review_status === "auto_approved", // only true if Veneto + future date + high confidence
           status: "enriched",
           updated_at: new Date().toISOString(),
         };
