@@ -34,13 +34,31 @@ const supabase = createClient(
 
 // --- Config ---
 
-// Instagram profiles of Pro Loco and sagre aggregators in Veneto
-const INSTAGRAM_PROFILES = [
-  "https://www.instagram.com/sagreveneto/",           // Sagre Veneto
-  "https://www.instagram.com/sagreinveneto/",          // Sagre in Veneto
-  "https://www.instagram.com/unpliveneto/",            // UNPLI Veneto Pro Loco
-  "https://www.instagram.com/venetoinfesta/",          // Veneto in Festa
+// Instagram profiles: read from DB (external_sources), fallback to hardcoded
+const FALLBACK_INSTAGRAM_PROFILES = [
+  "https://www.instagram.com/sagreveneto/",
+  "https://www.instagram.com/sagreinveneto/",
+  "https://www.instagram.com/unpliveneto/",
+  "https://www.instagram.com/venetoinfesta/",
 ];
+
+async function loadInstagramProfiles() {
+  try {
+    const { data } = await supabase
+      .from("external_sources")
+      .select("url")
+      .eq("type", "instagram")
+      .eq("is_active", true);
+    if (data && data.length > 0) {
+      console.log(`[ig] Loaded ${data.length} profiles from DB`);
+      return data.map((r) => r.url);
+    }
+  } catch (e) {
+    console.warn("[ig] Could not load from external_sources, using fallback:", e.message);
+  }
+  console.log(`[ig] Using ${FALLBACK_INSTAGRAM_PROFILES.length} hardcoded profiles`);
+  return FALLBACK_INSTAGRAM_PROFILES;
+}
 
 const POSTS_PER_PROFILE = 15; // Recent posts to check (locandine are usually recent)
 const MAX_DAYS_OLD = 60;       // Skip posts older than 60 days
@@ -193,6 +211,8 @@ async function fetchImageAsBase64(imageUrl) {
 async function scrapeInstagramPosts() {
   console.log("[apify] Starting Instagram scrape...");
   const client = new ApifyClient({ token: APIFY_TOKEN });
+
+  const INSTAGRAM_PROFILES = await loadInstagramProfiles();
 
   const input = {
     directUrls: INSTAGRAM_PROFILES,
@@ -376,6 +396,7 @@ async function main() {
 }
 
 async function logRun(status, found, inserted, merged, message, startedAt) {
+  const completedAt = new Date().toISOString();
   await supabase.from("scrape_logs").insert({
     source_id: null,
     source_name: "instagram",
@@ -385,8 +406,13 @@ async function logRun(status, found, inserted, merged, message, startedAt) {
     events_merged: merged,
     error_message: message,
     duration_ms: Date.now() - startedAt,
-    completed_at: new Date().toISOString(),
+    completed_at: completedAt,
   });
+
+  // Update last_scraped_at on all active instagram sources
+  await supabase.from("external_sources")
+    .update({ last_scraped_at: completedAt, last_result: { found, inserted, merged, errors: message ? 1 : 0 } })
+    .eq("type", "instagram").eq("is_active", true);
 }
 
 main().catch(console.error);

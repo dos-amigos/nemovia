@@ -246,9 +246,239 @@ export async function getEnrichLogs(limit: number = 10) {
     .limit(limit);
 
   if (error) {
-    // Table might not exist yet
     console.error("enrich_logs query error:", error.message);
     return [];
   }
   return data ?? [];
+}
+
+// ============================================================
+// Source monitoring & management
+// ============================================================
+
+export type SourceOverview = {
+  name: string;
+  display_name: string;
+  type: "web" | "api" | "instagram" | "facebook" | "search" | "enrichment";
+  is_active: boolean;
+  last_scraped_at: string | null;
+  last_status: string | null;
+  last_found: number | null;
+  last_inserted: number | null;
+  last_merged: number | null;
+  last_error: string | null;
+  last_duration_ms: number | null;
+};
+
+/** Get overview of ALL sources with last scrape stats */
+export async function getSourcesOverview(): Promise<SourceOverview[]> {
+  if (!(await isAdmin())) throw new Error("Unauthorized");
+  const db = createAdminClient();
+
+  // 1. Get DB-driven web scrapers
+  const { data: webSources } = await db
+    .from("scraper_sources")
+    .select("name, display_name, is_active, last_scraped_at")
+    .order("name");
+
+  // 2. Get external sources (instagram, facebook)
+  const { data: extSources } = await db
+    .from("external_sources")
+    .select("type, name, url, is_active, last_scraped_at, last_result");
+
+  // 3. Get last scrape log per source_name
+  const { data: logs } = await db
+    .from("scrape_logs")
+    .select("source_name, status, events_found, events_inserted, events_merged, error_message, duration_ms, completed_at")
+    .order("completed_at", { ascending: false })
+    .limit(200);
+
+  // Build last-log-per-source map
+  const lastLogMap = new Map<string, (typeof logs extends (infer T)[] | null ? T : never)>();
+  for (const log of logs ?? []) {
+    if (!lastLogMap.has(log.source_name)) {
+      lastLogMap.set(log.source_name, log);
+    }
+  }
+
+  const sources: SourceOverview[] = [];
+
+  // Web scrapers from scraper_sources
+  for (const s of webSources ?? []) {
+    const log = lastLogMap.get(s.name);
+    sources.push({
+      name: s.name,
+      display_name: s.display_name,
+      type: "web",
+      is_active: s.is_active,
+      last_scraped_at: log?.completed_at ?? s.last_scraped_at,
+      last_status: log?.status ?? null,
+      last_found: log?.events_found ?? null,
+      last_inserted: log?.events_inserted ?? null,
+      last_merged: log?.events_merged ?? null,
+      last_error: log?.error_message ?? null,
+      last_duration_ms: log?.duration_ms ?? null,
+    });
+  }
+
+  // Custom API scrapers (hardcoded edge functions)
+  const customSources = [
+    { name: "sagretoday", display_name: "SagreToday", type: "api" as const },
+    { name: "trovasagre", display_name: "TrovaSagre", type: "api" as const },
+    { name: "sagriamo", display_name: "Sagriamo", type: "api" as const },
+    { name: "cheventi", display_name: "ChEventi", type: "api" as const },
+  ];
+  for (const s of customSources) {
+    const log = lastLogMap.get(s.name);
+    sources.push({
+      name: s.name,
+      display_name: s.display_name,
+      type: s.type,
+      is_active: true,
+      last_scraped_at: log?.completed_at ?? null,
+      last_status: log?.status ?? null,
+      last_found: log?.events_found ?? null,
+      last_inserted: log?.events_inserted ?? null,
+      last_merged: log?.events_merged ?? null,
+      last_error: log?.error_message ?? null,
+      last_duration_ms: log?.duration_ms ?? null,
+    });
+  }
+
+  // External sources: aggregate by type (show per-account in management, but here show per-type summary)
+  const extByType = new Map<string, { type: string; count: number; active: number }>();
+  for (const s of extSources ?? []) {
+    const entry = extByType.get(s.type) ?? { type: s.type, count: 0, active: 0 };
+    entry.count++;
+    if (s.is_active) entry.active++;
+    extByType.set(s.type, entry);
+  }
+
+  // Facebook summary
+  const fbLog = lastLogMap.get("facebook");
+  const fbInfo = extByType.get("facebook");
+  sources.push({
+    name: "facebook",
+    display_name: `Facebook (${fbInfo?.active ?? 0}/${fbInfo?.count ?? 0} pagine)`,
+    type: "facebook",
+    is_active: (fbInfo?.active ?? 0) > 0,
+    last_scraped_at: fbLog?.completed_at ?? null,
+    last_status: fbLog?.status ?? null,
+    last_found: fbLog?.events_found ?? null,
+    last_inserted: fbLog?.events_inserted ?? null,
+    last_merged: fbLog?.events_merged ?? null,
+    last_error: fbLog?.error_message ?? null,
+    last_duration_ms: fbLog?.duration_ms ?? null,
+  });
+
+  // Instagram summary
+  const igLog = lastLogMap.get("instagram");
+  const igInfo = extByType.get("instagram");
+  sources.push({
+    name: "instagram",
+    display_name: `Instagram (${igInfo?.active ?? 0}/${igInfo?.count ?? 0} profili)`,
+    type: "instagram",
+    is_active: (igInfo?.active ?? 0) > 0,
+    last_scraped_at: igLog?.completed_at ?? null,
+    last_status: igLog?.status ?? null,
+    last_found: igLog?.events_found ?? null,
+    last_inserted: igLog?.events_inserted ?? null,
+    last_merged: igLog?.events_merged ?? null,
+    last_error: igLog?.error_message ?? null,
+    last_duration_ms: igLog?.duration_ms ?? null,
+  });
+
+  // Tavily discovery
+  const tavLog = lastLogMap.get("tavily");
+  sources.push({
+    name: "tavily",
+    display_name: "Tavily Discovery",
+    type: "search",
+    is_active: true,
+    last_scraped_at: tavLog?.completed_at ?? null,
+    last_status: tavLog?.status ?? null,
+    last_found: tavLog?.events_found ?? null,
+    last_inserted: tavLog?.events_inserted ?? null,
+    last_merged: tavLog?.events_merged ?? null,
+    last_error: tavLog?.error_message ?? null,
+    last_duration_ms: tavLog?.duration_ms ?? null,
+  });
+
+  return sources;
+}
+
+export type ExternalSource = {
+  id: string;
+  type: string;
+  name: string;
+  url: string;
+  notes: string | null;
+  is_active: boolean;
+  last_scraped_at: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  last_result: any;
+};
+
+/** Get all external sources for management */
+export async function getExternalSources(): Promise<ExternalSource[]> {
+  if (!(await isAdmin())) throw new Error("Unauthorized");
+  const db = createAdminClient();
+
+  const { data, error } = await db
+    .from("external_sources")
+    .select("*")
+    .order("type")
+    .order("name");
+
+  if (error) {
+    console.error("external_sources query error:", error.message);
+    return [];
+  }
+  return (data ?? []) as ExternalSource[];
+}
+
+/** Add a new external source */
+export async function addExternalSource(
+  type: string,
+  name: string,
+  url: string,
+  notes?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!(await isAdmin())) throw new Error("Unauthorized");
+  const db = createAdminClient();
+
+  const { error } = await db.from("external_sources").insert({
+    type,
+    name,
+    url: url.trim(),
+    notes: notes || null,
+  });
+
+  if (error) {
+    if (error.code === "23505") return { ok: false, error: "URL già presente" };
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
+}
+
+/** Toggle external source active/inactive */
+export async function toggleExternalSource(id: string, isActive: boolean) {
+  if (!(await isAdmin())) throw new Error("Unauthorized");
+  const db = createAdminClient();
+
+  const { error } = await db
+    .from("external_sources")
+    .update({ is_active: isActive, updated_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+}
+
+/** Delete an external source */
+export async function deleteExternalSource(id: string) {
+  if (!(await isAdmin())) throw new Error("Unauthorized");
+  const db = createAdminClient();
+
+  const { error } = await db.from("external_sources").delete().eq("id", id);
+  if (error) throw new Error(error.message);
 }

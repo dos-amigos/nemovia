@@ -12,10 +12,17 @@ import {
   bulkApproveAutoAction,
   logoutAction,
   getEnrichLogs,
+  getSourcesOverview,
+  getExternalSources,
+  addExternalSource,
+  toggleExternalSource,
+  deleteExternalSource,
   type ReviewStatus,
+  type SourceOverview,
+  type ExternalSource,
 } from "./actions";
 import { EditModal } from "./EditModal";
-import { Check, X, ExternalLink, LogOut, ChevronLeft, ChevronRight, RefreshCw, Play, Pause } from "lucide-react";
+import { Check, X, ExternalLink, LogOut, ChevronLeft, ChevronRight, RefreshCw, Play, Pause, Plus, Trash2, Power } from "lucide-react";
 import { FoodIcons } from "@/lib/constants/food-icons";
 
 type SagraRow = Awaited<ReturnType<typeof getAdminSagre>>["data"][number];
@@ -69,6 +76,11 @@ export function AdminDashboard() {
   const [activityLog, setActivityLog] = useState<string[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [enrichLogs, setEnrichLogs] = useState<any[]>([]);
+  const [sourcesOverview, setSourcesOverview] = useState<SourceOverview[]>([]);
+  const [extSources, setExtSources] = useState<ExternalSource[]>([]);
+  const [showSourceMgmt, setShowSourceMgmt] = useState(false);
+  const [newSource, setNewSource] = useState({ type: "instagram", name: "", url: "", notes: "" });
+  const [sourceMsg, setSourceMsg] = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [loopRunning, setLoopRunning] = useState(false);
   const [loopRun, setLoopRun] = useState(0);
@@ -110,6 +122,7 @@ export function AdminDashboard() {
       setLastUpdate(new Date());
     });
     getEnrichLogs(5).then(setEnrichLogs).catch(() => {});
+    getSourcesOverview().then(setSourcesOverview).catch(() => {});
   }, [addLog]);
 
   // Initial load
@@ -363,6 +376,222 @@ export function AdminDashboard() {
         </div>
       )}
 
+      {/* Source monitoring panel */}
+      {sourcesOverview.length > 0 && (
+        <div className="mb-4 rounded-xl bg-white p-4 shadow">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-bold">Stato Fonti ({sourcesOverview.length})</h2>
+            <button
+              onClick={() => {
+                setShowSourceMgmt((v) => !v);
+                if (!showSourceMgmt) getExternalSources().then(setExtSources).catch(() => {});
+              }}
+              className="flex items-center gap-1 rounded-lg border border-primary/30 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/5"
+            >
+              <Plus className="h-3 w-3" />
+              Gestisci Fonti
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px]">
+              <thead>
+                <tr className="border-b text-left text-[10px] font-medium text-muted-foreground">
+                  <th className="pb-1.5 pr-3">Fonte</th>
+                  <th className="pb-1.5 pr-3">Tipo</th>
+                  <th className="pb-1.5 pr-3">Stato</th>
+                  <th className="pb-1.5 pr-3">Ultimo scrape</th>
+                  <th className="pb-1.5 pr-2 text-right">Trovate</th>
+                  <th className="pb-1.5 pr-2 text-right">Inserite</th>
+                  <th className="pb-1.5 pr-2 text-right">Merged</th>
+                  <th className="pb-1.5 pr-2 text-right">Durata</th>
+                  <th className="pb-1.5">Errore</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sourcesOverview.map((s) => {
+                  const ago = s.last_scraped_at ? timeAgo(s.last_scraped_at) : null;
+                  return (
+                    <tr key={s.name} className={`border-b last:border-0 ${s.last_status === "error" ? "bg-red-50" : ""}`}>
+                      <td className="py-1.5 pr-3 font-medium">{s.display_name}</td>
+                      <td className="py-1.5 pr-3">
+                        <span className={`inline-block rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase ${
+                          s.type === "web" ? "bg-blue-100 text-blue-700" :
+                          s.type === "api" ? "bg-purple-100 text-purple-700" :
+                          s.type === "instagram" ? "bg-pink-100 text-pink-700" :
+                          s.type === "facebook" ? "bg-indigo-100 text-indigo-700" :
+                          s.type === "search" ? "bg-amber-100 text-amber-700" :
+                          "bg-gray-100 text-gray-600"
+                        }`}>{s.type}</span>
+                      </td>
+                      <td className="py-1.5 pr-3">
+                        {s.is_active ? (
+                          <span className="inline-flex items-center gap-0.5 text-green-600">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Attivo
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">Disattivato</span>
+                        )}
+                      </td>
+                      <td className="py-1.5 pr-3 whitespace-nowrap">
+                        {ago ? (
+                          <span title={new Date(s.last_scraped_at!).toLocaleString("it-IT")}>{ago}</span>
+                        ) : (
+                          <span className="text-gray-400">Mai</span>
+                        )}
+                      </td>
+                      <td className="py-1.5 pr-2 text-right font-mono">{s.last_found ?? "—"}</td>
+                      <td className="py-1.5 pr-2 text-right font-mono text-green-600">{s.last_inserted ?? "—"}</td>
+                      <td className="py-1.5 pr-2 text-right font-mono text-blue-600">{s.last_merged ?? "—"}</td>
+                      <td className="py-1.5 pr-2 text-right font-mono">{s.last_duration_ms ? `${(s.last_duration_ms / 1000).toFixed(0)}s` : "—"}</td>
+                      <td className="max-w-[180px] truncate py-1.5 text-red-500">{s.last_error ?? ""}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Source management panel (expandable) */}
+      {showSourceMgmt && (
+        <div className="mb-4 rounded-xl bg-white p-4 shadow">
+          <h2 className="mb-3 text-sm font-bold">Gestione Fonti Esterne</h2>
+
+          {/* Add new source form */}
+          <div className="mb-4 flex flex-wrap items-end gap-2 rounded-lg bg-muted/30 p-3">
+            <div>
+              <label className="mb-0.5 block text-[10px] font-medium text-muted-foreground">Tipo</label>
+              <select
+                value={newSource.type}
+                onChange={(e) => setNewSource({ ...newSource, type: e.target.value })}
+                className="rounded border px-2 py-1.5 text-xs"
+              >
+                <option value="instagram">Instagram</option>
+                <option value="facebook">Facebook</option>
+                <option value="rss">RSS</option>
+                <option value="other">Altro</option>
+              </select>
+            </div>
+            <div className="flex-1 min-w-[150px]">
+              <label className="mb-0.5 block text-[10px] font-medium text-muted-foreground">Nome</label>
+              <input
+                value={newSource.name}
+                onChange={(e) => setNewSource({ ...newSource, name: e.target.value })}
+                placeholder="Pro Loco Treviso"
+                className="w-full rounded border px-2 py-1.5 text-xs"
+              />
+            </div>
+            <div className="flex-[2] min-w-[200px]">
+              <label className="mb-0.5 block text-[10px] font-medium text-muted-foreground">URL</label>
+              <input
+                value={newSource.url}
+                onChange={(e) => setNewSource({ ...newSource, url: e.target.value })}
+                placeholder="https://www.instagram.com/prolocotreviso/"
+                className="w-full rounded border px-2 py-1.5 text-xs"
+              />
+            </div>
+            <div className="flex-1 min-w-[120px]">
+              <label className="mb-0.5 block text-[10px] font-medium text-muted-foreground">Note</label>
+              <input
+                value={newSource.notes}
+                onChange={(e) => setNewSource({ ...newSource, notes: e.target.value })}
+                placeholder="Opzionale"
+                className="w-full rounded border px-2 py-1.5 text-xs"
+              />
+            </div>
+            <button
+              onClick={async () => {
+                if (!newSource.name.trim() || !newSource.url.trim()) return;
+                setSourceMsg(null);
+                const res = await addExternalSource(newSource.type, newSource.name.trim(), newSource.url.trim(), newSource.notes.trim() || undefined);
+                if (res.ok) {
+                  setNewSource({ type: newSource.type, name: "", url: "", notes: "" });
+                  setSourceMsg("Aggiunta!");
+                  getExternalSources().then(setExtSources);
+                  getSourcesOverview().then(setSourcesOverview);
+                } else {
+                  setSourceMsg(res.error ?? "Errore");
+                }
+              }}
+              className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary/90"
+            >
+              <Plus className="inline h-3.5 w-3.5 mr-0.5" />
+              Aggiungi
+            </button>
+            {sourceMsg && <span className="text-xs text-muted-foreground">{sourceMsg}</span>}
+          </div>
+
+          {/* External sources list */}
+          {extSources.length > 0 && (
+            <table className="w-full text-[11px]">
+              <thead>
+                <tr className="border-b text-left text-[10px] font-medium text-muted-foreground">
+                  <th className="pb-1.5 pr-3">Tipo</th>
+                  <th className="pb-1.5 pr-3">Nome</th>
+                  <th className="pb-1.5 pr-3">URL</th>
+                  <th className="pb-1.5 pr-3">Note</th>
+                  <th className="pb-1.5 pr-3">Stato</th>
+                  <th className="pb-1.5">Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                {extSources.map((s) => (
+                  <tr key={s.id} className="border-b last:border-0">
+                    <td className="py-1.5 pr-3">
+                      <span className={`inline-block rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase ${
+                        s.type === "instagram" ? "bg-pink-100 text-pink-700" :
+                        s.type === "facebook" ? "bg-indigo-100 text-indigo-700" :
+                        "bg-gray-100 text-gray-600"
+                      }`}>{s.type}</span>
+                    </td>
+                    <td className="py-1.5 pr-3 font-medium">{s.name}</td>
+                    <td className="max-w-[250px] truncate py-1.5 pr-3">
+                      <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{s.url}</a>
+                    </td>
+                    <td className="py-1.5 pr-3 text-muted-foreground">{s.notes ?? ""}</td>
+                    <td className="py-1.5 pr-3">
+                      {s.is_active ? (
+                        <span className="text-green-600">Attivo</span>
+                      ) : (
+                        <span className="text-gray-400">Off</span>
+                      )}
+                    </td>
+                    <td className="py-1.5">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={async () => {
+                            await toggleExternalSource(s.id, !s.is_active);
+                            getExternalSources().then(setExtSources);
+                            getSourcesOverview().then(setSourcesOverview);
+                          }}
+                          title={s.is_active ? "Disattiva" : "Attiva"}
+                          className={`rounded p-1 ${s.is_active ? "text-orange-500 hover:bg-orange-50" : "text-green-600 hover:bg-green-50"}`}
+                        >
+                          <Power className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Eliminare "${s.name}"?`)) return;
+                            await deleteExternalSource(s.id);
+                            getExternalSources().then(setExtSources);
+                            getSourcesOverview().then(setSourcesOverview);
+                          }}
+                          title="Elimina"
+                          className="rounded p-1 text-red-500 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
       {/* Status filter tabs */}
       <div className="mb-4 flex flex-wrap gap-2">
         {(["needs_review", "pending", "auto_approved", "admin_approved", "admin_rejected", "discarded", "all"] as const).map((s) => (
@@ -554,6 +783,17 @@ export function AdminDashboard() {
       )}
     </div>
   );
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "adesso";
+  if (mins < 60) return `${mins}m fa`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h fa`;
+  const days = Math.floor(hrs / 24);
+  return `${days}g fa`;
 }
 
 function PipelineStat({ label, value, color, prev }: { label: string; value: number; color?: string; prev?: number }) {

@@ -18,13 +18,31 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// --- Facebook pages to scrape (Pro Loco and sagre aggregators in Veneto) ---
-const FB_PAGES = [
-  "https://www.facebook.com/sagre.veneto/events",         // Sagre Veneto (74K likes)
-  "https://www.facebook.com/SagrenelVeneto/events",       // Sagre in Veneto (35K+)
-  "https://www.facebook.com/unpliveneto.proloco/events",  // UNPLI Veneto Pro Loco
-  "https://www.facebook.com/prolocoverona/events",        // Pro Loco Verona (9.8K)
+// --- Facebook pages: read from DB (external_sources), fallback to hardcoded ---
+const FALLBACK_FB_PAGES = [
+  "https://www.facebook.com/sagre.veneto/events",
+  "https://www.facebook.com/SagrenelVeneto/events",
+  "https://www.facebook.com/unpliveneto.proloco/events",
+  "https://www.facebook.com/prolocoverona/events",
 ];
+
+async function loadFacebookPages() {
+  try {
+    const { data } = await supabase
+      .from("external_sources")
+      .select("url")
+      .eq("type", "facebook")
+      .eq("is_active", true);
+    if (data && data.length > 0) {
+      console.log(`[fb] Loaded ${data.length} pages from DB`);
+      return data.map((r) => r.url);
+    }
+  } catch (e) {
+    console.warn("[fb] Could not load from external_sources, using fallback:", e.message);
+  }
+  console.log(`[fb] Using ${FALLBACK_FB_PAGES.length} hardcoded pages`);
+  return FALLBACK_FB_PAGES;
+}
 
 // --- Helper functions ---
 
@@ -106,6 +124,7 @@ async function scrapeEvents() {
   let totalSkipped = 0;
   let totalErrors = 0;
 
+  const FB_PAGES = await loadFacebookPages();
   for (const pageUrl of FB_PAGES) {
     const pageName = pageUrl.match(/facebook\.com\/([^/]+)/)?.[1] || pageUrl;
     console.log(`\n[fb] Scraping: ${pageName}`);
@@ -253,6 +272,7 @@ async function scrapeEvents() {
   }
 
   // Log run
+  const completedAt = new Date().toISOString();
   await supabase.from("scrape_logs").insert({
     source_id: null,
     source_name: "facebook",
@@ -262,8 +282,13 @@ async function scrapeEvents() {
     events_merged: totalMerged,
     error_message: totalErrors > 0 ? `${totalErrors} errors, ${totalSkipped} non-food skipped` : null,
     duration_ms: Date.now() - startedAt,
-    completed_at: new Date().toISOString(),
+    completed_at: completedAt,
   });
+
+  // Update last_scraped_at on all active facebook sources
+  await supabase.from("external_sources")
+    .update({ last_scraped_at: completedAt, last_result: { found: totalFound, inserted: totalInserted, merged: totalMerged, errors: totalErrors } })
+    .eq("type", "facebook").eq("is_active", true);
 
   console.log(`\n[fb] Done in ${((Date.now() - startedAt) / 1000).toFixed(1)}s`);
   console.log(`[fb] Found=${totalFound}, Inserted=${totalInserted}, Merged=${totalMerged}, Skipped=${totalSkipped}, Errors=${totalErrors}`);
