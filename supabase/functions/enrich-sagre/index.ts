@@ -200,6 +200,9 @@ function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
 7. **end_date**: data fine YYYY-MM-DD. Se evento di un solo giorno = uguale a start_date. null se non determinabile.
 
 8. **food_tags**: array tag alimentari (max 3) SOLO da: ${FOOD_TAGS.join(", ")}
+   REGOLA: basa i tag SOLO su informazioni ESPLICITE nel titolo o nella description/source_description.
+   MAI inventare tag basandoti su supposizioni o sulla tua description generata.
+   Se dal titolo e dalla description originale NON si capisce il cibo specifico → usa ["Prodotti Tipici"] e basta.
    Regole gastronomia veneta:
    - Pinza/Pinzin = "Pane" (NON dolci, è focaccia veneta)
    - Baccalà/Stoccafisso = "Pesce"
@@ -207,10 +210,11 @@ function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
    - Zucca = "Zucca" (tag dedicato, NON Verdura)
    - Gnocchi = "Prodotti Tipici"
    - Polenta = "Prodotti Tipici" (o "Carne" se con carne)
-   - Se non chiaro = "Prodotti Tipici"
    NOTA: se la sagra è vegetariana (zucca, asparagi, radicchio, verdure) aggiungi ANCHE "Verdura" come secondo tag.
 
 9. **feature_tags**: array (max 2) SOLO da: ${FEATURE_TAGS.join(", ")}
+   REGOLA: basa i tag SOLO su informazioni ESPLICITE. MAI inventare "Musica" o "Bambini" se non menzionati nella description originale.
+   Se non ci sono informazioni → array vuoto [].
    - "Giostre" SOLO per grandi fiere con luna park
 
 10. **description**: descrizione in italiano, SEMPRE presente, max 1000 caratteri, coinvolgente e RICCA DI DETTAGLI.
