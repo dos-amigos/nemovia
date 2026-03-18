@@ -10,7 +10,7 @@
 import { GoogleGenAI } from "npm:@google/genai@1";
 import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
 
-const GEOCODE_LIMIT = 30;   // max rows to geocode per loop iteration
+const GEOCODE_LIMIT = 15;   // max rows to geocode per loop iteration (was 30 — reduced to leave more time for LLM)
 const LLM_LIMIT = 200;      // max sagre to enrich per loop iteration (25 batches of 8)
 const SLEEP_MS = 1100;      // 1.1s between Nominatim calls (policy: 1 req/sec)
 const VENETO_VIEWBOX = "10.62,44.79,13.10,46.68"; // Nominatim viewbox: lon_min,lat_min,lon_max,lat_max
@@ -449,10 +449,14 @@ async function runGeocodePass(
 
 async function runLLMPass(
   supabase: SupabaseClient,
-  ai: GoogleGenAI
+  ai: GoogleGenAI,
+  startedAt?: number
 ): Promise<{ enriched: number; classified: number }> {
   let enriched = 0;
   let classified = 0; // non-sagra events deactivated
+
+  // Time budget: leave 20s margin for image pass + logging + self-chain
+  const hasTime = () => !startedAt || (Date.now() - startedAt) < (TIME_BUDGET_MS - 20_000);
 
   // Enrich both successfully geocoded sagre AND geocode-failed ones (tags/description are independent of GPS)
   const { data: rows } = await supabase
@@ -468,6 +472,12 @@ async function runLLMPass(
 
   let retries = 0;
   for (let i = 0; i < batches.length; i++) {
+    // Stop if time budget nearly exhausted
+    if (!hasTime()) {
+      console.log(`LLM pass: time budget reached after ${i}/${batches.length} batches (${enriched} enriched, ${classified} classified)`);
+      break;
+    }
+
     const batch = batches[i];
 
     // Rate limit: 15 RPM on Gemini free tier → wait 4.5s between calls
@@ -477,7 +487,7 @@ async function runLLMPass(
       const prompt = buildEnrichmentPrompt(batch);
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-lite",
+        model: "gemini-2.5-flash",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -1164,6 +1174,7 @@ Deno.serve(async (req) => {
   const startedAt = Date.now();
   const url = new URL(req.url);
   const resetMode = url.searchParams.get("reset"); // "all" | "images" | null
+  const loopMode = url.searchParams.get("loop") === "true"; // self-chaining mode
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -1174,7 +1185,6 @@ Deno.serve(async (req) => {
 
   // Handle reset modes BEFORE starting the pipeline
   if (resetMode === "all") {
-    // Re-enrich everything: set all enriched sagre back to pending_llm
     const { count } = await supabase
       .from("sagre")
       .update({ status: "pending_llm", updated_at: new Date().toISOString() })
@@ -1183,7 +1193,6 @@ Deno.serve(async (req) => {
       .select("id", { count: "exact", head: true });
     console.log(`Reset ${count ?? 0} sagre to pending_llm for re-enrichment`);
   } else if (resetMode === "images") {
-    // Re-fetch images only: null out Unsplash images so Pass 3 re-assigns them
     const { count } = await supabase
       .from("sagre")
       .update({ image_url: null, image_credit: null, updated_at: new Date().toISOString() })
@@ -1195,10 +1204,10 @@ Deno.serve(async (req) => {
   }
 
   // Fire-and-forget: return 200 immediately, work continues in background
-  EdgeRuntime.waitUntil(runEnrichmentPipeline(supabase, ai, startedAt));
+  EdgeRuntime.waitUntil(runEnrichmentPipeline(supabase, ai, startedAt, loopMode));
 
   return new Response(
-    JSON.stringify({ status: "started", reset: resetMode, timestamp: new Date().toISOString() }),
+    JSON.stringify({ status: "started", reset: resetMode, loop: loopMode, timestamp: new Date().toISOString() }),
     { status: 200, headers: { "Content-Type": "application/json" } }
   );
 });
@@ -1206,7 +1215,8 @@ Deno.serve(async (req) => {
 async function runEnrichmentPipeline(
   supabase: SupabaseClient,
   ai: GoogleGenAI,
-  startedAt: number
+  startedAt: number,
+  loopMode: boolean = false,
 ) {
   let geocoded = 0;
   let geocodeFailed = 0;
@@ -1235,7 +1245,7 @@ async function runEnrichmentPipeline(
 
       // Pass 2: LLM enrichment (processes up to 200 per iteration)
       if (hasTimeBudget()) {
-        const r = await runLLMPass(supabase, ai);
+        const r = await runLLMPass(supabase, ai, startedAt);
         llmEnriched += r.enriched;
         llmClassified += r.classified;
         if (r.enriched + r.classified > 0) didWork = true;
@@ -1277,4 +1287,41 @@ async function runEnrichmentPipeline(
   });
 
   console.log(`Enrichment complete (${loops} loops, ${elapsed()}ms): geocoded=${geocoded}, geocode_failed=${geocodeFailed}, llm_enriched=${llmEnriched}, classified_non_sagra=${llmClassified}, unsplash_assigned=${unsplashAssigned}`);
+
+  // Self-chaining: if loop mode enabled and there's still pending work, trigger another run
+  if (loopMode && !errorMessage) {
+    const { count: pendingGeo } = await supabase
+      .from("sagre").select("id", { count: "exact", head: true }).eq("status", "pending_geocode");
+    const { count: pendingLlm } = await supabase
+      .from("sagre").select("id", { count: "exact", head: true }).in("status", ["pending_llm", "geocode_failed"]);
+    const { count: pendingImg } = await supabase
+      .from("sagre").select("id", { count: "exact", head: true }).eq("status", "enriched").is("image_url", null);
+
+    const totalPending = (pendingGeo ?? 0) + (pendingLlm ?? 0) + (pendingImg ?? 0);
+    console.log(`Loop mode: ${totalPending} pending (geo=${pendingGeo ?? 0}, llm=${pendingLlm ?? 0}, img=${pendingImg ?? 0})`);
+
+    if (totalPending > 0) {
+      // Wait 10s before self-triggering to avoid rate-limit issues
+      await new Promise((r) => setTimeout(r, 10_000));
+
+      const selfUrl = `${Deno.env.get("SUPABASE_URL")!}/functions/v1/enrich-sagre?loop=true`;
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+      console.log(`Self-chaining: triggering next run (${totalPending} items remaining)...`);
+      try {
+        await fetch(selfUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${serviceKey}`,
+            "Content-Type": "application/json",
+          },
+        });
+        console.log("Self-chain trigger sent successfully");
+      } catch (chainErr) {
+        console.error("Self-chain trigger failed:", chainErr);
+      }
+    } else {
+      console.log("Loop mode: all queues empty, chain complete!");
+    }
+  }
 }

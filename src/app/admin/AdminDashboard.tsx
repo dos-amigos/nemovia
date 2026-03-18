@@ -11,6 +11,7 @@ import {
   rejectAction,
   bulkApproveAutoAction,
   logoutAction,
+  getEnrichLogs,
   type ReviewStatus,
 } from "./actions";
 import { EditModal } from "./EditModal";
@@ -66,6 +67,8 @@ export function AdminDashboard() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [activityLog, setActivityLog] = useState<string[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [enrichLogs, setEnrichLogs] = useState<any[]>([]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [loopRunning, setLoopRunning] = useState(false);
   const [loopRun, setLoopRun] = useState(0);
@@ -94,7 +97,6 @@ export function AdminDashboard() {
       setPipeline((prev) => {
         if (prev) {
           setPrevPipeline(prev);
-          // Detect changes and log them
           const diffs: string[] = [];
           if (p.pending_llm < prev.pending_llm) diffs.push(`Gemini: ${prev.pending_llm - p.pending_llm} analizzate`);
           if (p.enriched > prev.enriched) diffs.push(`+${p.enriched - prev.enriched} enriched`);
@@ -107,6 +109,7 @@ export function AdminDashboard() {
       });
       setLastUpdate(new Date());
     });
+    getEnrichLogs(5).then(setEnrichLogs).catch(() => {});
   }, [addLog]);
 
   // Initial load
@@ -167,63 +170,29 @@ export function AdminDashboard() {
     });
   }
 
-  // Loop: trigger → wait 150s → check if work left → repeat
+  // Loop mode: trigger with loop=true, server self-chains — no browser needed
   async function startEnrichLoop() {
-    loopAbortRef.current = false;
     setLoopRunning(true);
-    setLoopRun(0);
+    setLoopRun(1);
+    addLog("--- Avvio loop server-side (continua anche a browser chiuso) ---");
+    setEnrichMsg("Loop avviato — la funzione si auto-richiama finché c'è lavoro");
 
-    let run = 0;
-    while (!loopAbortRef.current) {
-      run++;
-      setLoopRun(run);
-      addLog(`--- Run #${run} avviato ---`);
-      setEnrichMsg(`Run #${run} in corso...`);
-
-      const msg = await triggerEnrichment();
-      if (msg !== "started") {
-        addLog(`Run #${run} errore: ${msg}`);
-        break;
-      }
-
-      // Wait 150s for the run to complete (Supabase edge fn budget ~120s + margin)
-      for (let waited = 0; waited < 150; waited += 10) {
-        if (loopAbortRef.current) break;
-        await new Promise((r) => setTimeout(r, 10_000));
-        loadPipeline();
-      }
-
-      if (loopAbortRef.current) {
-        addLog("Loop fermato dall'utente.");
-        break;
-      }
-
-      // Check if there's still work
-      const stats = await getPipelineStats();
-      setPipeline(stats);
-      const remaining = stats.pending_geocode + stats.pending_llm;
-      addLog(`Run #${run} completato. Rimanenti: ${remaining} (geo: ${stats.pending_geocode}, llm: ${stats.pending_llm})`);
-
-      if (remaining === 0) {
-        addLog("Tutte le sagre processate!");
-        setEnrichMsg("Completato!");
-        break;
-      }
-
-      // Brief pause before next run
-      addLog("Pausa 10s prima del prossimo run...");
-      await new Promise((r) => setTimeout(r, 10_000));
+    const msg = await triggerEnrichment(true); // loop=true
+    if (msg !== "started") {
+      addLog(`Errore avvio: ${msg}`);
+      setLoopRunning(false);
+      setEnrichMsg(null);
+      return;
     }
-
-    setLoopRunning(false);
-    setEnrichMsg(null);
-    loadTable();
-    loadPipeline();
+    addLog("Primo run avviato. Il server continuerà automaticamente.");
   }
 
   function stopEnrichLoop() {
-    loopAbortRef.current = true;
-    addLog("Fermando il loop...");
+    // Note: can't truly stop server-side loop from client, but we stop UI tracking
+    setLoopRunning(false);
+    setLoopRun(0);
+    setEnrichMsg(null);
+    addLog("Monitoraggio loop fermato (il run corrente completerà sul server).");
   }
 
   function handleLogout() {
@@ -359,6 +328,41 @@ export function AdminDashboard() {
         </div>
       )}
 
+      {/* Enrich run logs */}
+      {enrichLogs.length > 0 && (
+        <div className="mb-4 rounded-xl bg-gray-900 p-3 shadow">
+          <h3 className="text-[11px] font-bold text-gray-400 mb-1">Ultimi Run Enrichment</h3>
+          <div className="overflow-x-auto font-mono text-[10px] text-gray-300">
+            <table className="w-full">
+              <thead>
+                <tr className="text-gray-500">
+                  <th className="pr-3 text-left">Completato</th>
+                  <th className="pr-3 text-right">Durata</th>
+                  <th className="pr-3 text-right">Geocod</th>
+                  <th className="pr-3 text-right">Geo fail</th>
+                  <th className="pr-3 text-right">LLM</th>
+                  <th className="pr-3 text-right">Scartate</th>
+                  <th className="text-left">Errore</th>
+                </tr>
+              </thead>
+              <tbody>
+                {enrichLogs.map((log, i) => (
+                  <tr key={i} className={log.error_message ? "text-red-400" : ""}>
+                    <td className="pr-3">{log.completed_at ? new Date(log.completed_at).toLocaleTimeString("it-IT") : "—"}</td>
+                    <td className="pr-3 text-right">{log.duration_ms ? `${(log.duration_ms / 1000).toFixed(0)}s` : "—"}</td>
+                    <td className="pr-3 text-right text-cyan-400">{log.geocoded_count ?? 0}</td>
+                    <td className="pr-3 text-right text-orange-400">{log.geocode_failed ?? 0}</td>
+                    <td className="pr-3 text-right text-green-400">{log.llm_count ?? 0}</td>
+                    <td className="pr-3 text-right text-red-400">{log.skipped_count ?? 0}</td>
+                    <td className="truncate max-w-[200px] text-red-400">{log.error_message ?? ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Status filter tabs */}
       <div className="mb-4 flex flex-wrap gap-2">
         {(["needs_review", "pending", "auto_approved", "admin_approved", "admin_rejected", "discarded", "all"] as const).map((s) => (
@@ -452,7 +456,10 @@ export function AdminDashboard() {
                   <td className="group/img relative px-3 py-2">
                     {row.image_url ? (
                       <>
-                        <img src={row.image_url} alt="" className="h-8 w-12 rounded object-cover" />
+                        <img src={row.image_url} alt="" className="h-8 w-12 rounded object-cover"
+                          onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextElementSibling?.classList.remove("hidden"); }}
+                        />
+                        <span className="hidden text-xs text-red-400">✗</span>
                         <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 group-hover/img:block">
                           <img src={row.image_url} alt="" className="h-40 w-60 rounded-lg object-cover shadow-xl" />
                         </div>

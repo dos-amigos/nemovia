@@ -81,8 +81,8 @@ export function SagraCard({ sagra, distanceKm }: SagraCardProps) {
           </Badge>
         )}
 
-        {/* Food type icons positioned bottom-right (up to 3) */}
-        <div className="absolute bottom-2 right-2 flex items-center gap-0.5">
+        {/* Food type icons positioned bottom-right (up to 3) — hidden when empty via :has() */}
+        <div className="absolute bottom-2 right-2 hidden has-[span]:flex items-center gap-0.5">
           <div className="flex items-center gap-0.5 rounded-full bg-white/60 px-1.5 py-1 backdrop-blur-sm">
             <FoodIcons foodTags={sagra.food_tags} title={sagra.title} className="h-4 w-4" themed />
           </div>

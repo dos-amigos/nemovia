@@ -68,7 +68,9 @@ export function provinceSuffix(province: string | null | undefined, locationText
   if (!code) return "";
   const loc = locationText ?? "";
   if (loc.includes(`(${code})`) || loc.includes(`(${province})`)) return "";
-  if (loc.toLowerCase().includes(province.toLowerCase())) return "";
+  // Match full province name only, not substring (e.g. "RO" inside "Rosolina")
+  const pLower = province.toLowerCase();
+  if (pLower.length > 2 && loc.toLowerCase().includes(pLower)) return "";
   return ` (${code})`;
 }
 

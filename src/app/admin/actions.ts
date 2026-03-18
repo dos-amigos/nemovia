@@ -173,13 +173,19 @@ export async function getPipelineStats(): Promise<{
   if (!(await isAdmin())) throw new Error("Unauthorized");
   const db = createAdminClient();
 
+  const today = new Date().toISOString().split("T")[0];
+  const lookback = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
   const [total, pgeo, pllm, enr, img, active] = await Promise.all([
     db.from("sagre").select("id", { count: "exact", head: true }),
     db.from("sagre").select("id", { count: "exact", head: true }).eq("status", "pending_geocode"),
     db.from("sagre").select("id", { count: "exact", head: true }).in("status", ["pending_llm", "geocode_failed"]),
     db.from("sagre").select("id", { count: "exact", head: true }).eq("status", "enriched"),
     db.from("sagre").select("id", { count: "exact", head: true }).not("image_url", "is", null),
-    db.from("sagre").select("id", { count: "exact", head: true }).eq("is_active", true),
+    // Match homepage logic: is_active + province not null + future/recent dates
+    db.from("sagre").select("id", { count: "exact", head: true })
+      .eq("is_active", true)
+      .not("province", "is", null)
+      .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${lookback}),and(end_date.is.null,start_date.is.null)`),
   ]);
 
   return {
@@ -193,13 +199,14 @@ export async function getPipelineStats(): Promise<{
 }
 
 /** Trigger enrich-sagre edge function */
-export async function triggerEnrichment(): Promise<string> {
+export async function triggerEnrichment(loop: boolean = false): Promise<string> {
   if (!(await isAdmin())) throw new Error("Unauthorized");
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-  const res = await fetch(`${url}/functions/v1/enrich-sagre`, {
+  const params = loop ? "?loop=true" : "";
+  const res = await fetch(`${url}/functions/v1/enrich-sagre${params}`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${key}`,
@@ -224,5 +231,24 @@ export async function getLastEnrichmentLogs(limit: number = 5) {
     .order("started_at", { ascending: false })
     .limit(limit);
 
+  return data ?? [];
+}
+
+/** Get enrich pipeline run logs */
+export async function getEnrichLogs(limit: number = 10) {
+  if (!(await isAdmin())) throw new Error("Unauthorized");
+  const db = createAdminClient();
+
+  const { data, error } = await db
+    .from("enrich_logs")
+    .select("*")
+    .order("completed_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    // Table might not exist yet
+    console.error("enrich_logs query error:", error.message);
+    return [];
+  }
   return data ?? [];
 }
