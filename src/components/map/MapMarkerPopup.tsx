@@ -72,7 +72,7 @@ export default function MapMarkerPopup({ sagra }: MapMarkerPopupProps) {
 
         <Link
           href={`/sagra/${sagra.slug}`}
-          className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary/90"
+          className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg bg-[#9B1B30] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#7A2840]"
         >
           Vedi dettagli
           <ChevronRight className="h-3.5 w-3.5" />
