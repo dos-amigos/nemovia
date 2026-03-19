@@ -29,7 +29,7 @@ export default function MapMarkerPopup({ sagra }: MapMarkerPopupProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         {/* Food icon badge */}
-        <div className="absolute bottom-2 right-2 flex items-center gap-0.5 rounded-full bg-white/60 px-1.5 py-1 backdrop-blur-sm">
+        <div className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/60 backdrop-blur-sm">
           <FoodIcons foodTags={sagra.food_tags} title={sagra.title} className="h-4 w-4" themed />
         </div>
         {/* Free badge */}
@@ -72,7 +72,8 @@ export default function MapMarkerPopup({ sagra }: MapMarkerPopupProps) {
 
         <Link
           href={`/sagra/${sagra.slug}`}
-          className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg bg-[#9B1B30] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#7A2840]"
+          className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+          style={{ backgroundColor: "#9B1B30", color: "#ffffff" }}
         >
           Vedi dettagli
           <ChevronRight className="h-3.5 w-3.5" />
