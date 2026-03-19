@@ -87,7 +87,6 @@ export function AdminDashboard() {
   const [enrichLogs, setEnrichLogs] = useState<any[]>([]);
   const [sourcesOverview, setSourcesOverview] = useState<SourceOverview[]>([]);
   const [cronJobs, setCronJobs] = useState<CronJob[]>([]);
-  const [loopRunning, setLoopRunning] = useState(false);
   const [enrichMsg, setEnrichMsg] = useState<string | null>(null);
 
   // Sagre view state
@@ -144,12 +143,7 @@ export function AdminDashboard() {
     });
   }
 
-  async function startEnrichLoop() {
-    setLoopRunning(true);
-    setEnrichMsg("Loop avviato — il server continua automaticamente");
-    const msg = await triggerEnrichment(true);
-    if (msg !== "started") { setLoopRunning(false); setEnrichMsg(msg); }
-  }
+  // Self-chaining removed: pg_cron now runs every 10 min (migration 026)
 
   function handleLogout() {
     startTransition(async () => { await logoutAction(); router.refresh(); });
@@ -220,14 +214,11 @@ export function AdminDashboard() {
             lastEnrichAgo={lastEnrichAgo}
             pendingTotal={pendingTotal}
             enrichMsg={enrichMsg}
-            loopRunning={loopRunning}
             isPending={isPending}
             enrichLogs={enrichLogs}
             sourcesOverview={sourcesOverview}
             counts={counts}
             onTriggerEnrich={handleTriggerEnrich}
-            onStartLoop={startEnrichLoop}
-            onStopLoop={() => { setLoopRunning(false); setEnrichMsg(null); }}
           />
         )}
         {view === "dettagli" && (
@@ -293,24 +284,21 @@ export function AdminDashboard() {
 // =============================================================================
 
 function DashboardView({
-  pipeline, isWorking, lastEnrichAgo, pendingTotal, enrichMsg, loopRunning, isPending,
+  pipeline, isWorking, lastEnrichAgo, pendingTotal, enrichMsg, isPending,
   enrichLogs, sourcesOverview, counts,
-  onTriggerEnrich, onStartLoop, onStopLoop,
+  onTriggerEnrich,
 }: {
   pipeline: PipelineData | null;
   isWorking: boolean;
   lastEnrichAgo: string | null;
   pendingTotal: number;
   enrichMsg: string | null;
-  loopRunning: boolean;
   isPending: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   enrichLogs: any[];
   sourcesOverview: SourceOverview[];
   counts: Record<string, number>;
   onTriggerEnrich: () => void;
-  onStartLoop: () => void;
-  onStopLoop: () => void;
 }) {
   if (!pipeline) return <div className="py-20 text-center text-muted-foreground">Caricamento...</div>;
 
@@ -346,20 +334,10 @@ function DashboardView({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {loopRunning ? (
-              <button onClick={onStopLoop} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">
-                <Pause className="mr-1 inline h-4 w-4" /> Ferma
-              </button>
-            ) : (
-              <>
-                <button onClick={onTriggerEnrich} disabled={isPending} className="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-gray-50 disabled:opacity-50">
-                  <RefreshCw className={`mr-1 inline h-4 w-4 ${isPending ? "animate-spin" : ""}`} /> 1 Run
-                </button>
-                <button onClick={onStartLoop} disabled={isPending} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50">
-                  <Play className="mr-1 inline h-4 w-4" /> Processa Tutto
-                </button>
-              </>
-            )}
+            <button onClick={onTriggerEnrich} disabled={isPending} className="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-gray-50 disabled:opacity-50">
+              <RefreshCw className={`mr-1 inline h-4 w-4 ${isPending ? "animate-spin" : ""}`} /> Run Manuale
+            </button>
+            <span className="text-xs text-muted-foreground">Cron: ogni 10 min</span>
           </div>
         </div>
       </div>

@@ -1213,7 +1213,6 @@ Deno.serve(async (req) => {
   const startedAt = Date.now();
   const url = new URL(req.url);
   const resetMode = url.searchParams.get("reset"); // "all" | "images" | null
-  const loopMode = url.searchParams.get("loop") === "true"; // self-chaining mode
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -1243,10 +1242,10 @@ Deno.serve(async (req) => {
   }
 
   // Fire-and-forget: return 200 immediately, work continues in background
-  EdgeRuntime.waitUntil(runEnrichmentPipeline(supabase, ai, startedAt, loopMode));
+  EdgeRuntime.waitUntil(runEnrichmentPipeline(supabase, ai, startedAt));
 
   return new Response(
-    JSON.stringify({ status: "started", reset: resetMode, loop: loopMode, timestamp: new Date().toISOString() }),
+    JSON.stringify({ status: "started", reset: resetMode, timestamp: new Date().toISOString() }),
     { status: 200, headers: { "Content-Type": "application/json" } }
   );
 });
@@ -1255,7 +1254,6 @@ async function runEnrichmentPipeline(
   supabase: SupabaseClient,
   ai: GoogleGenAI,
   startedAt: number,
-  loopMode: boolean = false,
 ) {
   let geocoded = 0;
   let geocodeFailed = 0;
@@ -1326,41 +1324,4 @@ async function runEnrichmentPipeline(
   });
 
   console.log(`Enrichment complete (${loops} loops, ${elapsed()}ms): geocoded=${geocoded}, geocode_failed=${geocodeFailed}, llm_enriched=${llmEnriched}, classified_non_sagra=${llmClassified}, unsplash_assigned=${unsplashAssigned}`);
-
-  // Self-chaining: if loop mode enabled and there's still pending work, trigger another run
-  if (loopMode && !errorMessage) {
-    const { count: pendingGeo } = await supabase
-      .from("sagre").select("id", { count: "exact", head: true }).eq("status", "pending_geocode");
-    const { count: pendingLlm } = await supabase
-      .from("sagre").select("id", { count: "exact", head: true }).in("status", ["pending_llm", "geocode_failed"]);
-    const { count: pendingImg } = await supabase
-      .from("sagre").select("id", { count: "exact", head: true }).eq("status", "enriched").is("image_url", null);
-
-    const totalPending = (pendingGeo ?? 0) + (pendingLlm ?? 0) + (pendingImg ?? 0);
-    console.log(`Loop mode: ${totalPending} pending (geo=${pendingGeo ?? 0}, llm=${pendingLlm ?? 0}, img=${pendingImg ?? 0})`);
-
-    if (totalPending > 0) {
-      // Wait 10s before self-triggering to avoid rate-limit issues
-      await new Promise((r) => setTimeout(r, 10_000));
-
-      const selfUrl = `${Deno.env.get("SUPABASE_URL")!}/functions/v1/enrich-sagre?loop=true`;
-      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-      console.log(`Self-chaining: triggering next run (${totalPending} items remaining)...`);
-      try {
-        await fetch(selfUrl, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${serviceKey}`,
-            "Content-Type": "application/json",
-          },
-        });
-        console.log("Self-chain trigger sent successfully");
-      } catch (chainErr) {
-        console.error("Self-chain trigger failed:", chainErr);
-      }
-    } else {
-      console.log("Loop mode: all queues empty, chain complete!");
-    }
-  }
 }

@@ -199,14 +199,13 @@ export async function getPipelineStats(): Promise<{
 }
 
 /** Trigger enrich-sagre edge function */
-export async function triggerEnrichment(loop: boolean = false): Promise<string> {
+export async function triggerEnrichment(): Promise<string> {
   if (!(await isAdmin())) throw new Error("Unauthorized");
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-  const params = loop ? "?loop=true" : "";
-  const res = await fetch(`${url}/functions/v1/enrich-sagre${params}`, {
+  const res = await fetch(`${url}/functions/v1/enrich-sagre`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${key}`,
