@@ -6,26 +6,30 @@
 --       Current backlog (3363 geo + 1840 LLM) cleared in ~2 days.
 --       At regime (~100 new/day), cleared in <2 hours.
 
--- Remove old 4x/day jobs
+-- Remove old 4x/day jobs (ignore errors if already removed)
 SELECT cron.unschedule('enrich-sagre-morning');
 SELECT cron.unschedule('enrich-sagre-midday');
 SELECT cron.unschedule('enrich-sagre-evening');
 SELECT cron.unschedule('enrich-sagre-midnight');
 
--- Single job every 10 minutes
+-- Remove broken job (used current_setting which doesn't exist)
+SELECT cron.unschedule('enrich-sagre');
+
+-- Single job every 10 minutes — uses vault secrets (same as all other cron jobs)
 SELECT cron.schedule(
   'enrich-sagre',
   '*/10 * * * *',
   $$
-    SELECT net.http_post(
-      url := current_setting('app.settings.supabase_url')
+  SELECT net.http_post(
+    url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'project_url')
             || '/functions/v1/enrich-sagre',
-      headers := jsonb_build_object(
-        'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')
-      ),
-      body := '{}'::jsonb
-    );
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'anon_key')
+    ),
+    body := '{"trigger":"cron"}'::jsonb,
+    timeout_milliseconds := 5000
+  );
   $$
 );
 

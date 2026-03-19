@@ -45,11 +45,21 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 function getReason(row: SagraRow): string {
+  // For discarded sagre, explain WHY they were discarded
+  if (row.review_status === "discarded") {
+    if (row.status === "classified_non_sagra") return "Non è una sagra";
+    if (row.status === "duplicate") return "Duplicato";
+    if (row.confidence != null && row.confidence < 30) return "Confidence troppo bassa (" + row.confidence + ")";
+    if (!row.start_date) return "Senza data";
+    // Discarded manually or by dedup cleanup
+    return "Scartata manualmente";
+  }
+
+  // For pending/in-queue sagre, show pipeline stage
   if (row.status === "pending_geocode") return "In coda geocoding";
   if (row.status === "pending_llm" || row.status === "geocode_failed") return "In coda Gemini";
-  if (row.status === "duplicate") return "Duplicato";
-  if (row.status === "classified_non_sagra") return "Non e' una sagra";
   if (row.confidence == null) return "In attesa di analisi";
+
   const parts: string[] = [];
   if (row.confidence < 30) parts.push("Confidence " + row.confidence);
   else if (row.confidence < 70) parts.push("Confidence " + row.confidence);
@@ -755,15 +765,9 @@ function SagreView({
                   <td className="max-w-[200px] px-3 py-2 text-[11px] text-muted-foreground">{getReason(row)}</td>
                   <td className="whitespace-nowrap px-3 py-2 text-[11px] text-muted-foreground">{row.source_id ? row.source_id.replace(/^scrape-/, "").replace(/-/g, " ") : "—"}</td>
                   <td className="px-3 py-2"><FoodIcons foodTags={row.food_tags} title={row.title} className="h-4 w-4" themed /></td>
-                  <td className="group/img relative px-3 py-2">
+                  <td className="px-3 py-2">
                     {row.image_url ? (
-                      <>
-                        <img src={row.image_url} alt="" className="h-8 w-12 rounded object-cover" onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextElementSibling?.classList.remove("hidden"); }} />
-                        <span className="hidden text-xs text-red-400">x</span>
-                        <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 group-hover/img:block">
-                          <img src={row.image_url} alt="" className="h-40 w-60 rounded-lg object-cover shadow-xl" />
-                        </div>
-                      </>
+                      <ImagePreview src={row.image_url} />
                     ) : <span className="text-xs text-muted-foreground">—</span>}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2">
@@ -812,6 +816,33 @@ function SagreView({
 // =============================================================================
 // Helper components
 // =============================================================================
+
+function ImagePreview({ src }: { src: string }) {
+  const [show, setShow] = useState(false);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const ref = useRef<HTMLImageElement>(null);
+
+  function handleEnter() {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    setPos({ x: r.left + r.width / 2, y: r.top });
+    setShow(true);
+  }
+
+  return (
+    <>
+      <img ref={ref} src={src} alt="" className="h-8 w-12 rounded object-cover cursor-pointer"
+        onMouseEnter={handleEnter} onMouseLeave={() => setShow(false)}
+        onError={(e) => { e.currentTarget.style.display = "none"; }} />
+      {show && (
+        <div className="pointer-events-none fixed z-[9999]"
+          style={{ left: pos.x, top: pos.y - 8, transform: "translate(-50%, -100%)" }}>
+          <img src={src} alt="" className="h-48 w-72 rounded-lg border bg-white object-cover shadow-2xl" />
+        </div>
+      )}
+    </>
+  );
+}
 
 function PipelineStat({ label, value, color, prev }: { label: string; value: number; color?: string; prev?: number }) {
   const diff = prev != null ? value - prev : 0;
