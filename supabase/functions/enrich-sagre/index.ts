@@ -477,12 +477,14 @@ async function runLLMPass(
   supabase: SupabaseClient,
   ai: GoogleGenAI,
   startedAt?: number
-): Promise<{ enriched: number; classified: number }> {
+): Promise<{ enriched: number; classified: number; lastError: string | null }> {
   let enriched = 0;
   let classified = 0; // non-sagra events deactivated
+  let lastError: string | null = null;
 
   // Time budget: leave 20s margin for image pass + logging + self-chain
   const hasTime = () => !startedAt || (Date.now() - startedAt) < (TIME_BUDGET_MS - 20_000);
+  const remainingMs = () => startedAt ? TIME_BUDGET_MS - (Date.now() - startedAt) : TIME_BUDGET_MS;
 
   // Enrich both successfully geocoded sagre AND geocode-failed ones (tags/description are independent of GPS)
   const { data: rows } = await supabase
@@ -492,7 +494,9 @@ async function runLLMPass(
     .limit(LLM_LIMIT)
     .order("created_at", { ascending: true });
 
-  if (!rows?.length) return { enriched, classified };
+  if (!rows?.length) return { enriched, classified, lastError: null };
+
+  console.log(`LLM pass: ${rows.length} sagre to enrich in ${Math.ceil(rows.length / BATCH_SIZE)} batches`);
 
   const batches = chunkBatch(rows as SagraForLLM[], BATCH_SIZE);
 
@@ -506,8 +510,8 @@ async function runLLMPass(
 
     const batch = batches[i];
 
-    // Rate limit: 15 RPM on Gemini free tier → wait 4.5s between calls
-    if (i > 0) await sleep(4500);
+    // Rate limit: 10 RPM on Gemini free tier → wait 6.5s between calls
+    if (i > 0) await sleep(6500);
 
     try {
       const prompt = buildEnrichmentPrompt(batch);
@@ -652,20 +656,35 @@ async function runLLMPass(
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       console.error("LLM batch enrichment error:", errMsg);
+      lastError = errMsg;
 
-      // If rate limited (429), wait 60s and retry (max 3 retries)
-      if ((errMsg.includes("429") || errMsg.includes("quota") || errMsg.includes("exceeded")) && retries < 3) {
+      const isRateLimit = errMsg.includes("429") || errMsg.includes("quota") || errMsg.includes("exceeded") || errMsg.includes("RESOURCE_EXHAUSTED");
+
+      if (isRateLimit && retries < 3) {
         retries++;
-        console.log(`Rate limited by Gemini (retry ${retries}/3), waiting 60s...`);
-        await sleep(60_000);
+        // Smart retry: wait proportionally to remaining time, never more than 50% of what's left
+        const remaining = remainingMs();
+        const waitMs = Math.min(15_000, Math.max(5_000, remaining * 0.3));
+        if (remaining < 10_000) {
+          console.log(`Rate limited but only ${Math.round(remaining / 1000)}s left — stopping LLM pass`);
+          break;
+        }
+        console.log(`Rate limited by Gemini (retry ${retries}/3), waiting ${Math.round(waitMs / 1000)}s (${Math.round(remaining / 1000)}s remaining)...`);
+        await sleep(waitMs);
         i--; // retry same batch
         continue;
       }
-      // Other errors: skip batch, continue
+
+      if (isRateLimit) {
+        // Exhausted retries — stop entire LLM pass, next cron will continue
+        console.log(`Gemini rate limit persistent after ${retries} retries — stopping. Next cron will resume.`);
+        break;
+      }
+      // Other errors: skip batch, continue to next
     }
   }
 
-  return { enriched, classified };
+  return { enriched, classified, lastError: enriched === 0 ? lastError : null };
 }
 
 // =============================================================================
@@ -1295,6 +1314,7 @@ async function runEnrichmentPipeline(
         llmEnriched += r.enriched;
         llmClassified += r.classified;
         if (r.enriched + r.classified > 0) didWork = true;
+        if (r.lastError) errorMessage = r.lastError;
       }
 
       // Pass 3: Image assignment (Unsplash primary + Pexels fallback)
