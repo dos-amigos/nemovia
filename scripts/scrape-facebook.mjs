@@ -243,7 +243,7 @@ async function scrapeEvents() {
         source_url: fullEvent.url || `https://www.facebook.com/events/${fullEvent.id}`,
         source_description: fullEvent.description?.slice(0, 1000) || null,
         sources: ["facebook"],
-        is_active: true,
+        is_active: false,
         status: hasCoords ? "pending_llm" : "pending_geocode",
         content_hash: contentHash,
       };

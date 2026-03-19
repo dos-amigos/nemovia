@@ -231,7 +231,8 @@ async function fetchWithTimeout(url: string, timeoutMs = 15_000): Promise<string
 async function upsertEvent(
   supabase: SupabaseClient,
   event: NormalizedEvent,
-  sourceName: string
+  sourceName: string,
+  provinceCode?: string
 ): Promise<{ result: "inserted" | "merged" | "skipped"; id?: string }> {
   const { data: dupes } = await supabase.rpc("find_duplicate_sagra", {
     p_normalized_title: event.normalizedTitle,
@@ -255,7 +256,7 @@ async function upsertEvent(
     return { result: "merged", id: existing.id };
   }
 
-  const { data: insertData, error } = await supabase.from("sagre").insert({
+  const insertRow: Record<string, unknown> = {
     title:         event.title,
     slug:          event.slug,
     location_text: event.city,
@@ -267,26 +268,21 @@ async function upsertEvent(
     is_free:       event.isFree,
     sources:       [sourceName],
     is_active:     false,
-    status:        "pending_geocode",
+    status:        provinceCode ? "pending_llm" : "pending_geocode",
     content_hash:  event.contentHash,
-  }).select("id").single();
+  };
+  if (provinceCode) {
+    insertRow.province = provinceCode;
+  }
+
+  const { data: insertData, error } = await supabase.from("sagre").insert(insertRow).select("id").single();
 
   if (error) {
     if (error.code === "23505") {
       const { data: retryData } = await supabase.from("sagre").insert({
-        title:         event.title,
-        slug:          event.slug + "-" + Date.now().toString(36),
-        location_text: event.city,
-        start_date:    event.startDate,
-        end_date:      event.endDate,
-        image_url:     event.imageUrl,
-        source_url:    event.url,
-        price_info:    event.priceInfo,
-        is_free:       event.isFree,
-        sources:       [sourceName],
-        is_active:     false,
-        status:        "pending_geocode",
-        content_hash:  event.contentHash + Date.now().toString(36),
+        ...insertRow,
+        slug:         event.slug + "-" + Date.now().toString(36),
+        content_hash: event.contentHash + Date.now().toString(36),
       }).select("id").single();
       return { result: "inserted", id: retryData?.id };
     }
@@ -473,6 +469,16 @@ async function getEventsNeedingDetails(
 
 const PROVINCES = ["belluno", "padova", "rovigo", "treviso", "venezia", "vicenza", "verona"];
 
+const PROVINCE_CODE_MAP: Record<string, string> = {
+  belluno: "BL",
+  padova: "PD",
+  rovigo: "RO",
+  treviso: "TV",
+  venezia: "VE",
+  vicenza: "VI",
+  verona: "VR",
+};
+
 function getCurrentProvince(): string {
   const provinceIndex = Math.floor(Date.now() / (30 * 60 * 1000)) % PROVINCES.length;
   return PROVINCES[provinceIndex];
@@ -480,6 +486,7 @@ function getCurrentProvince(): string {
 
 async function scrapeSagretodayProvince(supabase: SupabaseClient, province: string): Promise<void> {
   const sourceName = "sagretoday";
+  const provinceCode = PROVINCE_CODE_MAP[province];
   const startedAt = Date.now();
   let eventsFound = 0;
   let eventsInserted = 0;
@@ -594,7 +601,7 @@ async function scrapeSagretodayProvince(supabase: SupabaseClient, province: stri
 
       // Process collected JSON-LD events
       for (const normalized of jsonLdEvents) {
-        const { result } = await upsertEvent(supabase, normalized, sourceName);
+        const { result } = await upsertEvent(supabase, normalized, sourceName, provinceCode);
         eventsFound++;
         if (result === "inserted") eventsInserted++;
         else if (result === "merged") eventsMerged++;
@@ -638,7 +645,7 @@ async function scrapeSagretodayProvince(supabase: SupabaseClient, province: stri
         });
 
         for (const normalized of fallbackEvents) {
-          const { result } = await upsertEvent(supabase, normalized, sourceName);
+          const { result } = await upsertEvent(supabase, normalized, sourceName, provinceCode);
           eventsFound++;
           if (result === "inserted") eventsInserted++;
           else if (result === "merged") eventsMerged++;

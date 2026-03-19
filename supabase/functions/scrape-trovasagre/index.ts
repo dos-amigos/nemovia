@@ -13,6 +13,7 @@ interface NormalizedEvent {
   imageUrl: string | null;
   url: string | null;
   contentHash: string;
+  province?: string | null;
 }
 
 interface DuplicateResult {
@@ -174,6 +175,24 @@ function tryUpgradeImageUrl(imageUrl: string | null, _sourceName: string): strin
   return imageUrl;
 }
 
+// --- Province helpers ---
+
+const PROVINCE_NAME_TO_CODE: Record<string, string> = {
+  belluno: "BL", padova: "PD", rovigo: "RO", treviso: "TV",
+  venezia: "VE", vicenza: "VI", verona: "VR",
+};
+
+function normalizeProvinceCode(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (trimmed.length === 2) {
+    const upper = trimmed.toUpperCase();
+    const VENETO_CODES = ["BL", "PD", "RO", "TV", "VE", "VI", "VR"];
+    return VENETO_CODES.includes(upper) ? upper : null;
+  }
+  return PROVINCE_NAME_TO_CODE[trimmed.toLowerCase()] || null;
+}
+
 // --- Upsert logic ---
 
 async function upsertEvent(
@@ -203,6 +222,8 @@ async function upsertEvent(
     return { result: "merged", id: existing.id };
   }
 
+  const status = event.province ? "pending_llm" : "pending_geocode";
+
   const { data: insertData, error } = await supabase.from("sagre").insert({
     title:         event.title,
     slug:          event.slug,
@@ -215,8 +236,9 @@ async function upsertEvent(
     is_free:       event.isFree,
     sources:       [sourceName],
     is_active:     false,
-    status:        "pending_geocode",
+    status,
     content_hash:  event.contentHash,
+    ...(event.province ? { province: event.province } : {}),
   }).select("id").single();
 
   if (error) {
@@ -233,8 +255,9 @@ async function upsertEvent(
         is_free:       event.isFree,
         sources:       [sourceName],
         is_active:     false,
-        status:        "pending_geocode",
+        status,
         content_hash:  event.contentHash + Date.now().toString(36),
+        ...(event.province ? { province: event.province } : {}),
       }).select("id").single();
       return { result: "inserted", id: retryData?.id };
     }
@@ -306,6 +329,10 @@ async function scrapeTrovasagre(supabase: SupabaseClient): Promise<void> {
       const comuneNome = String(item.comune_nome || "").trim();
       const city = comuneNome;
 
+      // Extract province from API data (try provincia_sigla, provincia, provincia_nome)
+      const rawProvince = String(item.provincia_sigla || item.provincia || item.provincia_nome || "").trim();
+      const province = normalizeProvinceCode(rawProvince);
+
       const startDate = item.data_inizio ? String(item.data_inizio) : null;
       const endDate = item.data_fine ? String(item.data_fine) : null;
 
@@ -329,6 +356,7 @@ async function scrapeTrovasagre(supabase: SupabaseClient): Promise<void> {
         imageUrl: tryUpgradeImageUrl(imageUrl, sourceName),
         url: sourceUrl,
         contentHash: generateContentHash(title, city, startDate),
+        province,
       };
 
       if (isCalendarDateRange(normalized.startDate, normalized.endDate)) continue;

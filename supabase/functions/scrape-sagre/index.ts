@@ -241,12 +241,41 @@ function isNonSagraTitle(title: string): boolean {
     /\b(yoga|fitness|pilates)\b/i.test(t) ||
     /\b(mercato|mercatino|mercatini)\b/i.test(t) ||
     /\bfiera\b/i.test(t) ||
-    /\brassegna\b/i.test(t)
+    /\brassegna\b/i.test(t) ||
+    /\bfestival\b/i.test(t)
   ) {
     return true;
   }
 
   return false;
+}
+
+// --- Section 2b2: Veneto province filter ---
+// Veneto has 7 provinces. Events outside Veneto must be rejected at scrape time.
+// Used to filter out non-Veneto events from national sources like eventiesagre.
+const VENETO_PROVINCES = new Set(["BL", "PD", "RO", "TV", "VE", "VI", "VR"]);
+
+function extractProvinceCode(text: string): string | null {
+  // Match (XX) pattern — 2-letter province code in parentheses
+  const parenMatch = text.match(/\(([A-Z]{2})\)/);
+  if (parenMatch) return parenMatch[1];
+  // Match "City - XX" pattern (venetoinfesta format)
+  const dashMatch = text.match(/\b-\s*([A-Z]{2})\s*$/);
+  if (dashMatch) return dashMatch[1];
+  return null;
+}
+
+function isVenetoEvent(rawText: string): boolean {
+  // If we can extract a province code, check if it's Veneto
+  const province = extractProvinceCode(rawText);
+  if (province) return VENETO_PROVINCES.has(province);
+  // If the raw text explicitly mentions a non-Veneto region, reject
+  const nonVenetoRegions = /\b(Lombardia|Piemonte|Emilia[\s-]?Romagna|Trentino|Friuli|Toscana|Lazio|Campania|Sicilia|Sardegna|Puglia|Calabria|Liguria|Marche|Abruzzo|Molise|Basilicata|Umbria|Valle\s+d'Aosta)\b/i;
+  if (nonVenetoRegions.test(rawText)) return false;
+  // If text explicitly says "Veneto", it's likely Veneto
+  if (/\bVeneto\b/i.test(rawText)) return true;
+  // No region info available — allow through (geocoding will validate later)
+  return true;
 }
 
 // --- Section 2c: Date quality filters ---
@@ -1018,6 +1047,12 @@ async function scrapeSource(supabase: SupabaseClient, source: ScraperSource): Pr
 
         // Skip non-sagra events (standalone concerts, markets, theatre, etc.)
         if (isNonSagraTitle(raw.title)) continue;
+
+        // Skip non-Veneto events — check raw element text for province/region info
+        // This catches sources like eventiesagre that may return national results
+        // despite a Veneto URL filter
+        const rawText = $(items[i]).text();
+        if (!isVenetoEvent(rawText)) continue;
 
         const normalized = normalizeRawEvent(raw, source.name);
 

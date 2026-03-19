@@ -13,6 +13,7 @@ interface NormalizedEvent {
   imageUrl: string | null;
   url: string | null;
   contentHash: string;
+  province?: string | null;
 }
 
 interface DuplicateResult {
@@ -218,6 +219,8 @@ async function upsertEvent(
     return { result: "merged", id: existing.id };
   }
 
+  const status = event.province ? "pending_llm" : "pending_geocode";
+
   const { data: insertData, error } = await supabase.from("sagre").insert({
     title:         event.title,
     slug:          event.slug,
@@ -230,8 +233,9 @@ async function upsertEvent(
     is_free:       event.isFree,
     sources:       [sourceName],
     is_active:     false,
-    status:        "pending_geocode",
+    status,
     content_hash:  event.contentHash,
+    ...(event.province ? { province: event.province } : {}),
   }).select("id").single();
 
   if (error) {
@@ -248,8 +252,9 @@ async function upsertEvent(
         is_free:       event.isFree,
         sources:       [sourceName],
         is_active:     false,
-        status:        "pending_geocode",
+        status,
         content_hash:  event.contentHash + Date.now().toString(36),
+        ...(event.province ? { province: event.province } : {}),
       }).select("id").single();
       return { result: "inserted", id: retryData?.id };
     }
@@ -353,6 +358,7 @@ async function scrapeSagriamo(supabase: SupabaseClient): Promise<void> {
           imageUrl: tryUpgradeImageUrl(imageUrl, sourceName),
           url: sourceUrl,
           contentHash: generateContentHash(title, city, startDate),
+          province,
         };
 
         // Date quality gates (sagriamo events are curated, allow up to 25 days)

@@ -97,7 +97,8 @@ export function isNonSagraTitle(title: string): boolean {
     /\b(yoga|fitness|pilates)\b/i.test(t) ||
     /\b(mercato|mercatino|mercatini)\b/i.test(t) ||
     /\bfiera\b/i.test(t) ||
-    /\brassegna\b/i.test(t)
+    /\brassegna\b/i.test(t) ||
+    /\bfestival\b/i.test(t)
   ) {
     return true;
   }

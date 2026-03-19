@@ -198,6 +198,28 @@ describe("isNonSagraTitle", () => {
     it("rejects 'Maratona della Citta'", () => {
       expect(isNonSagraTitle("Maratona della Citta")).toBe(true);
     });
+
+    it("rejects 'Irlanda Festival'", () => {
+      expect(isNonSagraTitle("Irlanda Festival")).toBe(true);
+    });
+
+    it("rejects 'Festival della Musica'", () => {
+      expect(isNonSagraTitle("Festival della Musica")).toBe(true);
+    });
+
+    it("rejects 'Beer Running Festival'", () => {
+      expect(isNonSagraTitle("Beer Running Festival")).toBe(true);
+    });
+  });
+
+  describe("allows food festivals via whitelist", () => {
+    it("allows 'Festival del Pesce' (food keyword whitelisted)", () => {
+      expect(isNonSagraTitle("Festival del Pesce")).toBe(false);
+    });
+
+    it("allows 'Sagra e Festival della Polenta'", () => {
+      expect(isNonSagraTitle("Sagra e Festival della Polenta")).toBe(false);
+    });
   });
 
   describe("allows sagre with secondary activity keywords (whitelist)", () => {
