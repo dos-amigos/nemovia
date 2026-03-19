@@ -10,7 +10,7 @@
 import { GoogleGenAI } from "npm:@google/genai@1";
 import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
 
-const GEOCODE_LIMIT = 30;   // max rows to geocode per loop iteration (~33s at 1.1s/call, leaves ~85s for LLM)
+const GEOCODE_LIMIT = 50;   // max rows to geocode per iteration (capped by 50% time budget — ~25-27 effective)
 const LLM_LIMIT = 200;      // max sagre to enrich per loop iteration (25 batches of 8)
 const SLEEP_MS = 1100;      // 1.1s between Nominatim calls (policy: 1 req/sec)
 const VENETO_VIEWBOX = "10.62,44.79,13.10,46.68"; // Nominatim viewbox: lon_min,lat_min,lon_max,lat_max
@@ -340,10 +340,15 @@ interface EnrichmentResult {
 // =============================================================================
 
 async function runGeocodePass(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  startedAt?: number
 ): Promise<{ geocoded: number; failed: number }> {
   let geocoded = 0;
   let failed = 0;
+
+  // Geocode gets max 50% of time budget — leave the rest for LLM + images
+  const GEOCODE_BUDGET_MS = TIME_BUDGET_MS * 0.5;
+  const hasGeoTime = () => !startedAt || (Date.now() - startedAt) < GEOCODE_BUDGET_MS;
 
   const { data: rows } = await supabase
     .from("sagre")
@@ -355,6 +360,10 @@ async function runGeocodePass(
   if (!rows?.length) return { geocoded, failed };
 
   for (const sagra of rows as SagraForGeocode[]) {
+    if (!hasGeoTime()) {
+      console.log(`Geocode pass: time budget reached after ${geocoded + failed}/${rows.length} rows`);
+      break;
+    }
     // CRITICAL: if location_text is a province capital, extract actual town from title
     const refinedLocation = refineCityFromTitle(sagra.location_text ?? "", sagra.title ?? "");
     const city = cleanCityName(refinedLocation);
@@ -1272,9 +1281,9 @@ async function runEnrichmentPipeline(
       loops++;
       let didWork = false;
 
-      // Pass 1: Geocoding (rate-limited by Nominatim, ~33s per 30 rows)
+      // Pass 1: Geocoding (gets max 50% of time budget, leaves rest for LLM)
       if (hasTimeBudget()) {
-        const r = await runGeocodePass(supabase);
+        const r = await runGeocodePass(supabase, startedAt);
         geocoded += r.geocoded;
         geocodeFailed += r.failed;
         if (r.geocoded + r.failed > 0) didWork = true;
