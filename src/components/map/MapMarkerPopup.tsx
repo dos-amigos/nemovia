@@ -72,8 +72,9 @@ export default function MapMarkerPopup({ sagra }: MapMarkerPopupProps) {
 
         <Link
           href={`/sagra/${sagra.slug}`}
+          data-cta=""
           className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
-          style={{ backgroundColor: "#9B1B30", color: "#ffffff" }}
+          style={{ backgroundColor: "#9B1B30" }}
         >
           Vedi dettagli
           <ChevronRight className="h-3.5 w-3.5" />
