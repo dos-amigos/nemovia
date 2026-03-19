@@ -10,7 +10,7 @@
 import { GoogleGenAI } from "npm:@google/genai@1";
 import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
 
-const GEOCODE_LIMIT = 50;   // max rows to geocode per loop iteration (~55s at 1.1s/call, leaves ~65s for LLM)
+const GEOCODE_LIMIT = 30;   // max rows to geocode per loop iteration (~33s at 1.1s/call, leaves ~85s for LLM)
 const LLM_LIMIT = 200;      // max sagre to enrich per loop iteration (25 batches of 8)
 const SLEEP_MS = 1100;      // 1.1s between Nominatim calls (policy: 1 req/sec)
 const VENETO_VIEWBOX = "10.62,44.79,13.10,46.68"; // Nominatim viewbox: lon_min,lat_min,lon_max,lat_max
