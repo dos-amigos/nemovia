@@ -181,9 +181,10 @@ export async function getPipelineStats(): Promise<{
     db.from("sagre").select("id", { count: "exact", head: true }).in("status", ["pending_llm", "geocode_failed"]),
     db.from("sagre").select("id", { count: "exact", head: true }).eq("status", "enriched"),
     db.from("sagre").select("id", { count: "exact", head: true }).not("image_url", "is", null),
-    // Match homepage logic: is_active + province not null + future/recent dates
+    // Match frontend logic: is_active + approved + province + future/recent dates
     db.from("sagre").select("id", { count: "exact", head: true })
       .eq("is_active", true)
+      .in("review_status", ["auto_approved", "admin_approved"])
       .not("province", "is", null)
       .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${lookback}),and(end_date.is.null,start_date.is.null)`),
   ]);
