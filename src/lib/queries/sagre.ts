@@ -13,6 +13,9 @@ import type {
   ProvinceCount,
 } from "./types";
 
+/** Only show sagre that passed quality review */
+const APPROVED_STATUSES = ["auto_approved", "admin_approved"];
+
 /**
  * Parse PostGIS EWKB hex (Point, SRID 4326) into GeoJSON.
  * PostgREST returns geography columns as WKB hex, not GeoJSON.
@@ -61,6 +64,7 @@ export async function getWeekendSagre(limit = 12): Promise<SagraCardData[]> {
       .from("sagre")
       .select(SAGRA_CARD_FIELDS)
       .eq("is_active", true)
+      .in("review_status", APPROVED_STATUSES)
       .not("province", "is", null)
       .or(`end_date.gte.${today},end_date.is.null`)
       .lte("start_date", nextSunday)
@@ -99,6 +103,7 @@ export async function getActiveSagre(limit = 200): Promise<SagraCardData[]> {
       .from("sagre")
       .select(SAGRA_CARD_FIELDS)
       .eq("is_active", true)
+      .in("review_status", APPROVED_STATUSES)
       .not("province", "is", null)
       .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${lookbackDate}),and(end_date.is.null,start_date.is.null)`)
       .order("start_date", { ascending: true, nullsFirst: false })
@@ -194,6 +199,7 @@ export async function searchSagre(
       .from("sagre")
       .select(SAGRA_CARD_FIELDS)
       .eq("is_active", true)
+      .in("review_status", APPROVED_STATUSES)
       .not("province", "is", null);
 
     // Apply date filter BEFORE optional filters to avoid PostgREST .or() precedence issues
@@ -251,6 +257,7 @@ export async function getProvinceCounts(): Promise<ProvinceCount[]> {
       .from("sagre")
       .select("province, title")
       .eq("is_active", true)
+      .in("review_status", APPROVED_STATUSES)
       .not("province", "is", null)
       .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${lookbackPc}),and(end_date.is.null,start_date.is.null)`);
 
@@ -365,6 +372,7 @@ export async function searchMapSagre(
       .from("sagre")
       .select(MAP_MARKER_FIELDS)
       .eq("is_active", true)
+      .in("review_status", APPROVED_STATUSES)
       .not("location", "is", null);
 
     // Apply date filter BEFORE optional filters to avoid PostgREST .or() precedence issues
@@ -428,6 +436,7 @@ export async function getMapSagre(): Promise<MapMarkerData[]> {
       .from("sagre")
       .select(MAP_MARKER_FIELDS)
       .eq("is_active", true)
+      .in("review_status", APPROVED_STATUSES)
       .not("location", "is", null)
       .or(`end_date.gte.${today},and(end_date.is.null,start_date.gte.${lookbackMs}),and(end_date.is.null,start_date.is.null)`);
 
@@ -459,6 +468,7 @@ export async function getSagraBySlug(slug: string): Promise<Sagra | null> {
       .select("*")
       .eq("slug", slug)
       .eq("is_active", true)
+      .in("review_status", APPROVED_STATUSES)
       .single();
 
     if (error) {
