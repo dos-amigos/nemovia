@@ -467,6 +467,39 @@
 - Commit: c220840, e0f628c, 295d2b0, 961a908
 - **FATTO**: deploy enrich-sagre + re-enrichment con nuovi tag
 
+### 2026-03-20 (sessione 13) — Multi-provider LLM, dedup, fix qualità
+- **Gemini 429 diagnosticato**: free tier solo 20 RPD (non 250). Billing Google Cloud = trial, non pagamento
+- **Multi-provider LLM implementato**: chain Groq (14.4K RPD) → Mistral (86K RPD) → Gemini (20 RPD) → Vertex AI (crediti Cloud)
+  - Groq e Mistral API key create e caricate in Supabase secrets
+  - Vertex AI configurato come ultimo resort (crediti Cloud 254€)
+  - Sleep tra batch ridotto da 6.5s a 2s
+- **Date gate fix CRITICO**: auto-approval accettava qualsiasi stringa come data. Ora richiede YYYY-MM-DD valido.
+  - 57 sagre senza data disattivate (erano auto_approved erroneamente)
+- **Dedup migliorato 3 livelli**:
+  - Frontend: dedup per location+date (non solo titolo). Stesso paese + stessa data = stessa sagra
+  - DB RPC (migration 028): find_duplicate_sagra ora matcha anche per città+date senza titolo
+  - Pulizia manuale: 36+ duplicati rimossi dal DB
+- **Geocoding sagre enriched**: Pass 1 ora geocoda anche sagre `enriched` senza GPS (prima ignorava)
+  - Non regredisce status enriched a pending_llm
+  - 48 sagre geocodate → mappa ora visibile su 37+ sagre
+- **Icona pesce**: sostituita con Tabler Icons fish (chiara e riconoscibile)
+- **Tag "Gratis" rimosso**: tutte le sagre sono gratuite, tag inutile. Rimosso da enrichment, frontend, homepage
+- **Video anti-asiatico**: query Pexels aggiornate con -asian -sushi -chopsticks -ramen
+- **Immagini Unsplash resettate**: 21 foto generiche resettate per riassegnazione con query specifiche per sagra
+- **Fix immagine lista vs dettaglio**: dettaglio ora mostra immagine (anche fallback) invece di video Pexels random
+- **Foto specifiche fixate**: ciliegie (era fragole/lamponi), fagiolo (era radicchio), olio (era verdure fritte)
+- Commits: 5c4aff3, e53cf55, f3ba9f3, 4784c70, db396e4
+- **DA FARE**:
+  - Descrizioni formattate con paragrafi (info/orari/contatti separati)
+  - Sagre senza GPS: 20 restanti con frazioni non trovate da Nominatim
+  - Foto mancanti: Pass 3 Unsplash in corso (rate limit 50 req/ora)
+  - Aggiornamento date quando fonte ri-scrapa sagra con date diverse
+
+### 2026-03-19 (sessione 11+12) — Reset DB, fix scraper, Gemini 429
+- **Sessione 11**: Reset DB completo, fix scraper pre-filtri (Veneto check, province da URL), cron enrich ogni 10min
+- **Sessione 12**: Enrichment bloccato (Gemini 429). Fix: smart retry max 15s, error logging in enrich_logs, graceful exit
+- Dettagli in memory/project_session11.md e project_session12.md
+
 ### 2026-03-13 — 10 bugfix + Unsplash image relevance con Gemini
 - 10 bug/richieste dell'utente — tutti risolti in una sessione
 - **ScrollRow**: rimosso `snap-always` (causa scatti mobile + click non funzionanti)
