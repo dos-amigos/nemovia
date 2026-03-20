@@ -74,9 +74,17 @@ FRONTEND
 | Tavily Search API | Ogni 3gg 10:00 | Discovery nuove sagre |
 | Instagram (Apify) | Lun+Gio 09:00 | Pagine da external_sources |
 
+### Filtri pre-inserimento (tutti gli scraper)
+1. `isNoiseTitle()` — skip titoli rumore (calendario, navigazione)
+2. `isNonSagraTitle()` — skip non-sagre (concerti, mostre, mercatini non-food)
+3. `containsPastYear()` — **skip pagine con SOLO anni passati** nel titolo/URL/body. Dinamico: usa `new Date().getFullYear()`. Se trova "2025" ma non "2026" → skip. Se trova "2025-2026" → ok.
+4. `isPastYearEvent()` — skip se date estratte sono di anno passato
+5. `isCalendarDateRange()` / `isExcessiveDuration()` — skip date impossibili
+6. `find_duplicate_sagra()` RPC — dedup prima di inserire
+
 ### Aggiungere una nuova fonte
 1. Creare edge function `scrape-<nome>/index.ts`
-2. Inline: normalizzazione, dedup hash, province mapping
+2. Inline: normalizzazione, dedup hash, province mapping, **containsPastYear**
 3. **is_active: false** all'inserimento (SEMPRE)
 4. Chiamare `find_duplicate_sagra()` RPC prima di inserire
 5. Aggiungere pg_cron job in nuova migration
@@ -117,6 +125,9 @@ Se alta confidence ma non Veneto → `discarded` silenziosamente.
 
 - **Senza data valida → MAI auto_approved** (va in needs_review)
 - Date LLM accettate solo se formato YYYY-MM-DD (regex)
+- **LLM NON deve inventare l'anno**: se la fonte dice "15-20 settembre" senza anno → `null`
+  Solo se c'è scritto esplicitamente "2026" o "settembre 2026" può usare quell'anno.
+  Date di anni passati (2025, 2024...) → `null`
 - Expire: grace period 30gg per sagre senza end_date
 - Query frontend: lookback 30 giorni
 
