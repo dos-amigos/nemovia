@@ -198,27 +198,20 @@ const ICONS: Record<
     </svg>
   ),
 
-  /** Pumpkin — round ribbed shape with stem, clear at 16px */
+  /** Pumpkin — Tabler Icons pumpkin body + stem (no face) */
   zucca: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.5}
+      strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      {/* Stem */}
-      <path d="M12 4c0-1.5-1-2-1-2s1 .5 1 2z" fill="currentColor" stroke="none" />
-      <path d="M11 2c.5 0 1.2.3 1.2 1.2S12 5 12 5" />
-      {/* Main body — wide oval pumpkin shape */}
-      <ellipse cx="12" cy="14" rx="8" ry="6.5" />
-      {/* Ribs — vertical lines that make it look like a pumpkin */}
-      <path d="M12 7.5v13" />
-      <path d="M8 8.5c-1 1.5-1.5 4-1.5 5.5s.5 4 1.5 5.5" />
-      <path d="M16 8.5c1 1.5 1.5 4 1.5 5.5s-.5 4-1.5 5.5" />
+      <path d="M17 6.082c2.609 .588 3.627 4.162 2.723 7.983c-.903 3.82 -2.75 6.44 -5.359 5.853a3.355 3.355 0 0 1 -.774 -.279a3.728 3.728 0 0 1 -1.59 .361c-.556 0 -1.09 -.127 -1.59 -.362a3.296 3.296 0 0 1 -.774 .28c-2.609 .588 -4.456 -2.033 -5.36 -5.853c-.903 -3.82 .115 -7.395 2.724 -7.983c1.085 -.244 1.575 .066 2.585 .787c.716 -.554 1.54 -.869 2.415 -.869c.876 0 1.699 .315 2.415 .87c1.01 -.722 1.5 -1.032 2.585 -.788" />
+      <path d="M12 6c0 -1.226 .693 -2.346 1.789 -2.894l.211 -.106" />
     </svg>
   ),
 
