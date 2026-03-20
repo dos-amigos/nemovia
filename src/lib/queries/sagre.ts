@@ -30,13 +30,21 @@ function parseWKBPoint(
   return { type: "Point", coordinates: [lng, lat] };
 }
 
-/** Remove duplicate sagre by title (keeps first occurrence). */
-function deduplicateByTitle<T extends { title: string }>(items: T[]): T[] {
-  const seen = new Set<string>();
+/** Remove duplicate sagre by location+dates OR title (keeps first occurrence). */
+function deduplicateByTitle<T extends { title: string; location_text?: string | null; start_date?: string | null }>(items: T[]): T[] {
+  const seenTitle = new Set<string>();
+  const seenLocationDate = new Set<string>();
   return items.filter((item) => {
-    const key = item.title.toLowerCase().trim();
-    if (seen.has(key)) return false;
-    seen.add(key);
+    // Primary dedup: same location + same start_date = same sagra (regardless of title)
+    if (item.location_text && item.start_date) {
+      const locDateKey = `${item.location_text.toLowerCase().trim()}|${item.start_date}`;
+      if (seenLocationDate.has(locDateKey)) return false;
+      seenLocationDate.add(locDateKey);
+    }
+    // Secondary dedup: exact same title
+    const titleKey = item.title.toLowerCase().trim();
+    if (seenTitle.has(titleKey)) return false;
+    seenTitle.add(titleKey);
     return true;
   });
 }
