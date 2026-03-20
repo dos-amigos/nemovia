@@ -74,20 +74,20 @@ const TITLE_THEMES: [RegExp, string][] = [
   [/inverno|natale/i, "winter Italian food warm"],
 ];
 
-/** Fallback: food tag → video query */
+/** Fallback: food tag → video query (always exclude Asian food) */
 const TAG_QUERIES: Record<string, string> = {
-  Pesce: "seafood cooking Mediterranean",
-  Carne: "grilled meat barbecue Italian",
-  Vino: "wine pouring glass Italian",
-  Formaggi: "cheese Italian making",
-  Funghi: "mushroom cooking Italian",
-  Radicchio: "radicchio salad Italian",
-  Dolci: "Italian pastry dessert making",
-  Zucca: "pumpkin soup cooking",
-  Gnocchi: "gnocchi pasta Italian",
-  Pane: "bread baking Italian",
-  Verdura: "vegetables cooking Italian",
-  "Prodotti Tipici": "Italian charcuterie cheese board",
+  Pesce: "seafood cooking Mediterranean -asian -sushi -chopsticks",
+  Carne: "grilled meat barbecue Italian -asian -chopsticks",
+  Vino: "wine pouring glass Italian -asian",
+  Formaggi: "cheese Italian making -asian",
+  Funghi: "mushroom cooking Italian -asian -ramen",
+  Radicchio: "radicchio salad Italian -asian",
+  Dolci: "Italian pastry dessert making -asian",
+  Zucca: "pumpkin soup cooking Italian -asian",
+  Gnocchi: "gnocchi pasta Italian -asian -ramen",
+  Pane: "bread baking Italian -asian",
+  Verdura: "vegetables cooking Italian -asian -chopsticks",
+  "Prodotti Tipici": "Italian charcuterie cheese board -asian -sushi",
 };
 
 function extractThemeQuery(title: string, foodTags?: string[] | null): string | null {
@@ -119,7 +119,7 @@ export async function searchCityVideo(
 
   const queries = [
     themeQuery,
-    "Italian food cooking rustic", // Generic food fallback (NEVER city/province)
+    "Italian food cooking rustic -asian -chopsticks -sushi", // Generic food fallback (NEVER city/province, NEVER Asian)
   ].filter(Boolean) as string[];
 
   for (const query of queries) {
