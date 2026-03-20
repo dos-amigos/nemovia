@@ -15,7 +15,7 @@ describe("validateTags", () => {
     expect(validateTags(["Pesce", "Invalid", "Vino"], FOOD_TAGS)).toEqual(["Pesce", "Vino"]);
   });
   it("filters feature tags against correct enum", () => {
-    expect(validateTags(["Gratis", "Bambini", "Xyz"], FEATURE_TAGS)).toEqual(["Gratis", "Bambini"]);
+    expect(validateTags(["Musica", "Bambini", "Xyz"], FEATURE_TAGS)).toEqual(["Musica", "Bambini"]);
   });
   it("returns empty array for empty input", () => {
     expect(validateTags([], FOOD_TAGS)).toEqual([]);
@@ -102,7 +102,7 @@ describe("is_sagra classification", () => {
     const result: EnrichmentResult = {
       id: "test-1",
       food_tags: ["Pesce"],
-      feature_tags: ["Gratis"],
+      feature_tags: ["Musica"],
       enhanced_description: "Test description",
       is_sagra: true,
     };

@@ -22,7 +22,6 @@ export const QUICK_FILTER_CHIPS = [
   { label: "Vino", emoji: "\uD83C\uDF77", param: "cucina", value: "Vino" },
   { label: "Radicchio", emoji: "\uD83E\uDD6C", param: "cucina", value: "Radicchio" },
   { label: "Funghi", emoji: "\uD83C\uDF44", param: "cucina", value: "Funghi" },
-  { label: "Gratis", emoji: "\uD83C\uDD93", param: "gratis", value: "true" },
   { label: "Oggi", emoji: "\uD83D\uDCC5", param: "da", value: "today" },
 ] as const;
 

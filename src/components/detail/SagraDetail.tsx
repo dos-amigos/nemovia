@@ -55,8 +55,8 @@ export default function SagraDetail({ sagra, videoUrl }: SagraDetailProps) {
         <div className="space-y-6 lg:sticky lg:top-20 lg:self-start">
           {/* Hero image/video with parallax (mobile only) */}
           <ParallaxHero className="relative -mx-4 -mt-4 h-64 w-[calc(100%+2rem)] overflow-hidden sm:-mx-6 sm:h-72 sm:w-[calc(100%+3rem)] lg:mx-0 lg:mt-0 lg:w-full lg:h-[28rem] lg:rounded-xl">
-            {/* Media: video fallback or image */}
-            {!hasGoodImage && videoUrl ? (
+            {/* Media: always show image (pipeline or fallback) — video only if no image at all */}
+            {!hasGoodImage && !fallback && videoUrl ? (
               <video
                 autoPlay
                 muted

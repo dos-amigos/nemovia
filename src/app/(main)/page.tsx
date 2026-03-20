@@ -9,7 +9,7 @@ import { ScrollRowSection } from "@/components/home/ScrollRowSection";
 import { QuickFilters } from "@/components/home/QuickFilters";
 import { ProvinceSection } from "@/components/home/ProvinceSection";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Calendar, MapPin, Ticket } from "lucide-react";
+import { Calendar, MapPin } from "lucide-react";
 import { FoodIcon } from "@/lib/constants/food-icons";
 import { VENETO_PROVINCES } from "@/lib/constants/veneto";
 import type { SagraCardData } from "@/lib/queries/types";
@@ -60,8 +60,7 @@ export default async function HomePage() {
   // Netflix approach: same sagra CAN appear in different category types
   // (e.g. in "A Verona" AND "Sagre di Vino") but NOT twice within same type.
 
-  // Row 1: Gratis
-  const gratisSagre = allActive.filter((s) => s.is_free === true).slice(0, 12);
+  // Row 1: (Gratis removed — practically all sagre are free entry)
 
   // Province rows: up to 3, dedup within province rows only
   const provinceShown = new Set<string>();
@@ -132,13 +131,6 @@ export default async function HomePage() {
             viewAllHref="/cerca"
             delay={(delay += 0.05)}
             minItems={1}
-          />
-          <ScrollRowSection
-            title="Gratis"
-            icon={<Ticket className="h-5 w-5 text-accent" />}
-            sagre={gratisSagre}
-            viewAllHref="/cerca?gratis=true"
-            delay={(delay += 0.05)}
           />
 
           {/* Province rows */}

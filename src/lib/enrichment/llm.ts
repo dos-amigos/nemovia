@@ -20,7 +20,6 @@ export const FOOD_TAGS = [
 ] as const;
 
 export const FEATURE_TAGS = [
-  "Gratis",
   "Musica",
   "Artigianato",
   "Bambini",

@@ -276,7 +276,7 @@ function isValidItalyCoord(lat: number, lon: number): boolean {
 // =============================================================================
 
 const FOOD_TAGS = ["Pesce", "Carne", "Vino", "Formaggi", "Funghi", "Radicchio", "Zucca", "Dolci", "Pane", "Verdura", "Prodotti Tipici"] as const;
-const FEATURE_TAGS = ["Gratis", "Musica", "Artigianato", "Bambini", "Tradizionale", "Giostre"] as const;
+const FEATURE_TAGS = ["Musica", "Artigianato", "Bambini", "Tradizionale", "Giostre"] as const;
 type FoodTag = typeof FOOD_TAGS[number];
 type FeatureTag = typeof FEATURE_TAGS[number];
 const BATCH_SIZE = 8;
