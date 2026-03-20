@@ -126,6 +126,20 @@ function isFoodEvent(title: string): boolean {
   return false;
 }
 
+/**
+ * Check if the event text (title, URL, body) explicitly mentions ONLY past years.
+ * Dynamic: uses current year from Date, works for any year.
+ */
+function containsPastYear(title: string, url?: string, body?: string): boolean {
+  const currentYear = new Date().getFullYear();
+  const textToCheck = `${title} ${url ?? ""} ${body ?? ""}`;
+  const yearMatch = textToCheck.match(/\b(20[0-9]{2})\b/g);
+  if (!yearMatch) return false;
+  const years = yearMatch.map(Number);
+  const hasCurrentOrFuture = years.some(y => y >= currentYear);
+  return !hasCurrentOrFuture && years.some(y => y < currentYear);
+}
+
 // --- Image quality filters ---
 
 const BAD_IMAGE_PATTERNS: RegExp[] = [
@@ -385,6 +399,9 @@ function parseCheventiJsonLd(html: string, provinceName: string): NormalizedEven
         let endDate: string | null = null;
         if (event.startDate) startDate = String(event.startDate).slice(0, 10);
         if (event.endDate) endDate = String(event.endDate).slice(0, 10);
+
+        // Skip events that only mention past years in title/URL
+        if (containsPastYear(title, event.url ?? undefined)) continue;
 
         // Skip past events
         if (startDate) {

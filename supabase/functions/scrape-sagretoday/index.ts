@@ -172,6 +172,20 @@ function isPastYearEvent(startDate: string | null, endDate: string | null): bool
   return false;
 }
 
+/**
+ * Check if the event text (title, URL, body) explicitly mentions ONLY past years.
+ * Dynamic: uses current year from Date, works for any year.
+ */
+function containsPastYear(title: string, url?: string, body?: string): boolean {
+  const currentYear = new Date().getFullYear();
+  const textToCheck = `${title} ${url ?? ""} ${body ?? ""}`;
+  const yearMatch = textToCheck.match(/\b(20[0-9]{2})\b/g);
+  if (!yearMatch) return false;
+  const years = yearMatch.map(Number);
+  const hasCurrentOrFuture = years.some(y => y >= currentYear);
+  return !hasCurrentOrFuture && years.some(y => y < currentYear);
+}
+
 // --- Image quality filters ---
 
 const BAD_IMAGE_PATTERNS: RegExp[] = [
@@ -588,6 +602,7 @@ async function scrapeSagretodayProvince(supabase: SupabaseClient, province: stri
               contentHash: generateContentHash(title, city || province, startDate),
             };
 
+            if (containsPastYear(title, sourceUrl ?? undefined)) continue;
             if (isCalendarDateRange(normalized.startDate, normalized.endDate)) continue;
             if (isExcessiveDuration(normalized.startDate, normalized.endDate, 7)) continue;
             if (isPastYearEvent(normalized.startDate, normalized.endDate)) continue;
