@@ -343,9 +343,13 @@ function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
 
 5. **province_code**: codice provincia 2 lettere (BL/PD/RO/TV/VE/VI/VR) o null se non in Veneto.
 
-6. **start_date**: data inizio in formato YYYY-MM-DD. Estraila da titolo, description, o qualsiasi campo. Anno corrente = 2026 se non specificato. null se non determinabile.
+6. **start_date**: data inizio in formato YYYY-MM-DD. Estraila da titolo, description, o qualsiasi campo.
+   REGOLA CRITICA: l'anno DEVE essere ESPLICITO nei dati. Se trovi "15-20 settembre" senza anno → null.
+   MAI assumere o inventare l'anno. Solo se c'è scritto "2026" o "settembre 2026" puoi usare quell'anno.
+   Se la data è di un anno passato (es. 2025, 2024) → null (evento scaduto).
 
 7. **end_date**: data fine YYYY-MM-DD. Se evento di un solo giorno = uguale a start_date. null se non determinabile.
+   Stessa regola: anno DEVE essere esplicito nei dati. MAI inventare.
 
 8. **food_tags**: array tag alimentari (max 3) SOLO da: ${FOOD_TAGS.join(", ")}
    REGOLA: basa i tag SOLO su informazioni ESPLICITE nel titolo o nella description/source_description.

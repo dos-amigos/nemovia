@@ -333,6 +333,23 @@ function isPastYearEvent(
   return false;
 }
 
+/**
+ * Check if the event text (title, URL, body) explicitly mentions a past year.
+ * Catches sagre pages from 2025 that scrapers can't date-filter because dates aren't structured.
+ */
+function containsPastYear(title: string, url?: string, body?: string): boolean {
+  const currentYear = new Date().getFullYear();
+  const textToCheck = `${title} ${url ?? ""} ${body ?? ""}`;
+  // Check for any 4-digit year before current year (2020-2025 if current is 2026)
+  const yearMatch = textToCheck.match(/\b(20[0-9]{2})\b/g);
+  if (!yearMatch) return false;
+  // If ALL years found are past → it's an old event
+  // If ANY year is current or future → it's ok (might be "2025-2026" range)
+  const years = yearMatch.map(Number);
+  const hasCurrentOrFuture = years.some(y => y >= currentYear);
+  return !hasCurrentOrFuture && years.some(y => y < currentYear);
+}
+
 // --- Section 2d: Image URL upgrade + low-quality detection ---
 // Inline copy from src/lib/scraper/filters.ts + src/lib/fallback-images.ts
 // (Deno cannot import from src/). Keep in sync with canonical sources.
@@ -1053,6 +1070,9 @@ async function scrapeSource(supabase: SupabaseClient, source: ScraperSource): Pr
         // despite a Veneto URL filter
         const rawText = $(items[i]).text();
         if (!isVenetoEvent(rawText)) continue;
+
+        // Skip events from past years — check title + URL + page text for year mentions
+        if (containsPastYear(raw.title, raw.url, rawText)) continue;
 
         const normalized = normalizeRawEvent(raw, source.name);
 

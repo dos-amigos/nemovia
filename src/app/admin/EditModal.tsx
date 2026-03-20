@@ -28,6 +28,8 @@ export function EditModal({ sagraId, onClose, onSaved }: EditModalProps) {
   });
   const [isPending, startTransition] = useTransition();
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   useEffect(() => {
     getAdminSagraById(sagraId).then((data) => {
       setSagra(data);
@@ -43,6 +45,9 @@ export function EditModal({ sagraId, onClose, onSaved }: EditModalProps) {
         image_url: (data.image_url as string) ?? "",
         is_free: (data.is_free as boolean) ?? false,
       });
+    }).catch((err) => {
+      console.error("EditModal load error:", err);
+      setLoadError(err instanceof Error ? err.message : "Errore caricamento sagra");
     });
   }, [sagraId]);
 
@@ -86,7 +91,14 @@ export function EditModal({ sagraId, onClose, onSaved }: EditModalProps) {
   if (!sagra) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="rounded-xl bg-white p-8 shadow-xl">Caricamento...</div>
+        <div className="rounded-xl bg-white p-8 shadow-xl">
+          {loadError ? (
+            <div className="space-y-2 text-center">
+              <p className="text-red-600 font-medium">Errore: {loadError}</p>
+              <button onClick={onClose} className="text-sm text-muted-foreground underline">Chiudi</button>
+            </div>
+          ) : "Caricamento..."}
+        </div>
       </div>
     );
   }
