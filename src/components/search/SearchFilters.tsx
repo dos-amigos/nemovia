@@ -163,7 +163,7 @@ export function SearchFilters({ variant = "sidebar" }: SearchFiltersProps) {
 
   // ---- City search block (reused in both variants) ----
   const citySearchBlock = (
-    <div className="flex flex-col gap-2">
+    <div className={`flex ${variant === "topbar" ? "flex-row items-center" : "flex-col"} gap-2`}>
       <div className="relative flex-1">
         {hasGeo ? (
           <div className="flex h-10 items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-3">
@@ -245,7 +245,7 @@ export function SearchFilters({ variant = "sidebar" }: SearchFiltersProps) {
           size="sm"
           onClick={requestLocation}
           disabled={loading}
-          className="h-10 w-full whitespace-nowrap rounded-lg"
+          className={`h-10 whitespace-nowrap rounded-lg ${variant === "topbar" ? "shrink-0 px-4" : "w-full"}`}
         >
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -407,25 +407,22 @@ export function SearchFilters({ variant = "sidebar" }: SearchFiltersProps) {
   ) : null;
 
   // =============================================
-  // TOPBAR VARIANT (map page — horizontal layout)
+  // TOPBAR VARIANT (map page — horizontal layout, 2 rows)
   // =============================================
   if (variant === "topbar") {
     return (
-      <div className="space-y-3">
-        {/* Row 1: City search + filters inline on desktop */}
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-          {/* City search — takes more space */}
-          <div className="relative lg:w-64 shrink-0">
-            {citySearchBlock}
-          </div>
-          {/* Other filters — grid that fills remaining space */}
-          <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {provinciaField}
-            {cucinaField}
-            {gratisField}
-            {daField}
-            {aField}
-          </div>
+      <div className="relative z-20 space-y-2">
+        {/* Row 1: City search + Usa posizione on same line */}
+        <div className="relative z-30">
+          {citySearchBlock}
+        </div>
+
+        {/* Row 2: Other filters — full width grid */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {provinciaField}
+          {cucinaField}
+          {daField}
+          {aField}
         </div>
 
         {error && (
@@ -462,7 +459,6 @@ export function SearchFilters({ variant = "sidebar" }: SearchFiltersProps) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-1">
         {provinciaField}
         {cucinaField}
-        {gratisField}
         {daField}
         {aField}
       </div>
