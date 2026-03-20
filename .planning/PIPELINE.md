@@ -1,324 +1,321 @@
-# PIPELINE — Regole Definitive Scraping, Qualita', Date, Province
+# PIPELINE — Algoritmo Completo Scraping, Enrichment, Qualità
 
-> **BIBBIA** per ogni attivita' di scraping e qualita' dati futura.
-> Ultimo aggiornamento: 2026-03-16.
+> **BIBBIA** del progetto. Ogni decisione su dati, scraping, immagini, qualità è qui.
+> Struttura replicabile: cambiando soggetto (mercatini, eventi medievali...) basta
+> modificare le sezioni marcate con 🎯.
+> Ultimo aggiornamento: 2026-03-20 (sessione 13).
 
 ---
 
-## 1. Flusso Dati Completo
+## 1. Architettura Pipeline
 
 ```
-SCRAPING (9 fonti)
-    |
-    v
- [sagre] status='pending_geocode'
-    |
-    v
-ENRICHMENT Pass 1: Geocoding (Nominatim)
-  - location_text → coordinate GPS + provincia (2-letter code)
-  - Non-Veneto → is_active=false, status='geocode_failed'
-    |
-    v
- [sagre] status='pending_llm'
-    |
-    v
-ENRICHMENT Pass 2: LLM (Google Gemini 2.5 Flash-Lite — 1000 RPD free tier)
-  - Genera: food_tags, feature_tags, enhanced_description, unsplash_query
-  - Budget: 120s totale, rate limit 4.5s tra batch
-    |
-    v
- [sagre] status='enriched'
-    |
-    v
-ENRICHMENT Pass 3: Immagini (Unsplash API)
-  - Cerca con unsplash_query (generata da Gemini)
-  - Fallback: 5 immagini curate per categoria
-    |
-    v
+FONTI (13 scraper)
+    ↓
+INSERIMENTO → is_active=false, status='pending_geocode'
+    ↓
+DEDUP al volo (RPC find_duplicate_sagra)
+  → stesso paese + stesse date = stessa sagra (merge sources)
+  → titolo simile + città simile = stessa sagra (pg_trgm > 0.6)
+    ↓
+ENRICHMENT Pass 1: GEOCODING (Nominatim, 1 req/sec)
+  → location_text → coordinate GPS + provincia (2-letter)
+  → Non-Veneto → discard
+  → Già enriched senza GPS → aggiunge coordinate senza resettare status
+    ↓
+ENRICHMENT Pass 2: LLM (chain multi-provider)
+  → Groq Llama 3.1 8B (14.400 RPD gratis)
+  → Mistral Small (86.400 RPD gratis)
+  → Gemini 2.5 Flash (20 RPD gratis)
+  → Vertex AI Gemini (crediti Cloud, ultimo resort)
+  → Genera: food_tags, feature_tags, enhanced_description, unsplash_query
+  → Auto-approval: confidence≥70 + data YYYY-MM-DD valida + Veneto + futura
+    ↓
+ENRICHMENT Pass 3: IMMAGINI (catena 3 provider)
+  → Unsplash (50 req/ora) — primario
+  → Pexels (200 req/ora) — fallback
+  → Pixabay (100 req/min) — terzo livello
+  → Query specifica per sagra (generata da LLM basata su descrizione)
+    ↓
 EXPIRE CRON (01:00 ogni giorno)
-  - end_date < oggi → is_active=false
-  - start_date < oggi - 30 giorni (senza end_date) → is_active=false
-  - Anno precedente → is_active=false
-    |
-    v
-QUERY FRONTEND
-  - is_active=true AND province IS NOT NULL
-  - end_date >= oggi OR (end_date NULL AND start_date >= oggi - 30gg) OR (entrambi NULL)
+  → end_date < oggi → disattiva
+  → start_date < oggi - 30gg (senza end_date) → disattiva
+  → Anno precedente → disattiva
+    ↓
+FRONTEND
+  → Dedup: location+date, poi titolo esatto
+  → Filtro: is_active=true AND province IS NOT NULL
+  → Fallback immagini: 33 soggetti × 10 foto locali (Pexels)
+  → Fallback video: Pexels Video API per tema cibo
 ```
 
 ---
 
-## 2. Province — Regole Ferree
+## 2. 🎯 Fonti Scraping
 
-### Formato DB
-- **SEMPRE codice 2 lettere maiuscole**: BL, PD, RO, TV, VE, VR, VI
-- MAI nomi completi nel DB (Verona, Padova, ecc.)
-- Se Nominatim ritorna "Provincia di Padova" → normalizzare a "PD"
+### Edge Functions (Supabase, pg_cron)
+| Fonte | Tipo | Frequenza | Note |
+|-------|------|-----------|------|
+| assosagre.it | Cheerio | 2x/giorno | Dettaglio con menu/orari |
+| venetoinfesta.it | Cheerio | 2x/giorno | |
+| solosagre.com | Cheerio | 2x/giorno | |
+| sagritaly.it | Cheerio | 2x/giorno | |
+| eventiesagre.it | Cheerio | 2x/giorno | Filtro Veneto |
+| itinerarinelgusto.it | Cheerio | 2x/giorno | |
+| sagretoday.it | JSON-LD | Ogni 30min | 1 provincia a rotazione |
+| trovasagre.it | JSON API | 2x/giorno | |
+| sagriamo.it | REST API | 2x/giorno | |
+| cheventi.it | Cheerio | 2x/giorno | |
 
-### Normalizzazione
-```
-belluno, provincia di belluno → BL
-padova, provincia di padova → PD
-rovigo, provincia di rovigo → RO
-treviso, provincia di treviso → TV
-venezia, provincia di venezia → VE
-verona, provincia di verona → VR
-vicenza, provincia di vicenza → VI
-```
-
-### Regole
-1. Sagre senza provincia sono **invisibili** (tutte le query richiedono `province IS NOT NULL`)
-2. Province non-Veneto → `is_active=false, status='geocode_failed'`
-3. Display: sempre "Citta' (XX)" — mai citta' sola, mai duplicare se gia' presente
-4. Funzione `provinceSuffix()` in `veneto.ts` per display consistente
-
-### Diagnosi "poche sagre"
-Se ci sono poche sagre visibili, controllare:
-```sql
--- Quante attive senza provincia?
-SELECT count(*) FROM sagre WHERE is_active=true AND province IS NULL;
--- Se > 0: serve re-enrichment (set status='new' per ri-geocodare)
-```
-
----
-
-## 3. Date — Regole Ferree
-
-### Campi
-- `start_date`: data inizio evento (DATE, nullable)
-- `end_date`: data fine evento (DATE, nullable)
-
-### Logica Expire (cron giornaliero 01:00)
-```sql
--- Sagre da disattivare:
-WHERE is_active = true AND (
-  -- Con end_date esplicita passata
-  (end_date IS NOT NULL AND end_date < CURRENT_DATE)
-  -- Senza end_date: grace period 30 giorni dalla start_date
-  OR (end_date IS NULL AND start_date IS NOT NULL
-      AND start_date < CURRENT_DATE - INTERVAL '30 days')
-  -- Anno precedente
-  OR (start_date IS NOT NULL
-      AND EXTRACT(YEAR FROM start_date) < EXTRACT(YEAR FROM CURRENT_DATE))
-)
-```
-
-### Logica Query Frontend (lookback 30 giorni)
-```
-Mostra sagra SE:
-  end_date >= oggi                                          (multi-day, non scaduta)
-  OR (end_date NULL AND start_date >= oggi - 30 giorni)     (senza fine, recente)
-  OR (end_date NULL AND start_date NULL)                    (senza date)
-```
-
-### Perche' 30 giorni (non 14)
-Molte sagre durano 2-4 settimane ma gli scraper non estraggono `end_date`.
-Con 14 giorni, una sagra del 1 marzo spariva il 15 marzo anche se era ancora attiva.
-30 giorni copre la maggior parte delle sagre mensili.
-
-### Recupero date mancanti
-- `scrape-sagretoday` estrae `startDate`/`endDate` da JSON-LD delle pagine dettaglio
-- Priorita': sagre con `start_date IS NULL` vengono scrapate per prime
-- Pattern: NULL-only update (non sovrascrive date gia' presenti)
-
----
-
-## 4. Deduplicazione — 3 Livelli
-
-### Livello 1: In-scraper (al momento dell'inserimento)
-- `content_hash` (MD5 di title+location_text+start_date) → se esiste, merge sources
-- `find_duplicate_sagra()` RPC → fuzzy match su `normalized_title` (pg_trgm similarity > 0.6)
-
-### Livello 2: DB (migration periodica)
-- `normalized_title` → PARTITION BY, keep most enriched version
-- Criteri ordinamento: status='enriched' > con end_date > con image > con description > con province > piu' vecchia
-
-### Livello 3: Applicativo (query frontend)
-- `deduplicateByTitle()` in `sagre.ts` — rimuove duplicati per titolo lowercase
-
-### Diagnosi duplicati
-```sql
-SELECT normalized_title, count(*) as cnt
-FROM sagre WHERE is_active = true
-GROUP BY normalized_title HAVING count(*) > 1
-ORDER BY cnt DESC LIMIT 20;
-```
-
----
-
-## 5. Filtri Euristici — Cosa E'/Non E' una Sagra
-
-### E' una sagra (is_active = true)
-- Sagre del cibo, feste gastronomiche
-- Fiere con componente food significativa (Fiera del Riso, Fiera del Baccala')
-- Feste di piazza con cucina tipica
-- Manifestazioni con "sagra", "festa", "gastronomic" nel titolo
-
-### NON e' una sagra (is_active = false)
-- Visite guidate, escursioni, trekking
-- Wine tasting puri (senza cibo), degustazioni vini
-- Convegni, conferenze, workshop
-- Mostre fotografiche, gallerie, musei
-- Concerti, spettacoli teatrali (senza cibo)
-- Maratone, gare sportive, tornei
-- Antiquariato, mercatini non-food
-- Vinitaly e simili expo vini commerciali
-
-### Blocklist hardcoded
-```
-Vinitaly — in enrich-sagre
-```
-
-### Filtri SQL (migration 021)
-```sql
--- Deattivare SE contiene:
-visita guidata, guided tour, escursion, passeggiata, trekking
-tasting, degustazione vini, wine tasting
-convegno, conferenza, seminario, workshop, corso, lezione
-mostra fotografica, esposizione, galleria, museo
-concerto, spettacolo teatrale, recital, opera lirica
-maratona, corsa, gara ciclistica, torneo, campionato
-vinitaly, wine show, expo vini
-
--- PROTETTI (non deattivare anche se contengono parole sopra):
-sagra, sagre, festa, feste, gastronomic, culinari
-polenta, gnocch, risott, baccal, pesce, carne, porchetta, grigliat
-```
-
-### Trappola "fiera"
-Migration 008 deattivava TUTTE le "fiere". Ma molte fiere venete SONO sagre del cibo.
-**Regola**: "fiera" da sola NON e' motivo di deattivazione. Deattivare solo se
-combinata con termini non-food (antiquariato, artigianato puro, ecc.).
-
----
-
-## 6. Immagini — Pipeline Qualita'
-
-### 3 livelli di difesa
-1. **Scraping**: `isLowQualityUrl()` rifiuta thumbnail, placeholder, favicon, logo sito
-2. **Enrichment**: Gemini genera `unsplash_query` specifico → Unsplash cerca immagine pertinente
-3. **Display**: fallback a 5 immagini curate per categoria se URL mancante o low-quality
-
-### Pattern URL rifiutati
-```
-Tracking pixel, placeholder, favicon, logo sito
-thumbnail WordPress (150x150, 300x300)
-data: URI
-Dimensioni URL <= 400px
-Siti specifici: eventiesagre/thumb, assosagre/thumb, sagritaly/_small, solosagre/s/
-```
-
-### Regole query Unsplash (generate da Gemini)
-- 2-4 parole in inglese
-- Soggetto = keyword dopo "Sagra del/della", tradotto
-- Vino = calici, versato, uva, vigneti. MAI bottiglie/etichette
-- Olio = olive, versato, frantoio. MAI depositi/macchinari
-- Pinza veneta = focaccia flatbread. MAI dolci/torte
-
----
-
-## 7. Scraper — Architettura
-
-### Regole generali
-- **Edge Functions separate** per ogni scraper pesante (timeout 60s free / 150s pro)
-- **Chunking**: 1 provincia per invocazione (sagretoday)
-- **NULL-only update**: detail scraping aggiorna solo campi NULL (non sovrascrive)
-- **Copie inline**: funzioni pure copiate dentro la edge function (Deno non importa da src/)
-- **Rate limiting**: 1-1.5s tra richieste HTTP, 4.5s tra batch Gemini (modello: gemini-2.5-flash-lite, 1000 RPD free tier)
-
-### Schedule (pg_cron)
-| Job | Orario | Note |
-|-----|--------|------|
-| scrape-sagre | 06:00, 18:00 | 6 fonti Cheerio |
-| enrich-sagre | 06:30, 18:30 | Pipeline 3 pass, budget 120s |
-| expire-sagre-daily | 01:00 | Grace period 30 giorni |
-| scrape-sagretoday | Ogni 30 min | 1 provincia a rotazione |
-| scrape-trovasagre | 07:15, 19:15 | API JSON singola |
-| scrape-sagriamo | 07:20, 19:20 | API REST paginata |
+### GitHub Actions (Node.js)
+| Fonte | Frequenza | Note |
+|-------|-----------|------|
+| Facebook Graph API | Daily 08:00 | Pagine da external_sources |
+| Tavily Search API | Ogni 3gg 10:00 | Discovery nuove sagre |
+| Instagram (Apify) | Lun+Gio 09:00 | Pagine da external_sources |
 
 ### Aggiungere una nuova fonte
 1. Creare edge function `scrape-<nome>/index.ts`
 2. Inline: normalizzazione, dedup hash, province mapping
-3. Aggiungere pg_cron job in nuova migration
-4. Testare con curl + service_role_key (MAI `supabase functions invoke`)
-5. Aggiungere il nome fonte a questo file e a PROGRESS.md
+3. **is_active: false** all'inserimento (SEMPRE)
+4. Chiamare `find_duplicate_sagra()` RPC prima di inserire
+5. Aggiungere pg_cron job in nuova migration
+6. Testare con curl + service_role_key
+7. Aggiornare PIPELINE.md e PROGRESS.md
 
 ---
 
-## 8. Query Frontend — Parametri Chiave
+## 3. 🎯 Regole Auto-Approval
 
-| Parametro | Valore | Dove |
-|-----------|--------|------|
-| Lookback window | 30 giorni | sagre.ts (tutte le funzioni) |
-| getActiveSagre limit | 200 | sagre.ts default param |
-| Homepage limit | 200 | page.tsx getActiveSagre(200) |
-| MIN_ROW | 2 | page.tsx (minimo sagre per riga) |
-| MAX_PROVINCE_ROWS | 3 | page.tsx |
-| MAX_FOOD_ROWS | 4 | page.tsx |
-| getWeekendSagre limit | 20 | page.tsx |
-| searchSagre limit | 50 | sagre.ts |
-| searchMapSagre (RPC) | 200 | sagre.ts |
+Una sagra viene auto_approved (visibile sul sito) SOLO se TUTTE queste condizioni:
 
----
+| Condizione | Implementazione |
+|-----------|----------------|
+| `is_sagra = true` | LLM classifica come sagra specifica |
+| `confidence >= 70` | LLM score 0-100 |
+| `start_date` valida YYYY-MM-DD | Regex `/^\d{4}-\d{2}-\d{2}$/` — NO stringhe generiche |
+| Provincia Veneto | `province` in BL/PD/RO/TV/VE/VI/VR |
+| Data futura | `end_date >= oggi` o `start_date >= oggi` |
 
-## 9. Diagnosi "Poche Sagre" — Checklist
-
-Se l'homepage mostra poche sagre:
-
-1. **Quante sagre attive con provincia?**
-   ```sql
-   SELECT count(*) FROM sagre WHERE is_active=true AND province IS NOT NULL;
-   ```
-   Se < 50: problema di enrichment (province non assegnate)
-
-2. **Quante attive senza provincia?**
-   ```sql
-   SELECT count(*) FROM sagre WHERE is_active=true AND province IS NULL;
-   ```
-   Se > 0: serve re-enrichment → `UPDATE sagre SET status='new' WHERE is_active=true AND province IS NULL AND location IS NULL;`
-
-3. **Quante disattivate con date future?**
-   ```sql
-   SELECT count(*) FROM sagre WHERE is_active=false AND end_date >= CURRENT_DATE;
-   ```
-   Se > 0: filtri euristici troppo aggressivi, investigare
-
-4. **Duplicati?**
-   ```sql
-   SELECT normalized_title, count(*) FROM sagre WHERE is_active=true
-   GROUP BY normalized_title HAVING count(*) > 1;
-   ```
-
-5. **Scraper funzionano?**
-   ```sql
-   SELECT source_name, status, count(*), max(started_at)
-   FROM scrape_logs GROUP BY source_name, status ORDER BY source_name;
-   ```
+Se NON soddisfa → `needs_review` (visibile solo in admin).
+Se non è una sagra o confidence < 30 → `discarded`.
+Se alta confidence ma non Veneto → `discarded` silenziosamente.
 
 ---
 
-## 10. Migrazioni Applicate
+## 4. Province — Regole Ferree
 
-| # | Nome | Scopo |
-|---|------|-------|
-| 001 | foundation | Schema base, tabella sagre |
-| 002 | scraping_pipeline | scraper_sources, scrape_logs |
-| 003 | enrichment | Status pipeline, indici |
-| 004 | discovery | find_duplicate_sagra RPC |
-| 005 | data_quality | content_hash, normalized_title |
-| 006 | heuristic_filters | Filtri automatici (durata, anno, rumore) |
-| 007 | dedup_classification | Dedup avanzata |
-| 008 | retroactive_cleanup | Filtro keyword (fiera, mercato, mostra) |
-| 009 | filter_recalibration | Whitelist food per riattivare false positive |
-| 010 | province_normalization | normalize_province_code() SQL function |
-| 011 | add_itinerarinelgusto | Nuova fonte |
-| 012 | unsplash_image_credit | Colonna image_credit |
-| 013 | scraping_completeness | Detail scraping columns |
-| 014 | unsplash_extra_cron | Cron extra per immagini |
-| 015 | nearby_image_credit | find_nearby_sagre image_credit |
-| 016 | nearby_add_location | find_nearby_sagre + location |
-| 017 | unsplash_query_column | Colonna unsplash_query |
-| 018 | custom_scraper_cron_jobs | Cron per sagretoday/trovasagre/sagriamo |
-| 019 | fix_expire_grace_period | Grace period 14gg per sagre senza end_date |
-| 020 | extend_grace_period_30days | Grace period 14→30gg + riattivazione |
-| 021 | db_cleanup_dedup_reactivate | Dedup, ri-attiva fiere food, filtra non-sagre |
+- **SEMPRE codice 2 lettere maiuscole**: BL, PD, RO, TV, VE, VR, VI
+- MAI nomi completi nel DB
+- Display: "Città (XX)" — funzione `provinceSuffix()`
+- Sagre senza provincia = **invisibili** nel frontend
+- Non-Veneto → `is_active=false`
+
+---
+
+## 5. Date — Regole Ferree
+
+- **Senza data valida → MAI auto_approved** (va in needs_review)
+- Date LLM accettate solo se formato YYYY-MM-DD (regex)
+- Expire: grace period 30gg per sagre senza end_date
+- Query frontend: lookback 30 giorni
+
+---
+
+## 6. Deduplicazione — 3 Livelli
+
+### Livello 1: In-scraper (al momento dell'inserimento)
+RPC `find_duplicate_sagra()` cerca:
+- **Metodo A**: Titolo simile (pg_trgm > 0.6) + città simile (> 0.5)
+- **Metodo B**: Stessa città + stesse date esatte (qualsiasi titolo)
+Se trovato → merge sources, non inserire duplicato.
+
+### Livello 2: Frontend (query time)
+`deduplicateByTitle()` rimuove duplicati per:
+1. location_text + start_date (priorità)
+2. titolo esatto lowercase
+
+### Livello 3: Pulizia periodica (manuale/migration)
+SQL: GROUP BY normalized_title, keep best version.
+
+---
+
+## 7. 🎯 LLM Enrichment — Prompt e Regole
+
+### Provider chain (in ordine)
+1. **Groq** Llama 3.1 8B — 14.400 RPD gratis, veloce
+2. **Mistral** Small — 86.400 RPD gratis
+3. **Gemini** 2.5 Flash — 20 RPD gratis (AI Studio free tier)
+4. **Vertex AI** Gemini — crediti Cloud 254€ (solo emergenza)
+
+### Cosa genera il LLM (per ogni sagra)
+| Campo | Regola |
+|-------|--------|
+| `is_sagra` | true solo per evento singolo specifico, non elenchi/articoli |
+| `confidence` | 0-100, basato su completezza dati |
+| `clean_title` | Titolo pulito, senza date/luoghi, max 80 char |
+| `city` | Comune specifico (non provincia) |
+| `province_code` | BL/PD/RO/TV/VE/VI/VR o null |
+| `start_date` | YYYY-MM-DD o null |
+| `end_date` | YYYY-MM-DD o null |
+| `food_tags` | Max 3 da: Pesce, Carne, Vino, Formaggi, Funghi, Radicchio, Zucca, Dolci, Pane, Verdura, Prodotti Tipici |
+| `feature_tags` | Max 2 da: Musica, Artigianato, Bambini, Tradizionale, Giostre |
+| `description` | Italiano, paragrafi con emoji (📍🕐📞), max 1200 char |
+| `unsplash_query` | 3-5 parole EN, SPECIFICO al cibo/prodotto dalla descrizione |
+
+### Regole gastronomia veneta 🎯
+- Pinza/Pinzin = "Pane" (focaccia veneta, NON dolci)
+- Baccalà/Stoccafisso = "Pesce"
+- Zucca = tag dedicato (NON Verdura)
+- Gnocchi = "Prodotti Tipici"
+- Se non si capisce il cibo → ["Prodotti Tipici"]
+- MAI inventare tag non presenti nella descrizione
+
+### Regole description (formato paragrafi)
+```
+Paragrafo 1: Descrizione evento (storia, edizione, cosa si fa)
+
+Paragrafo 2: Menu e piatti (se dati disponibili)
+
+📍 Indirizzo
+🕐 Orari
+🎟️ Ingresso
+📞 Contatti
+```
+MAI inventare dettagli non presenti nella fonte originale.
+
+### Regole unsplash_query
+- Leggere TUTTA la descrizione per capire il soggetto SPECIFICO
+- "Palio del Chiaretto" → "rosé pink wine glass vineyard" (NON "wine" generico)
+- "Festa delle Ciliegie" → "fresh red cherries tree branch" (NON "berries")
+- VIETATO: "festival", "celebration", "market", "outdoor", "traditional", "Italian food"
+- Se titolo è già chiaro ("Sagra del Baccalà") → basta il titolo
+
+---
+
+## 8. Immagini — Pipeline 3 Livelli
+
+### Livello 1: Immagini da fonte (scraping)
+- Scraper estrae image_url dalla pagina sorgente
+- `isLowQualityUrl()` rifiuta: thumbnail, placeholder, favicon, logo, < 400px
+
+### Livello 2: API Immagini (enrichment Pass 3)
+Catena: **Unsplash → Pexels → Pixabay**
+- Query = `unsplash_query` generata da LLM (specifica per sagra)
+- Se query non trova nulla → `buildQueryFromTitle()` (traduce keyword dal titolo)
+- Hash deterministico per varietà (stessa query, foto diverse per sagre diverse)
+
+### Livello 3: Fallback locali
+- 33 soggetti × 10 foto = 330 immagini locali da Pexels
+- Matching: regex su titolo → soggetto → foto random dal pool
+- Soggetti: birra, radicchio, asparagi, polenta, baccalà, ciliegie, fragole, castagne, mele, risotto, olio, rane, funghi, zucca, ...
+
+### Regole immagini
+- **MAI** cibo asiatico, bacchette, cucina orientale
+- **MAI** foto generiche "Italian food" — sempre il PRODOTTO specifico
+- Ciliegie ≠ fragole ≠ lamponi (Unsplash confonde i frutti rossi)
+- Chiaretto = vino rosato (NON spritz)
+- Query Unsplash con `-asian -sushi -chopsticks` quando rilevante
+
+### Video fallback (pagina dettaglio)
+- Se sagra non ha immagine → Pexels Video API cerca per tema cibo
+- Query con `-asian -chopsticks -sushi -ramen`
+- Se no video → fallback immagine locale
+
+---
+
+## 9. 🎯 Filtri Euristici — Cosa È/Non È una Sagra
+
+### È una sagra ✅
+- Sagre del cibo, feste gastronomiche
+- Fiere con componente food (Fiera del Riso, Fiera del Baccalà)
+- Feste di piazza con cucina tipica
+- "sagra", "festa", "gastronomic" nel titolo
+
+### NON è una sagra ❌
+- Articoli che ELENCANO più eventi ("Le sagre di agosto a Padova")
+- Calendari, guide, roundup ("cosa fare questo weekend")
+- Titoli con PLURALE generico ("Sagre e feste", "Eventi enogastronomici")
+- Visite guidate, escursioni, convegni, concerti puri
+- Wine tasting puri, antiquariato, mercatini non-food
+- Vinitaly e simili expo commerciali
+
+### Regola chiave
+Una vera sagra ha UN nome specifico ("Sagra della Zucca"), NON un titolo che descrive una categoria.
+
+---
+
+## 10. Schedule Completo
+
+### pg_cron (Supabase)
+| Job | Orario | Funzione |
+|-----|--------|----------|
+| scrape-sagre | 06:00, 18:00 | 6 fonti Cheerio |
+| enrich-sagre | Ogni 10 min | Pipeline 3 pass, 120s budget |
+| expire-sagre | 01:00 | Disattiva sagre scadute |
+| scrape-sagretoday | Ogni 30 min | 1 provincia a rotazione |
+| scrape-trovasagre | 07:15, 19:15 | API JSON |
+| scrape-sagriamo | 07:20, 19:20 | REST API |
+| scrape-cheventi | 2x/giorno | Cheerio |
+
+### GitHub Actions
+| Job | Orario | Note |
+|-----|--------|------|
+| Facebook | Daily 08:00 UTC | Graph API |
+| Tavily | Ogni 3gg 10:00 UTC | Discovery |
+| Instagram | Lun+Gio 09:00 UTC | Apify |
+
+---
+
+## 11. Environment Variables
+
+### Supabase Secrets (edge functions)
+```
+GEMINI_API_KEY     — Google AI Studio (free tier 20 RPD)
+GROQ_KEY           — Groq (14.400 RPD gratis)
+MISTRAL_KEY        — Mistral (86.400 RPD gratis)
+PEXELS_API_KEY     — Pexels images + video
+UNSPLASH_ACCESS_KEY — Unsplash images
+PIXABAY_API_KEY    — Pixabay images (100 req/min)
+```
+
+### GitHub Secrets (Actions)
+```
+NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+TAVILY_API, APIFY_API, GEMINI_API_KEY
+```
+
+### .env locale
+```
+Tutti i sopra + ADMIN_PASSWORD
+```
+
+---
+
+## 12. Migrazioni Applicate
+
+| # | Scopo |
+|---|-------|
+| 001-017 | Schema base, pipeline, enrichment, immagini, province |
+| 018 | pg_cron per sagretoday/trovasagre/sagriamo |
+| 019-020 | Grace period expire 14→30gg |
+| 021 | Pulizia DB: dedup, filtri non-sagre, province |
+| 022-026 | Varie fix pipeline |
+| 027 | Dedup RPC cerca ALL sagre (non solo active) |
+| 028 | Dedup per location+date (non solo titolo) |
+
+---
+
+## 13. 🎯 Per Replicare su Altro Verticale
+
+Per adattare a "mercatini", "eventi medievali", etc:
+
+1. **Fonti**: cambiare lista scraper (sezione 2)
+2. **Filtri euristici**: cambiare cosa è/non è l'evento target (sezione 9)
+3. **Tag**: cambiare food_tags/feature_tags con categorie appropriate (sezione 7)
+4. **Regole dominio**: gastronomia veneta → regole del nuovo dominio (sezione 7)
+5. **Fallback immagini**: scaricare foto tematiche appropriate (sezione 8)
+6. **Auto-approval**: potrebbe servire criteri diversi (sezione 3)
+7. **Prompt LLM**: adattare a classificare il nuovo tipo di evento (sezione 7)
+
+Il resto (architettura, dedup, geocoding, pipeline, provider chain) è **generico e riutilizzabile**.
