@@ -16,8 +16,9 @@ export function ParallaxHero({ children, className }: ParallaxHeroProps) {
     offset: ["start start", "end start"],
   });
   const y = useTransform(scrollYProgress, [0, 1], [0, 30]);
-  // Smooth fade-out as the hero scrolls off screen (avoids abrupt clip)
-  const opacity = useTransform(scrollYProgress, [0, 0.7, 1], [1, 1, 0]);
+  // Gentle fade-out only at the very end (95-100%) to avoid abrupt clip
+  // Image stays fully visible while scrolling through content
+  const opacity = useTransform(scrollYProgress, [0, 0.95, 1], [1, 1, 0.7]);
 
   return (
     <div ref={ref} className={className}>
