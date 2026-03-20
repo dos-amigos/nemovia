@@ -179,21 +179,22 @@ const ICONS: Record<
     <Beef className={className} aria-hidden="true" />
   ),
 
-  /** Simple fish silhouette */
+  /** Fish — Tabler Icons fish, clear side-view with tail, fin, eye */
   pesce: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.5}
+      strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      <path d="M2 12c3-4 7-6 12-6 1.5 0 3 .5 4.5 1L22 12l-3.5 5c-1.5.5-3 1-4.5 1-5 0-9-2-12-6z" />
-      <path d="M18 7l2-3M18 17l2 3" />
-      <circle cx="16" cy="11" r="1" fill="currentColor" />
+      <path d="M16.69 7.44a6.973 6.973 0 0 0 -1.69 4.56c0 1.747 .64 3.345 1.699 4.571" />
+      <path d="M2 9.504c7.715 8.647 14.75 10.265 20 2.498c-5.25 -7.761 -12.285 -6.142 -20 2.504" />
+      <path d="M18 11v.01" />
+      <path d="M11.5 10.5c-.667 1 -.667 2 0 3" />
     </svg>
   ),
 

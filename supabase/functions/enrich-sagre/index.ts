@@ -10,6 +10,154 @@
 import { GoogleGenAI } from "npm:@google/genai@1";
 import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
 
+// =============================================================================
+// Multi-provider LLM fallback: Groq (free) → Mistral (free) → Gemini (free) → Vertex AI (credits)
+// =============================================================================
+
+type LLMProvider = "groq" | "mistral" | "gemini" | "vertex";
+
+interface LLMCallResult {
+  text: string;
+  provider: LLMProvider;
+}
+
+// Free providers first, paid (Vertex AI credits) last
+const PROVIDER_CHAIN: LLMProvider[] = ["groq", "mistral", "gemini", "vertex"];
+
+async function callLLMWithFallback(
+  prompt: string,
+  ai: GoogleGenAI,
+  responseSchema: Record<string, unknown>,
+): Promise<LLMCallResult> {
+  const errors: string[] = [];
+
+  for (const provider of PROVIDER_CHAIN) {
+    try {
+      const text = await callProvider(provider, prompt, ai, responseSchema);
+      return { text, provider };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const isQuota = msg.includes("429") || msg.includes("quota") || msg.includes("exceeded") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("rate_limit");
+      errors.push(`${provider}: ${msg.slice(0, 120)}`);
+      console.warn(`LLM ${provider} failed (quota=${isQuota}): ${msg.slice(0, 150)}`);
+      // Only fallback on quota/rate errors — other errors (bad JSON, network) also fallback
+      continue;
+    }
+  }
+
+  throw new Error(`All LLM providers failed: ${errors.join(" | ")}`);
+}
+
+async function callProvider(
+  provider: LLMProvider,
+  prompt: string,
+  ai: GoogleGenAI,
+  responseSchema: Record<string, unknown>,
+): Promise<string> {
+  switch (provider) {
+    case "gemini": {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema,
+        },
+      });
+      return response.text;
+    }
+
+    case "groq": {
+      const apiKey = Deno.env.get("GROQ_KEY");
+      if (!apiKey) throw new Error("GROQ_API_KEY not set");
+      const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          messages: [
+            { role: "system", content: "Rispondi SOLO con un array JSON valido, senza markdown, senza commenti, senza testo extra." },
+            { role: "user", content: prompt },
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.3,
+          max_tokens: 4096,
+        }),
+      });
+      if (!resp.ok) {
+        const body = await resp.text();
+        throw new Error(`Groq ${resp.status}: ${body.slice(0, 200)}`);
+      }
+      const data = await resp.json();
+      const raw = data.choices?.[0]?.message?.content ?? "";
+      return extractArrayFromJSON(raw);
+    }
+
+    case "mistral": {
+      const apiKey = Deno.env.get("MISTRAL_KEY");
+      if (!apiKey) throw new Error("MISTRAL_API_KEY not set");
+      const resp = await fetch("https://api.mistral.ai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: "mistral-small-latest",
+          messages: [
+            { role: "system", content: "Rispondi SOLO con un array JSON valido, senza markdown, senza commenti, senza testo extra." },
+            { role: "user", content: prompt },
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.3,
+          max_tokens: 4096,
+        }),
+      });
+      if (!resp.ok) {
+        const body = await resp.text();
+        throw new Error(`Mistral ${resp.status}: ${body.slice(0, 200)}`);
+      }
+      const data = await resp.json();
+      const raw = data.choices?.[0]?.message?.content ?? "";
+      return extractArrayFromJSON(raw);
+    }
+
+    case "vertex": {
+      const projectId = Deno.env.get("GOOGLE_CLOUD_PROJECT");
+      const apiKey = Deno.env.get("VERTEX_API_KEY") || Deno.env.get("GEMINI_API_KEY");
+      if (!projectId || !apiKey) throw new Error("GOOGLE_CLOUD_PROJECT or VERTEX_API_KEY not set");
+      const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/publishers/google/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const resp = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: responseSchema,
+            temperature: 0.3,
+          },
+        }),
+      });
+      if (!resp.ok) {
+        const body = await resp.text();
+        throw new Error(`Vertex ${resp.status}: ${body.slice(0, 200)}`);
+      }
+      const data = await resp.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      return text;
+    }
+  }
+}
+
+/** Extract JSON array from LLM response — handles wrapped objects like {results:[...]} */
+function extractArrayFromJSON(raw: string): string {
+  const parsed = JSON.parse(raw);
+  if (Array.isArray(parsed)) return JSON.stringify(parsed);
+  // Search for first array value in the object
+  for (const val of Object.values(parsed)) {
+    if (Array.isArray(val)) return JSON.stringify(val);
+  }
+  return raw;
+}
+
 const GEOCODE_LIMIT = 50;   // max rows to geocode per iteration (capped by 50% time budget — ~25-27 effective)
 const LLM_LIMIT = 200;      // max sagre to enrich per loop iteration (25 batches of 8)
 const SLEEP_MS = 1100;      // 1.1s between Nominatim calls (policy: 1 req/sec)
@@ -350,10 +498,11 @@ async function runGeocodePass(
   const GEOCODE_BUDGET_MS = TIME_BUDGET_MS * 0.5;
   const hasGeoTime = () => !startedAt || (Date.now() - startedAt) < GEOCODE_BUDGET_MS;
 
+  // Geocode both pending_geocode AND enriched sagre missing GPS coordinates
   const { data: rows } = await supabase
     .from("sagre")
-    .select("id, title, location_text")
-    .eq("status", "pending_geocode")
+    .select("id, title, location_text, status")
+    .or("status.eq.pending_geocode,and(status.eq.enriched,location.is.null)")
     .limit(GEOCODE_LIMIT)
     .order("created_at", { ascending: true });
 
@@ -414,10 +563,12 @@ async function runGeocodePass(
             // so non-null result = definitely Veneto
             if (province) {
               // Veneto sagra — geocode and continue to LLM enrichment
+              // If already enriched, keep status (just adding GPS); otherwise move to pending_llm
+              const currentStatus = (sagra as Record<string, unknown>).status as string;
               const updateData: Record<string, unknown> = {
                 location: `SRID=4326;POINT(${lon} ${lat})`,  // PostGIS WKT: LON LAT order
                 province: province,
-                status: "pending_llm",
+                status: currentStatus === "enriched" ? "enriched" : "pending_llm",
                 updated_at: new Date().toISOString(),
               };
               // Also update location_text if we refined it from title
@@ -439,19 +590,25 @@ async function runGeocodePass(
               failed++;
             }
           } else {
-            // Coordinates outside Italy bounding box — treat as failed
+            // Coordinates outside Italy bounding box — treat as failed (but don't regress enriched sagre)
+            const cs = (sagra as Record<string, unknown>).status as string;
+            if (cs !== "enriched") {
+              await supabase.from("sagre").update({
+                status: "geocode_failed",
+                updated_at: new Date().toISOString(),
+              }).eq("id", sagra.id);
+            }
+            failed++;
+          }
+        } else {
+          // Nominatim returned no results — don't regress enriched sagre
+          const cs = (sagra as Record<string, unknown>).status as string;
+          if (cs !== "enriched") {
             await supabase.from("sagre").update({
               status: "geocode_failed",
               updated_at: new Date().toISOString(),
             }).eq("id", sagra.id);
-            failed++;
           }
-        } else {
-          // Nominatim returned no results
-          await supabase.from("sagre").update({
-            status: "geocode_failed",
-            updated_at: new Date().toISOString(),
-          }).eq("id", sagra.id);
           failed++;
         }
       } else {
@@ -500,7 +657,6 @@ async function runLLMPass(
 
   const batches = chunkBatch(rows as SagraForLLM[], BATCH_SIZE);
 
-  let retries = 0;
   for (let i = 0; i < batches.length; i++) {
     // Stop if time budget nearly exhausted
     if (!hasTime()) {
@@ -510,42 +666,38 @@ async function runLLMPass(
 
     const batch = batches[i];
 
-    // Rate limit: 10 RPM on Gemini free tier → wait 6.5s between calls
-    if (i > 0) await sleep(6500);
+    // Rate limit: 2s between batches (Groq/Mistral are fast; Gemini fallback handles its own limits)
+    if (i > 0) await sleep(2000);
 
     try {
       const prompt = buildEnrichmentPrompt(batch);
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "ARRAY",
-            items: {
-              type: "OBJECT",
-              properties: {
-                id: { type: "STRING" },
-                is_sagra: { type: "BOOLEAN" },
-                confidence: { type: "INTEGER" },
-                clean_title: { type: "STRING" },
-                city: { type: "STRING" },
-                province_code: { type: "STRING" },
-                start_date: { type: "STRING" },
-                end_date: { type: "STRING" },
-                food_tags: { type: "ARRAY", items: { type: "STRING" } },
-                feature_tags: { type: "ARRAY", items: { type: "STRING" } },
-                description: { type: "STRING" },
-                unsplash_query: { type: "STRING" },
-              },
-              required: ["id", "is_sagra", "confidence", "clean_title", "food_tags", "feature_tags", "description", "unsplash_query"],
-            },
+      const responseSchema = {
+        type: "ARRAY",
+        items: {
+          type: "OBJECT",
+          properties: {
+            id: { type: "STRING" },
+            is_sagra: { type: "BOOLEAN" },
+            confidence: { type: "INTEGER" },
+            clean_title: { type: "STRING" },
+            city: { type: "STRING" },
+            province_code: { type: "STRING" },
+            start_date: { type: "STRING" },
+            end_date: { type: "STRING" },
+            food_tags: { type: "ARRAY", items: { type: "STRING" } },
+            feature_tags: { type: "ARRAY", items: { type: "STRING" } },
+            description: { type: "STRING" },
+            unsplash_query: { type: "STRING" },
           },
+          required: ["id", "is_sagra", "confidence", "clean_title", "food_tags", "feature_tags", "description", "unsplash_query"],
         },
-      });
+      };
 
-      const raw = JSON.parse(response.text) as EnrichmentResult[];
+      const llmResult = await callLLMWithFallback(prompt, ai, responseSchema);
+      console.log(`Batch ${i + 1} processed by ${llmResult.provider}`);
+
+      const raw = JSON.parse(llmResult.text) as EnrichmentResult[];
 
       // Blocklist: events that are NOT sagre regardless of LLM classification
       const BLOCKLIST_TITLES = ["vinitaly", "wine&food", "prowein"];
@@ -588,9 +740,13 @@ async function runLLMPass(
         const clean_title = (result.clean_title ?? "").slice(0, 100) || matchedSagra?.title || "";
 
         // Determine if this sagra qualifies for auto-approval
-        const effectiveStartDate = result.start_date || matchedSagra?.start_date || null;
-        const effectiveEndDate = result.end_date || matchedSagra?.end_date || null;
-        const hasDate = !!effectiveStartDate;
+        // CRITICAL: only valid YYYY-MM-DD dates count — LLM may return "luglio 2026" or garbage
+        const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+        const effectiveStartDate = (DATE_RE.test(result.start_date ?? "") ? result.start_date : null)
+          || matchedSagra?.start_date || null;
+        const effectiveEndDate = (DATE_RE.test(result.end_date ?? "") ? result.end_date : null)
+          || matchedSagra?.end_date || null;
+        const hasDate = !!effectiveStartDate && DATE_RE.test(effectiveStartDate);
         const isHighConfidence = confidence >= 70;
 
         // Province: must be a valid Veneto province to auto-approve
@@ -658,26 +814,9 @@ async function runLLMPass(
       console.error("LLM batch enrichment error:", errMsg);
       lastError = errMsg;
 
-      const isRateLimit = errMsg.includes("429") || errMsg.includes("quota") || errMsg.includes("exceeded") || errMsg.includes("RESOURCE_EXHAUSTED");
-
-      if (isRateLimit && retries < 3) {
-        retries++;
-        // Smart retry: wait proportionally to remaining time, never more than 50% of what's left
-        const remaining = remainingMs();
-        const waitMs = Math.min(15_000, Math.max(5_000, remaining * 0.3));
-        if (remaining < 10_000) {
-          console.log(`Rate limited but only ${Math.round(remaining / 1000)}s left — stopping LLM pass`);
-          break;
-        }
-        console.log(`Rate limited by Gemini (retry ${retries}/3), waiting ${Math.round(waitMs / 1000)}s (${Math.round(remaining / 1000)}s remaining)...`);
-        await sleep(waitMs);
-        i--; // retry same batch
-        continue;
-      }
-
-      if (isRateLimit) {
-        // Exhausted retries — stop entire LLM pass, next cron will continue
-        console.log(`Gemini rate limit persistent after ${retries} retries — stopping. Next cron will resume.`);
+      // If ALL providers failed (callLLMWithFallback exhausted the chain), stop
+      if (errMsg.includes("All LLM providers failed")) {
+        console.log("All LLM providers exhausted — stopping LLM pass. Next cron will resume.");
         break;
       }
       // Other errors: skip batch, continue to next
