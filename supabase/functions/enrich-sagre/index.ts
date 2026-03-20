@@ -365,24 +365,32 @@ function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
    Se non ci sono informazioni → array vuoto [].
    - "Giostre" SOLO per grandi fiere con luna park
 
-10. **description**: descrizione in italiano, SEMPRE presente, max 1000 caratteri, coinvolgente e RICCA DI DETTAGLI.
+10. **description**: descrizione in italiano, SEMPRE presente, max 1200 caratteri, coinvolgente e ORGANIZZATA IN PARAGRAFI.
+    FORMATO OBBLIGATORIO — usa "\\n\\n" per separare i paragrafi:
+
+    Paragrafo 1: Descrizione dell'evento (cosa è, storia, edizione)
+
+    Paragrafo 2 (se ci sono dati): Menu e piatti ("Tra i piatti: polenta e baccalà, grigliate, fritture.")
+
+    Paragrafo 3 (se ci sono dati): Info pratiche su righe separate con "\\n":
+    "📍 Via Piave 12, Tribano (PD)\\n🕐 Ven 18-23, Sab-Dom 10-23\\n🎟️ Ingresso libero\\n📞 333 456789 | info@sagra.it"
+
     REGOLA FONDAMENTALE: NON perdere informazioni utili dalla description originale. Riformula in italiano corretto ma CONSERVA:
-    - Orari di apertura (es. "dalle 09:00 alle 19:00")
-    - Indirizzo/via (es. "Via Piave e Viale Europa")
-    - Menu/piatti specifici (es. "polenta e baccalà, grigliate, fritture")
-    - Programma/attività (es. "mercatino, musica dal vivo, giochi per bambini")
-    - Contatti (telefono, email, pagina Facebook)
-    - Numero edizione (es. "19ª edizione")
-    - Prezzo/ingresso (es. "ingresso libero", "€15 cena completa")
-    - Organizzatore (es. "Pro Loco di Onigo")
-    Se la description originale è vuota o assente: CREANE una credibile basata su titolo e luogo.
+    - Orari, indirizzo, menu, programma, contatti, numero edizione, prezzo, organizzatore
+    Se la description originale è vuota o assente: CREANE una credibile basata su titolo e luogo (solo paragrafo 1).
     MAI inventare dettagli specifici (menu, orari, prezzi) se non sono nella description originale.
     MAI lasciare vuota!
 
-11. **unsplash_query**: 2-4 parole IN INGLESE per cercare FOTO DI CIBO.
-    REGOLA: estrai il SOGGETTO ALIMENTARE dal titolo e traduci in inglese.
-    Esempi: "Sagra del Pesce" → "fresh seafood platter", "Festa della Zucca" → "pumpkin soup autumn", "Festa della Bufala" → "buffalo mozzarella fresh Italian", "Sagra del Baccalà" → "salt cod Italian dish"
-    VIETATO: "festival", "party", "celebration", "market", "outdoor", "village". OGNI query DEVE avere un ALIMENTO SPECIFICO.
+11. **unsplash_query**: 3-5 parole IN INGLESE per cercare FOTO del PROTAGONISTA dell'evento.
+    REGOLA FONDAMENTALE: leggi TUTTA la description/source_description per capire il VERO soggetto, poi traduci in inglese.
+    - Se la description parla di "vino rosato Chiaretto" → "rosé pink wine glass vineyard" (NON "wine" generico)
+    - Se parla di "ciliegie" → "fresh red cherries tree branch" (NON "berries" o "fruit")
+    - Se parla di "fagiolo di Lamon" → "borlotti beans Italian dish" (NON verdure generiche)
+    - Se parla di "riso" → "Italian risotto rice dish" (NON cannoli o pasta)
+    La query deve essere SPECIFICA al piatto/prodotto menzionato nella description, non generica.
+    Esempi: "Sagra del Pesce" → "fresh seafood platter Mediterranean", "Festa della Zucca" → "pumpkin soup autumn Italian"
+    VIETATO: "festival", "party", "celebration", "market", "outdoor", "village", "traditional", "Italian food" generico.
+    OGNI query DEVE descrivere il CIBO/PRODOTTO SPECIFICO dell'evento.
 
 EVENTI:
 ${JSON.stringify(batch)}
@@ -1084,6 +1092,69 @@ async function fetchPexelsPhotos(
   return { photos: (data.photos ?? []) as PexelsPhoto[], rateLimitLow, error: false };
 }
 
+// =============================================================================
+// Pixabay Image API — third fallback after Unsplash + Pexels
+// Free tier: 100 req/min. Images must NOT be hotlinked (use largeImageURL, valid 24h cache).
+// =============================================================================
+
+const PIXABAY_API_KEY = Deno.env.get("PIXABAY_API_KEY");
+
+interface PixabayHit {
+  id: number;
+  largeImageURL: string;
+  webformatURL: string;
+  user: string;
+  pageURL: string;
+}
+
+async function fetchPixabayPhotos(
+  query: string,
+  perPage: number = 20
+): Promise<{ photos: PixabayHit[]; rateLimitLow: boolean; error: boolean }> {
+  if (!PIXABAY_API_KEY) {
+    return { photos: [], rateLimitLow: false, error: true };
+  }
+
+  const params = new URLSearchParams({
+    key: PIXABAY_API_KEY,
+    q: query,
+    image_type: "photo",
+    orientation: "horizontal",
+    category: "food",
+    per_page: String(perPage),
+    safesearch: "true",
+    lang: "it",
+  });
+
+  const resp = await fetch(`https://pixabay.com/api/?${params}`);
+
+  if (!resp.ok) {
+    console.error(`Pixabay API error: HTTP ${resp.status} for query: ${query}`);
+    return { photos: [], rateLimitLow: resp.status === 429, error: true };
+  }
+
+  const remaining = parseInt(resp.headers.get("X-RateLimit-Remaining") ?? "100", 10);
+  const rateLimitLow = remaining < 5;
+  if (rateLimitLow) {
+    console.log(`Pixabay rate limit low (${remaining} remaining) after query: ${query}`);
+  }
+
+  const data = await resp.json();
+  return { photos: (data.hits ?? []) as PixabayHit[], rateLimitLow, error: false };
+}
+
+function pickPixabayPhotoForSagra(photos: PixabayHit[], sagraId: string): { imageUrl: string; imageCredit: string } {
+  let hash = 0;
+  for (let i = 0; i < sagraId.length; i++) {
+    hash = ((hash << 5) - hash + sagraId.charCodeAt(i)) | 0;
+  }
+  const picked = photos[Math.abs(hash) % photos.length];
+  return {
+    imageUrl: picked.largeImageURL,  // 1280px wide
+    imageCredit: `${picked.user}|${picked.pageURL}`,
+  };
+}
+
 /**
  * Convert a Pexels photo to the same image_url/image_credit format used by Unsplash.
  * Uses large (940px) for good quality without being too heavy.
@@ -1233,7 +1304,24 @@ async function runUnsplashPass(
             console.log(`Pexels: assigned ${groupSagre.length} images for query: ${query}`);
             continue;
           }
-          // Both Unsplash and Pexels returned 0 — queue for title-based fallback retry
+          // Try Pixabay as third fallback
+          const pixabayResult = await fetchPixabayPhotos(query);
+          await sleep(1000);
+          if (!pixabayResult.error && pixabayResult.photos.length > 0) {
+            console.log(`Pixabay found ${pixabayResult.photos.length} photos for query: ${query}`);
+            for (const sagra of groupSagre) {
+              const { imageUrl, imageCredit } = pickPixabayPhotoForSagra(pixabayResult.photos, sagra.id);
+              await supabase.from("sagre").update({
+                image_url: imageUrl,
+                image_credit: imageCredit,
+                updated_at: new Date().toISOString(),
+              }).eq("id", sagra.id);
+              assigned++;
+            }
+            console.log(`Pixabay: assigned ${groupSagre.length} images for query: ${query}`);
+            continue;
+          }
+          // All three providers returned 0 — queue for title-based fallback retry
           retryWithTitleQuery.push(...groupSagre.filter(s => s.unsplash_query));
           continue;
         }
@@ -1329,6 +1417,23 @@ async function runUnsplashPass(
                   assigned++;
                 }
                 console.log(`Pexels retry: assigned ${groupSagre.length} images for query: ${queryKey}`);
+                continue;
+              }
+              // Try Pixabay as last resort in retry phase
+              const pixabayResult = await fetchPixabayPhotos(queryKey);
+              await sleep(1000);
+              if (!pixabayResult.error && pixabayResult.photos.length > 0) {
+                console.log(`Pixabay found ${pixabayResult.photos.length} photos for retry query: ${queryKey}`);
+                for (const sagra of groupSagre) {
+                  const { imageUrl, imageCredit } = pickPixabayPhotoForSagra(pixabayResult.photos, sagra.id);
+                  await supabase.from("sagre").update({
+                    image_url: imageUrl,
+                    image_credit: imageCredit,
+                    updated_at: new Date().toISOString(),
+                  }).eq("id", sagra.id);
+                  assigned++;
+                }
+                console.log(`Pixabay retry: assigned ${groupSagre.length} images for query: ${queryKey}`);
                 continue;
               }
               continue;
