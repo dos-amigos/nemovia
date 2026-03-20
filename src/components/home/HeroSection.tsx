@@ -118,26 +118,24 @@ export function HeroSection({ cityVideos = [], foodApiVideos = [] }: HeroSection
 
   return (
     <FadeIn>
-      <section className="relative mx-4 h-[280px] overflow-hidden rounded-2xl sm:mx-6 sm:h-[340px] lg:mx-8 lg:h-[400px]">
-        {/* Video background */}
-        {video && (
-          <video
-            ref={videoRef}
-            src={video.src}
-            autoPlay
-            muted
-            playsInline
-            onEnded={advanceVideo}
-            onError={advanceVideo}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        )}
-
-        {/* Fallback gradient while video loads */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-accent/20" />
-
-        {/* Dark gradient overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20" />
+      <section className="relative mx-4 h-[280px] rounded-2xl sm:mx-6 sm:h-[340px] lg:mx-8 lg:h-[400px]">
+        {/* Video + gradients clipped to rounded corners */}
+        <div className="absolute inset-0 overflow-hidden rounded-2xl">
+          {video && (
+            <video
+              ref={videoRef}
+              src={video.src}
+              autoPlay
+              muted
+              playsInline
+              onEnded={advanceVideo}
+              onError={advanceVideo}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-accent/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20" />
+        </div>
 
         {/* Content overlay */}
         <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
