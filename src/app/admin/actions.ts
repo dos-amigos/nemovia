@@ -640,3 +640,168 @@ export async function deleteExternalSource(id: string) {
   const { error } = await db.from("external_sources").delete().eq("id", id);
   if (error) throw new Error(error.message);
 }
+
+// =============================================================================
+// Provider usage / rate limit status
+// =============================================================================
+
+export type ProviderStatus = {
+  name: string;
+  status: "ok" | "low" | "exhausted" | "error";
+  used: number | null;
+  limit: number | null;
+  unit: string;
+  detail?: string;
+};
+
+/** Check rate limits for all LLM + image providers by making a minimal call and reading headers */
+export async function getProviderStatus(): Promise<ProviderStatus[]> {
+  if (!(await isAdmin())) throw new Error("Unauthorized");
+
+  const results: ProviderStatus[] = [];
+
+  // --- Groq ---
+  try {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.GROQ_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        messages: [{ role: "user", content: "ok" }],
+        max_tokens: 1,
+      }),
+    });
+    const limitReq = parseInt(res.headers.get("x-ratelimit-limit-requests") ?? "0", 10);
+    const remainReq = parseInt(res.headers.get("x-ratelimit-remaining-requests") ?? "0", 10);
+    const used = limitReq - remainReq;
+    results.push({
+      name: "Groq (Llama 3.1 8B)",
+      status: remainReq > 1000 ? "ok" : remainReq > 100 ? "low" : "exhausted",
+      used,
+      limit: limitReq,
+      unit: "req/giorno",
+    });
+  } catch {
+    results.push({ name: "Groq", status: "error", used: null, limit: null, unit: "req/giorno", detail: "Connessione fallita" });
+  }
+
+  // --- Mistral ---
+  try {
+    const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.MISTRAL_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "mistral-small-latest",
+        messages: [{ role: "user", content: "ok" }],
+        max_tokens: 1,
+      }),
+    });
+    const limitTok = parseInt(res.headers.get("x-ratelimit-limit-tokens-month") ?? "0", 10);
+    const remainTok = parseInt(res.headers.get("x-ratelimit-remaining-tokens-month") ?? "0", 10);
+    const limitReq = parseInt(res.headers.get("x-ratelimit-limit-req-minute") ?? "0", 10);
+    const remainReq = parseInt(res.headers.get("x-ratelimit-remaining-req-minute") ?? "0", 10);
+    const usedTok = limitTok - remainTok;
+    results.push({
+      name: "Mistral (Small)",
+      status: remainTok > 500_000 ? "ok" : remainTok > 100_000 ? "low" : "exhausted",
+      used: usedTok,
+      limit: limitTok,
+      unit: "token/mese",
+      detail: `${remainReq}/${limitReq} req/min`,
+    });
+  } catch {
+    results.push({ name: "Mistral", status: "error", used: null, limit: null, unit: "token/mese", detail: "Connessione fallita" });
+  }
+
+  // --- Gemini (free tier — no headers, test with a call) ---
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: "ok" }] }] }),
+      }
+    );
+    if (res.ok) {
+      results.push({ name: "Gemini (2.5 Flash)", status: "ok", used: null, limit: 20, unit: "req/giorno", detail: "Free tier" });
+    } else {
+      const body = await res.text();
+      const isQuota = body.includes("429") || body.includes("quota");
+      results.push({
+        name: "Gemini (2.5 Flash)",
+        status: isQuota ? "exhausted" : "error",
+        used: isQuota ? 20 : null,
+        limit: 20,
+        unit: "req/giorno",
+        detail: isQuota ? "Quota esaurita" : `HTTP ${res.status}`,
+      });
+    }
+  } catch {
+    results.push({ name: "Gemini", status: "error", used: null, limit: 20, unit: "req/giorno", detail: "Connessione fallita" });
+  }
+
+  // --- Unsplash ---
+  try {
+    const res = await fetch(
+      "https://api.unsplash.com/search/photos?query=test&per_page=1",
+      { headers: { Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`, "Accept-Version": "v1" } }
+    );
+    const limit = parseInt(res.headers.get("X-Ratelimit-Limit") ?? "50", 10);
+    const remain = parseInt(res.headers.get("X-Ratelimit-Remaining") ?? "0", 10);
+    results.push({
+      name: "Unsplash",
+      status: remain > 10 ? "ok" : remain > 2 ? "low" : "exhausted",
+      used: limit - remain,
+      limit,
+      unit: "req/ora",
+    });
+  } catch {
+    results.push({ name: "Unsplash", status: "error", used: null, limit: 50, unit: "req/ora" });
+  }
+
+  // --- Pexels ---
+  try {
+    const res = await fetch(
+      "https://api.pexels.com/v1/search?query=test&per_page=1",
+      { headers: { Authorization: process.env.PEXELS_API_KEY ?? "" } }
+    );
+    const limit = parseInt(res.headers.get("X-Ratelimit-Limit") ?? "200", 10);
+    const remain = parseInt(res.headers.get("X-Ratelimit-Remaining") ?? "0", 10);
+    results.push({
+      name: "Pexels",
+      status: remain > 50 ? "ok" : remain > 10 ? "low" : "exhausted",
+      used: limit - remain,
+      limit,
+      unit: "req/ora",
+    });
+  } catch {
+    results.push({ name: "Pexels", status: "error", used: null, limit: 200, unit: "req/ora" });
+  }
+
+  // --- Pixabay ---
+  try {
+    const key = process.env.PIXABAY_API_KEY;
+    if (!key) throw new Error("No key");
+    const res = await fetch(`https://pixabay.com/api/?key=${key}&q=test&per_page=3`);
+    const limit = parseInt(res.headers.get("X-RateLimit-Limit") ?? "100", 10);
+    const remain = parseInt(res.headers.get("X-RateLimit-Remaining") ?? "0", 10);
+    results.push({
+      name: "Pixabay",
+      status: remain > 20 ? "ok" : remain > 5 ? "low" : "exhausted",
+      used: limit - remain,
+      limit,
+      unit: "req/min",
+    });
+  } catch {
+    results.push({ name: "Pixabay", status: "error", used: null, limit: 100, unit: "req/min" });
+  }
+
+  return results;
+}

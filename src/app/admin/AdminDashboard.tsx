@@ -21,11 +21,13 @@ import {
   addExternalSource,
   toggleExternalSource,
   deleteExternalSource,
+  getProviderStatus,
   type ReviewStatus,
   type SourceOverview,
   type ExternalSource,
   type CronJob,
   type DbDiagnostics,
+  type ProviderStatus,
 } from "./actions";
 import { EditModal } from "./EditModal";
 import { Check, X, ExternalLink, LogOut, ChevronLeft, ChevronRight, RefreshCw, Play, Pause, Plus, Trash2, Power, LayoutDashboard, BarChart3, List } from "lucide-react";
@@ -500,6 +502,9 @@ function DettagliView({
     <div className="mx-auto max-w-6xl space-y-4">
       <h2 className="text-xl font-bold">Dettagli Pipeline</h2>
 
+      {/* Provider status panel */}
+      <ProviderStatusPanel />
+
       {/* Pipeline stats grid */}
       {pipeline && (
         <div className="rounded-xl bg-white p-4 shadow">
@@ -862,6 +867,95 @@ function DiagStat({ label, value, color }: { label: string; value: number; color
     <div className="rounded-lg bg-muted/50 p-2 text-center">
       <div className={`text-lg font-bold ${color ?? "text-foreground"}`}>{value}</div>
       <div className="text-[10px] text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+// =============================================================================
+// Provider Status Panel — shows free tier usage for all LLM + image providers
+// =============================================================================
+
+function ProviderStatusPanel() {
+  const [providers, setProviders] = useState<ProviderStatus[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getProviderStatus();
+      setProviders(data);
+    } catch {
+      // ignore
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const statusIcon = (s: ProviderStatus["status"]) => {
+    switch (s) {
+      case "ok": return "🟢";
+      case "low": return "🟡";
+      case "exhausted": return "🔴";
+      case "error": return "⚪";
+    }
+  };
+
+  const pct = (p: ProviderStatus) => {
+    if (p.used == null || p.limit == null || p.limit === 0) return null;
+    return Math.round((p.used / p.limit) * 100);
+  };
+
+  const fmtNum = (n: number) => {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+    return String(n);
+  };
+
+  return (
+    <div className="rounded-xl bg-white p-4 shadow">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-bold">Stato Provider (Free Tier)</h3>
+        <button onClick={refresh} disabled={loading} className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-50">
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+        </button>
+      </div>
+      {providers.length === 0 ? (
+        <div className="py-4 text-center text-sm text-muted-foreground">{loading ? "Controllo provider..." : "Nessun dato"}</div>
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {providers.map((p) => {
+            const percent = pct(p);
+            return (
+              <div key={p.name} className="flex items-center gap-3 rounded-lg border p-3">
+                <span className="text-lg">{statusIcon(p.status)}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{p.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {p.used != null && p.limit != null
+                      ? `${fmtNum(p.used)} / ${fmtNum(p.limit)} ${p.unit}`
+                      : p.detail ?? p.unit}
+                  </div>
+                  {p.detail && p.used != null && (
+                    <div className="text-[10px] text-muted-foreground">{p.detail}</div>
+                  )}
+                </div>
+                {percent != null && (
+                  <div className="relative h-8 w-8 shrink-0">
+                    <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
+                      <circle cx="18" cy="18" r="14" fill="none" stroke="#e5e7eb" strokeWidth="3" />
+                      <circle cx="18" cy="18" r="14" fill="none"
+                        stroke={percent > 80 ? "#ef4444" : percent > 50 ? "#eab308" : "#22c55e"}
+                        strokeWidth="3" strokeDasharray={`${percent * 0.88} 88`} strokeLinecap="round" />
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold">{percent}%</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
