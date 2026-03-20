@@ -60,14 +60,14 @@ export async function getAdminSagre(
   return { data: data ?? [], total: count ?? 0 };
 }
 
-/** Get single sagra with all fields for editing */
+/** Get single sagra with all fields for editing (excludes PostGIS location — not serializable in server actions) */
 export async function getAdminSagraById(id: string) {
   if (!(await isAdmin())) throw new Error("Unauthorized");
   const db = createAdminClient();
 
   const { data, error } = await db
     .from("sagre")
-    .select("*")
+    .select("id, title, slug, location_text, province, start_date, end_date, food_tags, feature_tags, image_url, image_credit, source_url, source_id, confidence, review_status, is_active, is_free, enhanced_description, source_description, description, status, created_at, unsplash_query")
     .eq("id", id)
     .single();
 
