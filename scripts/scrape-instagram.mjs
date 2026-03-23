@@ -21,9 +21,10 @@ if (!APIFY_TOKEN) {
   process.exit(1);
 }
 
+const GROQ_API_KEY = process.env.GROQ_API_KEY || process.env.GROQ_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-if (!GEMINI_API_KEY) {
-  console.error("GEMINI_API_KEY not found in .env");
+if (!GROQ_API_KEY && !GEMINI_API_KEY) {
+  console.error("Neither GROQ_API_KEY nor GEMINI_API_KEY found in .env");
   process.exit(1);
 }
 
@@ -123,16 +124,11 @@ function isFoodEvent(title) {
   return /\b(sagra|sagre|festa\s+d[ei]l|enogastronomic|degustazion|polenta|baccal[aà]|pesce|gnocch|risott|tortel|formagg|asparag|radicchi|funghi|vino|birra|griglia|salsiccia|castagne|zucca|bisi|carciofi|olio|riso|oca|bigoli|cinghiale|trippa|lumache|rane|bufala|focaccia|pinza|prosciutt|salame|pasta|pizza|gelato|dolci|tiramisù|fragol|cilieg|mele|uva|miele|pane|gastronomia|cucina|sapori|gusto|prodotti\s+tipici|street\s*food)\b/i.test(title);
 }
 
-// --- Gemini Vision API ---
+// --- Vision API: Groq (primary) → Gemini (fallback) ---
 
-async function analyzeImageWithGemini(imageUrl, caption) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`;
-
-  const prompt = `Sei un esperto di sagre e feste del cibo in Veneto (Italia).
+const VISION_PROMPT = `Sei un esperto di sagre e feste del cibo in Veneto (Italia).
 
 Analizza questa immagine (una locandina/volantino di un evento) e il testo del post Instagram.
-
-Testo post: "${caption || "nessun testo"}"
 
 Estrai SOLO se è una sagra/festa del cibo. Se NON è un evento gastronomico, rispondi con: {"is_sagra": false}
 
@@ -156,6 +152,51 @@ REGOLE:
 - Se non riesci a determinare un campo, usa null
 - Rispondi SOLO con il JSON, nessun altro testo`;
 
+async function analyzeImageWithGroq(imageUrl, caption) {
+  if (!GROQ_API_KEY) return null;
+  try {
+    const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "meta-llama/llama-4-scout-17b-16e-instruct",
+        messages: [{
+          role: "user",
+          content: [
+            { type: "text", text: `${VISION_PROMPT}\n\nTesto post: "${caption || "nessun testo"}"` },
+            { type: "image_url", image_url: { url: imageUrl } },
+          ],
+        }],
+        temperature: 0.1,
+        max_tokens: 500,
+      }),
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => "");
+      console.warn(`[groq-vision] HTTP ${resp.status}: ${errText.slice(0, 200)}`);
+      return null; // fallback to Gemini
+    }
+
+    const data = await resp.json();
+    const text = data.choices?.[0]?.message?.content || "";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    const result = JSON.parse(jsonMatch[0]);
+    result._provider = "groq";
+    return result;
+  } catch (err) {
+    console.warn(`[groq-vision] Error: ${err.message}`);
+    return null;
+  }
+}
+
+async function analyzeImageWithGemini(imageUrl, caption) {
+  if (!GEMINI_API_KEY) return null;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`;
   try {
     const resp = await fetch(url, {
       method: "POST",
@@ -163,40 +204,44 @@ REGOLE:
       body: JSON.stringify({
         contents: [{
           parts: [
-            { text: prompt },
+            { text: `${VISION_PROMPT}\n\nTesto post: "${caption || "nessun testo"}"` },
             { inline_data: { mime_type: "image/jpeg", data: await fetchImageAsBase64(imageUrl) } },
           ],
         }],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 500,
-        },
+        generationConfig: { temperature: 0.1, maxOutputTokens: 500 },
       }),
     });
 
     if (!resp.ok) {
       const errText = await resp.text().catch(() => "");
       if (resp.status === 429) {
-        console.warn("[gemini] Rate limited, waiting 10s...");
-        await new Promise(r => setTimeout(r, 10_000));
+        console.warn("[gemini] Rate limited, skipping");
         return null;
       }
-      console.error(`[gemini] API error: HTTP ${resp.status} — ${errText.slice(0, 200)}`);
+      console.error(`[gemini] HTTP ${resp.status}: ${errText.slice(0, 200)}`);
       return null;
     }
 
     const data = await resp.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-    // Extract JSON from response (may be wrapped in ```json ... ```)
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return null;
-
-    return JSON.parse(jsonMatch[0]);
+    const result = JSON.parse(jsonMatch[0]);
+    result._provider = "gemini";
+    return result;
   } catch (err) {
     console.error(`[gemini] Error:`, err.message);
     return null;
   }
+}
+
+/** Groq Vision (fast, free) → Gemini Vision (fallback) */
+async function analyzeImage(imageUrl, caption) {
+  // Try Groq first (sends URL directly, no base64 needed)
+  const groqResult = await analyzeImageWithGroq(imageUrl, caption);
+  if (groqResult) return groqResult;
+  // Fallback to Gemini (needs base64)
+  return analyzeImageWithGemini(imageUrl, caption);
 }
 
 async function fetchImageAsBase64(imageUrl) {
@@ -294,7 +339,7 @@ async function main() {
     console.log(`[pipeline] Analyzing: ${(post.caption || "no caption").slice(0, 60)}...`);
     totalAnalyzed++;
 
-    const result = await analyzeImageWithGemini(imageUrl, post.caption);
+    const result = await analyzeImage(imageUrl, post.caption);
     if (!result || !result.is_sagra) {
       console.log(`  → Not a sagra`);
       totalSkipped++;
