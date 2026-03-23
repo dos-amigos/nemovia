@@ -60,7 +60,7 @@ const TITLE_THEMES: [RegExp, string][] = [
   [/gnocch|gnoche/i, "gnocchi pasta Italian cooking"],
   [/fungh/i, "mushroom cooking Italian"],
   [/zucc[ah]/i, "pumpkin soup autumn cooking"],
-  [/pesce|frutti.*mare|sarde|\banguilla\b|ittich/i, "seafood cooking Mediterranean"],
+  [/pesce|frutti.*mare|sarde|\banguilla\b|ittich/i, "Italian seafood frying Mediterranean traditional"],
   [/carne|grigliata|barbecue|griglia/i, "grilled meat barbecue Italian"],
   [/\briso\b/i, "risotto Italian cooking"],
   [/wine|vino\b|chiaretto|torcolato/i, "wine pouring glass Italian"],

@@ -298,6 +298,53 @@ function truncateDescription(text: string): string {
 }
 
 /**
+ * Post-process LLM description to ensure emoji info lines are on separate lines.
+ * LLMs often collapse newlines into a single paragraph. This function:
+ * 1. Converts literal "\n" (escaped) into real newlines
+ * 2. Ensures each emoji icon (📍🕐🎟️📞) starts on its own line
+ * 3. Ensures paragraph breaks between description/menu/practical-info blocks
+ */
+function formatDescription(desc: string): string {
+  if (!desc) return desc;
+
+  let text = desc;
+
+  // Step 1: Convert literal escaped "\n" sequences to real newlines
+  // LLMs often output the two-character sequence \n instead of an actual newline
+  text = text.replace(/\\n/g, "\n");
+
+  // Step 2: Normalize existing whitespace — collapse 3+ newlines to 2
+  text = text.replace(/\n{3,}/g, "\n\n");
+
+  // Step 3: Ensure each emoji info marker starts on a new line with a paragraph break before the first one
+  // Common info emojis: 📍 (location), 🕐🕑🕒 (time/clock variants), 🎟️ (ticket), 📞 (phone), 📧 (email), 🌐 (web)
+  const infoEmojis = /([^\n])(📍|🕐|🕑|🕒|🕓|🕔|🕕|🕖|🕗|🕘|🕙|🕚|🕛|🎟️|🎟|📞|📧|🌐|⏰|🅿️|🅿)/g;
+  text = text.replace(infoEmojis, (_match, before, emoji) => {
+    // If the character before is already a newline, don't add another
+    return before.trim() === "" ? before + emoji : before + "\n" + emoji;
+  });
+
+  // Step 4: Ensure a double-newline (paragraph break) before the first emoji info block
+  // Find the first info emoji that appears after some text
+  const firstEmojiMatch = text.match(/\n(📍|🕐|🕑|🕒|🕓|🕔|🕕|🕖|🕗|🕘|🕙|🕚|🕛|🎟️|🎟|📞|📧|🌐|⏰|🅿️|🅿)/);
+  if (firstEmojiMatch && firstEmojiMatch.index !== undefined) {
+    const idx = firstEmojiMatch.index;
+    // Check if there's already a double newline before
+    if (idx > 0 && text[idx - 1] !== "\n") {
+      text = text.slice(0, idx) + "\n" + text.slice(idx);
+    }
+  }
+
+  // Step 5: Ensure "Tra i piatti:" or "Menu:" style sections get a paragraph break before them
+  text = text.replace(/([^\n])\s*(Tra i piatti:|Menu:|Piatti:)/g, "$1\n\n$2");
+
+  // Step 6: Clean up — trim lines, remove trailing spaces
+  text = text.split("\n").map(line => line.trimEnd()).join("\n").trim();
+
+  return text;
+}
+
+/**
  * Split an array into chunks of at most `size` items.
  */
 function chunkBatch<T>(items: T[], size: number): T[][] {
@@ -774,7 +821,7 @@ async function runLLMPass(
         // Valid sagra — enrich with all Gemini data
         const food_tags = validateTags(result.food_tags ?? [], FOOD_TAGS).slice(0, 3);
         const feature_tags = validateTags(result.feature_tags ?? [], FEATURE_TAGS).slice(0, 2);
-        const description = (result.description ?? "").slice(0, 1500) || null;
+        const description = formatDescription((result.description ?? "").slice(0, 1500)) || null;
         const unsplash_query = (result.unsplash_query ?? "").slice(0, 60) || null;
         const clean_title = (result.clean_title ?? "").slice(0, 100) || matchedSagra?.title || "";
 
