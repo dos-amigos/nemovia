@@ -339,6 +339,9 @@ async function main() {
     console.log(`[pipeline] Analyzing: ${(post.caption || "no caption").slice(0, 60)}...`);
     totalAnalyzed++;
 
+    // Rate limit: 3s between vision calls to stay under Groq TPM limit
+    if (totalAnalyzed > 1) await new Promise(r => setTimeout(r, 3000));
+
     const result = await analyzeImage(imageUrl, post.caption);
     if (!result || !result.is_sagra) {
       console.log(`  → Not a sagra`);
