@@ -118,7 +118,7 @@ export function AdminDashboard() {
   const [sourceMsg, setSourceMsg] = useState<string | null>(null);
   const [triggerMsg, setTriggerMsg] = useState<Record<string, string>>({});
 
-  // Load pipeline stats
+  // Load pipeline stats + counts (shared across all views)
   const loadPipeline = useCallback(() => {
     getPipelineStats().then((p) => {
       setPipeline((prev) => { if (prev) setPrevPipeline(prev); return p; });
@@ -127,6 +127,7 @@ export function AdminDashboard() {
     getEnrichLogs(6).then(setEnrichLogs).catch(() => {});
     getSourcesOverview().then(setSourcesOverview).catch(() => {});
     getCronJobs().then(setCronJobs).catch(() => {});
+    getStatusCounts().then(setCounts).catch(() => {});
   }, []);
 
   const loadTable = useCallback(() => {
@@ -141,7 +142,7 @@ export function AdminDashboard() {
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (autoRefresh) {
-      intervalRef.current = setInterval(() => { loadPipeline(); getStatusCounts().then(setCounts); }, 10_000);
+      intervalRef.current = setInterval(() => { loadPipeline(); }, 10_000);
     }
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [autoRefresh, loadPipeline]);

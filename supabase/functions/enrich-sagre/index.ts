@@ -709,7 +709,19 @@ async function runLLMPass(
       const llmResult = await callLLMWithFallback(prompt, ai, responseSchema);
       console.log(`Batch ${i + 1} processed by ${llmResult.provider}`);
 
-      const raw = JSON.parse(llmResult.text) as EnrichmentResult[];
+      const parsed = JSON.parse(llmResult.text);
+      // LLM may return a wrapper object (e.g. { results: [...] }) instead of a plain array
+      const raw: EnrichmentResult[] = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.results) ? parsed.results
+        : Array.isArray(parsed?.data) ? parsed.data
+        : typeof parsed === "object" && parsed !== null ? [parsed]
+        : [];
+
+      if (raw.length === 0) {
+        console.warn(`Batch ${i + 1}: LLM returned non-array or empty response, skipping`);
+        continue;
+      }
 
       // Blocklist: events that are NOT sagre regardless of LLM classification
       const BLOCKLIST_TITLES = ["vinitaly", "wine&food", "prowein"];
