@@ -406,13 +406,27 @@ function DashboardView({
           <h3 className="mb-3 text-sm font-bold">Ultima attivit&agrave; fonti</h3>
           <div className="space-y-1.5 text-xs">
             {recentSources.slice(0, 8).map((s) => (
-              <div key={s.name} className="flex items-center justify-between">
-                <span className="font-medium">{s.display_name}</span>
-                <div className="flex items-center gap-2">
-                  {s.last_inserted != null && s.last_inserted > 0 && (
-                    <span className="text-green-600">+{s.last_inserted}</span>
+              <div key={s.name}>
+                <div className="flex items-center justify-between">
+                  {s.sub_sources?.length ? (
+                    <details className="group">
+                      <summary className="cursor-pointer font-medium hover:text-primary list-none flex items-center gap-1">
+                        <span className="text-[10px] text-muted-foreground group-open:rotate-90 transition-transform">&#9654;</span>
+                        {s.display_name}
+                      </summary>
+                      <div className="ml-4 mt-1 space-y-0.5 text-[11px] text-muted-foreground">
+                        {s.sub_sources.map((name) => <div key={name}>{name}</div>)}
+                      </div>
+                    </details>
+                  ) : (
+                    <span className="font-medium">{s.display_name}</span>
                   )}
-                  <span className="text-muted-foreground">{s.last_scraped_at ? timeAgo(s.last_scraped_at) : "mai"}</span>
+                  <div className="flex items-center gap-2">
+                    {s.last_inserted != null && s.last_inserted > 0 && (
+                      <span className="text-green-600">+{s.last_inserted}</span>
+                    )}
+                    <span className="text-muted-foreground">{s.last_scraped_at ? timeAgo(s.last_scraped_at) : "mai"}</span>
+                  </div>
                 </div>
               </div>
             ))}

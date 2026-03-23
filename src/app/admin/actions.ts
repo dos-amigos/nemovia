@@ -426,6 +426,7 @@ export type SourceOverview = {
   last_merged: number | null;
   last_error: string | null;
   last_duration_ms: number | null;
+  sub_sources?: string[];
 };
 
 /** Get overview of ALL sources with last scrape stats */
@@ -504,11 +505,11 @@ export async function getSourcesOverview(): Promise<SourceOverview[]> {
   }
 
   // External sources: aggregate by type (show per-account in management, but here show per-type summary)
-  const extByType = new Map<string, { type: string; count: number; active: number }>();
+  const extByType = new Map<string, { type: string; count: number; active: number; names: string[] }>();
   for (const s of extSources ?? []) {
-    const entry = extByType.get(s.type) ?? { type: s.type, count: 0, active: 0 };
+    const entry = extByType.get(s.type) ?? { type: s.type, count: 0, active: 0, names: [] as string[] };
     entry.count++;
-    if (s.is_active) entry.active++;
+    if (s.is_active) { entry.active++; entry.names.push(s.name); }
     extByType.set(s.type, entry);
   }
 
@@ -527,6 +528,7 @@ export async function getSourcesOverview(): Promise<SourceOverview[]> {
     last_merged: fbLog?.events_merged ?? null,
     last_error: fbLog?.error_message ?? null,
     last_duration_ms: fbLog?.duration_ms ?? null,
+    sub_sources: fbInfo?.names?.sort() ?? [],
   });
 
   // Instagram summary
@@ -544,6 +546,7 @@ export async function getSourcesOverview(): Promise<SourceOverview[]> {
     last_merged: igLog?.events_merged ?? null,
     last_error: igLog?.error_message ?? null,
     last_duration_ms: igLog?.duration_ms ?? null,
+    sub_sources: igInfo?.names?.sort() ?? [],
   });
 
   // Tavily discovery
