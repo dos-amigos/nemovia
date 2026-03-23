@@ -400,13 +400,20 @@ function parseCheventiJsonLd(html: string, provinceName: string): NormalizedEven
         if (event.startDate) startDate = String(event.startDate).slice(0, 10);
         if (event.endDate) endDate = String(event.endDate).slice(0, 10);
 
-        // Skip events that only mention past years in title/URL
-        if (containsPastYear(title, event.url ?? undefined)) continue;
+        // Skip events that only mention past years in title/URL/description
+        const eventDesc = event.description ? String(event.description) : "";
+        if (containsPastYear(title, event.url ?? undefined, eventDesc)) continue;
 
         // Skip past events
         if (startDate) {
           const eventEnd = endDate || startDate;
           if (new Date(eventEnd) < new Date(new Date().toISOString().slice(0, 10))) continue;
+        }
+
+        // Skip events without any date — they are usually past events whose dates were removed
+        if (!startDate) {
+          console.log(`[cheventi] Skipping "${title}" — no date available`);
+          continue;
         }
 
         // Extract GPS coordinates

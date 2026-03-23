@@ -380,6 +380,11 @@ async function scrapeSagriamo(supabase: SupabaseClient): Promise<void> {
         if (isCalendarDateRange(normalized.startDate, normalized.endDate)) continue;
         if (isExcessiveDuration(normalized.startDate, normalized.endDate, 25)) continue;
         if (isPastYearEvent(normalized.startDate, normalized.endDate)) continue;
+        // Skip events without any date — they are usually past events whose dates were removed
+        if (!normalized.startDate) {
+          console.log(`[scrapeSagriamo] Skipping "${title}" — no date available`);
+          continue;
+        }
 
         const { result, id: eventId } = await upsertEvent(supabase, normalized, sourceName);
         eventsFound++;

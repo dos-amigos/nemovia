@@ -476,8 +476,23 @@ interface SagraForLLM {
   location_text: string;
   description: string | null;
   source_description: string | null;
+  source_url: string | null;
   start_date: string | null;
   end_date: string | null;
+}
+
+/**
+ * Check if the event text (title, URL, body) explicitly mentions ONLY past years.
+ * Used in enrichment to auto-discard sagre with past-year URLs and no date.
+ */
+function containsPastYear(title: string, url?: string, body?: string): boolean {
+  const currentYear = new Date().getFullYear();
+  const textToCheck = `${title} ${url ?? ""} ${body ?? ""}`;
+  const yearMatch = textToCheck.match(/\b(20[0-9]{2})\b/g);
+  if (!yearMatch) return false;
+  const years = yearMatch.map(Number);
+  const hasCurrentOrFuture = years.some(y => y >= currentYear);
+  return !hasCurrentOrFuture && years.some(y => y < currentYear);
 }
 
 interface EnrichmentResult {
@@ -658,7 +673,7 @@ async function runLLMPass(
   // Enrich both successfully geocoded sagre AND geocode-failed ones (tags/description are independent of GPS)
   const { data: rows } = await supabase
     .from("sagre")
-    .select("id, title, location_text, description, source_description, start_date, end_date")
+    .select("id, title, location_text, description, source_description, source_url, start_date, end_date")
     .in("status", ["pending_llm", "geocode_failed"])
     .limit(LLM_LIMIT)
     .order("created_at", { ascending: true });
@@ -781,6 +796,25 @@ async function runLLMPass(
         const today = new Date().toISOString().split("T")[0];
         const checkDate = effectiveEndDate || effectiveStartDate;
         const isFuture = !!checkDate && checkDate >= today;
+
+        // TASSATIVO: if no date after LLM enrichment AND source_url contains a past year → auto-discard
+        // These are stale events from previous years (e.g. sagretoday /2025/ URLs)
+        const sourceUrl = matchedSagra?.source_url ?? null;
+        const hasNoDatedAfterLLM = !hasDate;
+        const urlHasPastYear = !!sourceUrl && containsPastYear("", sourceUrl);
+        if (hasNoDatedAfterLLM && urlHasPastYear) {
+          await supabase.from("sagre").update({
+            is_active: false,
+            status: "enriched",
+            confidence,
+            review_status: "discarded",
+            enhanced_description: description,
+            updated_at: new Date().toISOString(),
+          }).eq("id", result.id);
+          classified++;
+          console.log(`Auto-discarded (no date + past-year URL): "${clean_title}" url=${sourceUrl}`);
+          continue;
+        }
 
         // Review status: auto_approved ONLY if ALL conditions met
         let review_status: string;

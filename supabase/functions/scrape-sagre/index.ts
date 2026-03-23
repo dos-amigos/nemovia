@@ -1080,6 +1080,11 @@ async function scrapeSource(supabase: SupabaseClient, source: ScraperSource): Pr
         if (isCalendarDateRange(normalized.startDate, normalized.endDate)) continue;
         if (isExcessiveDuration(normalized.startDate, normalized.endDate, 7)) continue;
         if (isPastYearEvent(normalized.startDate, normalized.endDate)) continue;
+        // Skip events without any date — they are usually past events whose dates were removed
+        if (!normalized.startDate) {
+          console.log(`[scrapeSource] Skipping "${raw.title}" — no date available`);
+          continue;
+        }
 
         const { result, id: eventId } = await upsertEvent(supabase, normalized, source.name);
 

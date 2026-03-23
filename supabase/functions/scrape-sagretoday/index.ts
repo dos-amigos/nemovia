@@ -602,10 +602,19 @@ async function scrapeSagretodayProvince(supabase: SupabaseClient, province: stri
               contentHash: generateContentHash(title, city || province, startDate),
             };
 
-            if (containsPastYear(title, sourceUrl ?? undefined)) continue;
+            // Check event description for past year mentions (body text often has "2025" even if JSON-LD lacks dates)
+            const eventDesc = event.description ? String(event.description) : "";
+            if (containsPastYear(title, sourceUrl ?? undefined, eventDesc)) continue;
+            // SagreToday marks past events with "(evento passato)" in the page — skip them
+            if (event.eventStatus === "https://schema.org/EventCancelled") continue;
             if (isCalendarDateRange(normalized.startDate, normalized.endDate)) continue;
             if (isExcessiveDuration(normalized.startDate, normalized.endDate, 7)) continue;
             if (isPastYearEvent(normalized.startDate, normalized.endDate)) continue;
+            // Skip events without any date — they are usually past events whose dates were removed
+            if (!normalized.startDate) {
+              console.log(`[scrapeSagretoday] Skipping "${title}" — no date available`);
+              continue;
+            }
 
             jsonLdEvents.push(normalized);
           }
@@ -622,49 +631,11 @@ async function scrapeSagretodayProvince(supabase: SupabaseClient, province: stri
         else if (result === "merged") eventsMerged++;
       }
 
-      // Fallback: if no JSON-LD found, try scraping links from the HTML
+      // Fallback: if no JSON-LD found, skip entirely.
+      // Fallback links have no structured dates and are usually past events.
+      // TASSATIVO rule: no date = no insert.
       if (!itemListFound) {
-        const links = $('a[href*="/sagra/"]');
-        const seenHrefs = new Set<string>();
-        const fallbackEvents: NormalizedEvent[] = [];
-
-        links.each((_i: number, el: cheerio.Element) => {
-          const href = $(el).attr("href") || "";
-          if (!href.match(/\/sagra\/[^/]+--e_[^/]+/)) return;
-          if (seenHrefs.has(href)) return;
-          seenHrefs.add(href);
-
-          let title = $(el).find("h2, h3, h4, .geo-card-title, p").first().text().trim();
-          if (!title) title = $(el).text().trim();
-          if (!title || title.length < 5) return;
-          if (isNoiseTitle(title)) return;
-          if (isNonSagraTitle(title)) return;
-
-          const sourceUrl = href.startsWith("http")
-            ? href
-            : `https://www.sagretoday.it${href}`;
-
-          fallbackEvents.push({
-            title: title.slice(0, 200),
-            normalizedTitle: normalizeText(title),
-            slug: generateSlug(title, province),
-            city: province,
-            startDate: null,
-            endDate: null,
-            priceInfo: null,
-            isFree: null,
-            imageUrl: null,
-            url: sourceUrl,
-            contentHash: generateContentHash(title, province, null),
-          });
-        });
-
-        for (const normalized of fallbackEvents) {
-          const { result } = await upsertEvent(supabase, normalized, sourceName, provinceCode);
-          eventsFound++;
-          if (result === "inserted") eventsInserted++;
-          else if (result === "merged") eventsMerged++;
-        }
+        console.log(`[scrapeSagretoday] ${province} page ${page}: no JSON-LD found, skipping fallback (no-date rule)`);
       }
 
       // Check if there's a next page link
