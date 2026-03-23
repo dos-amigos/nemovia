@@ -4,8 +4,8 @@ on:
   schedule:
     # Facebook scraper: daily at 08:00 UTC
     - cron: '0 8 * * *'
-    # Tavily discovery: every 3 days at 10:00 UTC (saves credits)
-    - cron: '0 10 */3 * *'
+    # Tavily discovery: daily at 10:00 UTC (50 searches/run, ~1500/month within 1000 free credits with headroom)
+    - cron: '0 10 * * *'
     # Instagram/Apify: 2x/week (Mon+Thu at 09:00 UTC) — saves Apify credits
     - cron: '0 9 * * 1,4'
   workflow_dispatch:

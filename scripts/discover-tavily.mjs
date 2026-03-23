@@ -38,8 +38,8 @@ const EXCLUDE_DOMAINS = [
   "facebook.com", "instagram.com", "youtube.com", "tripadvisor.com",
 ];
 
-// Max searches per run (budget: ~33/day to stay within 1000/month)
-const MAX_SEARCHES = 14; // 7 provinces × 2 months
+// Max searches per run (budget: ~50/run, 3 runs/month = 150/month, well within 1000)
+const MAX_SEARCHES = 50;
 
 // --- Helper functions ---
 
@@ -201,12 +201,27 @@ async function discoverSagre() {
   const currentMonth = now.getMonth(); // 0-indexed
   const currentYear = now.getFullYear();
 
-  // Search current month + next month for each province
-  const monthsToSearch = [
-    { month: MONTHS_IT[currentMonth], year: currentYear },
-    { month: MONTHS_IT[(currentMonth + 1) % 12], year: currentMonth === 11 ? currentYear + 1 : currentYear },
+  // Search current month + next 4 months for each province (covers full season)
+  const monthsToSearch = [];
+  for (let i = 0; i < 5; i++) {
+    const mIdx = (currentMonth + i) % 12;
+    const yr = currentMonth + i >= 12 ? currentYear + 1 : currentYear;
+    monthsToSearch.push({ month: MONTHS_IT[mIdx], year: yr });
+  }
+
+  // Extra targeted queries for better coverage
+  const EXTRA_QUERIES = [
+    "sagre veneto primavera 2026",
+    "sagre veneto estate 2026",
+    "feste paesane veneto 2026",
+    "fiere enogastronomiche veneto 2026",
+    "pro loco veneto eventi 2026",
+    "sagra del pesce veneto 2026",
+    "sagra della carne veneto 2026",
+    "festa del vino veneto 2026",
   ];
 
+  // Phase 1: Province × month searches
   for (const province of PROVINCES) {
     for (const { month, year } of monthsToSearch) {
       if (searchesMade >= MAX_SEARCHES) {
@@ -313,6 +328,83 @@ async function discoverSagre() {
       await new Promise(r => setTimeout(r, 1000));
     }
     if (searchesMade >= MAX_SEARCHES) break;
+  }
+
+  // Phase 2: Extra targeted queries
+  for (const query of EXTRA_QUERIES) {
+    if (searchesMade >= MAX_SEARCHES) break;
+
+    console.log(`[tavily] Search ${searchesMade + 1}/${MAX_SEARCHES}: "${query}"`);
+
+    let results;
+    try {
+      const data = await tavilySearch(query);
+      results = data.results || [];
+      searchesMade++;
+    } catch (err) {
+      console.error(`[tavily] Search failed:`, err.message);
+      if (err.message.includes("432")) break;
+      continue;
+    }
+
+    console.log(`[tavily] ${results.length} results for "${query}"`);
+
+    for (const result of results) {
+      // Use "Veneto" as fallback province, enrichment will fix it
+      const parsed = parseTavilyResult(result, "Veneto");
+      if (!parsed) { totalSkipped++; continue; }
+      totalFound++;
+
+      const { data: dupes } = await supabase.rpc("find_duplicate_sagra", {
+        p_normalized_title: parsed.normalizedTitle,
+        p_city: parsed.city.toLowerCase(),
+        p_start_date: parsed.startDate,
+        p_end_date: parsed.endDate,
+      });
+
+      const existing = dupes?.[0];
+      if (existing) {
+        if (!existing.sources?.includes("tavily")) {
+          await supabase.from("sagre").update({
+            sources: [...(existing.sources ?? []), "tavily"],
+            updated_at: new Date().toISOString(),
+          }).eq("id", existing.id);
+          totalMerged++;
+        } else { totalSkipped++; }
+        continue;
+      }
+
+      const { error } = await supabase.from("sagre").insert({
+        title: parsed.title,
+        slug: parsed.slug,
+        location_text: parsed.city,
+        start_date: parsed.startDate,
+        end_date: parsed.endDate,
+        source_url: parsed.sourceUrl,
+        source_description: parsed.sourceDescription,
+        sources: ["tavily"],
+        is_active: false,
+        status: "pending_geocode",
+        content_hash: parsed.contentHash,
+        province: parsed.province,
+      });
+
+      if (error && error.code === "23505") {
+        // Slug collision — retry with unique slug
+        await supabase.from("sagre").insert({
+          title: parsed.title, slug: parsed.slug + "-" + Date.now().toString(36),
+          location_text: parsed.city, start_date: parsed.startDate, end_date: parsed.endDate,
+          source_url: parsed.sourceUrl, source_description: parsed.sourceDescription,
+          sources: ["tavily"], is_active: false, status: "pending_geocode",
+          content_hash: parsed.contentHash + Date.now().toString(36), province: parsed.province,
+        });
+      } else if (error) { console.error(`  Insert error:`, error.message); continue; }
+
+      totalInserted++;
+      console.log(`  Inserted: ${parsed.title} (${parsed.city})`);
+    }
+
+    await new Promise(r => setTimeout(r, 1000));
   }
 
   // Log run
