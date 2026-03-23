@@ -317,13 +317,15 @@ function DashboardView({
 
   // Determine system status
   const hasErrors = enrichLogs.some((l) => l.error_message);
-  const systemStatus = isWorking
-    ? { label: "Pipeline in corso", color: "bg-blue-500", pulse: true }
-    : pendingTotal > 0
-      ? { label: "In coda — avvia enrichment", color: "bg-yellow-500", pulse: false }
-      : pipeline.active > 0
-        ? { label: "Tutto OK", color: "bg-green-500", pulse: false }
-        : { label: "Nessuna sagra attiva", color: "bg-red-500", pulse: false };
+  const systemStatus = isWorking && pendingTotal > 0
+    ? { label: `Enrichment in corso (${pendingTotal} in coda)`, color: "bg-blue-500", pulse: true }
+    : isWorking
+      ? { label: "Enrichment in corso", color: "bg-blue-500", pulse: true }
+      : pendingTotal > 0
+        ? { label: `${pendingTotal} sagre in coda`, color: "bg-yellow-500", pulse: false }
+        : pipeline.active > 0
+          ? { label: `${pipeline.active} sagre online`, color: "bg-green-500", pulse: false }
+          : { label: "Nessuna sagra attiva", color: "bg-red-500", pulse: false };
 
   // Sources with errors
   const errorSources = sourcesOverview.filter((s) => s.last_status === "error");

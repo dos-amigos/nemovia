@@ -786,7 +786,7 @@ async function runLLMPass(
         const effectiveEndDate = (DATE_RE.test(result.end_date ?? "") ? result.end_date : null)
           || matchedSagra?.end_date || null;
         const hasDate = !!effectiveStartDate && DATE_RE.test(effectiveStartDate);
-        const isHighConfidence = confidence >= 70;
+        const isHighConfidence = confidence >= 50;
 
         // Province: must be a valid Veneto province to auto-approve
         const effectiveProvince = (result.province_code?.toUpperCase() || matchedSagra?.province || null) as string | null;
