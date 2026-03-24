@@ -25,7 +25,7 @@ const BASE_URL = "https://www.culturaveneto.it";
 const LISTING_PATH = "/it/attivita/fiere-mercatini-enogastronomia";
 const SOURCE_NAME = "culturaveneto";
 const MAX_PAGES = 20; // safety cap (expect ~14)
-const MAX_DETAIL_FETCHES = 50; // limit detail page requests per run
+const MAX_DETAIL_FETCHES = 200; // fetch ALL detail pages — dates are ONLY on detail pages for single-day events
 const DELAY_MS = 1500; // politeness delay between requests
 
 // --- Helper functions ---
@@ -156,11 +156,12 @@ async function scrapeListingPage(url) {
       imageUrl = BASE_URL + imageUrl;
     }
 
-    // Dates — look for "Dal" and "Al" in text content
+    // Dates — "Dal DD/MM/YYYY" + "Al DD/MM/YYYY" for multi-day, "Il DD/MM/YYYY" for single-day
     const captionText = $el.find("div.caption").text();
     const startMatch = captionText.match(/Dal\s+(\d{1,2}\/\d{1,2}\/\d{4})/i);
     const endMatch = captionText.match(/Al\s+(\d{1,2}\/\d{1,2}\/\d{4})/i);
-    const startDate = startMatch ? parseDate(startMatch[1]) : null;
+    const singleMatch = captionText.match(/Il:?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
+    const startDate = startMatch ? parseDate(startMatch[1]) : (singleMatch ? parseDate(singleMatch[1]) : null);
     const endDate = endMatch ? parseDate(endMatch[1]) : null;
 
     // Location — from info-detail paragraph
@@ -235,10 +236,23 @@ async function scrapeDetailPage(url) {
       }
     }
 
-    return { description, lat, lng };
+    // Extract dates from detail page (single-day events use "Il: DD/MM/YYYY",
+    // multi-day use "Dal DD/MM/YYYY" / "Al DD/MM/YYYY")
+    const detailText = $(".info-detail").text();
+    let startDate = null;
+    let endDate = null;
+    const dalMatch = detailText.match(/Dal\s+(\d{1,2}\/\d{1,2}\/\d{4})/i);
+    const alMatch = detailText.match(/Al\s+(\d{1,2}\/\d{1,2}\/\d{4})/i);
+    const ilMatch = detailText.match(/Il:?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
+    if (dalMatch) startDate = parseDate(dalMatch[1]);
+    if (alMatch) endDate = parseDate(alMatch[1]);
+    if (!startDate && ilMatch) startDate = parseDate(ilMatch[1]);
+    if (startDate && !endDate) endDate = startDate;
+
+    return { description, lat, lng, startDate, endDate };
   } catch (err) {
     console.warn(`[culturaveneto] Detail fetch failed: ${url} — ${err.message}`);
-    return { description: "", lat: null, lng: null };
+    return { description: "", lat: null, lng: null, startDate: null, endDate: null };
   }
 }
 
@@ -327,6 +341,11 @@ async function scrapeCulturaVeneto() {
       description = detail.description;
       lat = detail.lat;
       lng = detail.lng;
+      // Use detail page dates when listing page didn't have them
+      if (!event.startDate && detail.startDate) {
+        event.startDate = detail.startDate;
+        event.endDate = detail.endDate || detail.startDate;
+      }
       detailFetches++;
     }
 
