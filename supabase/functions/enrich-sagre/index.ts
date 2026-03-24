@@ -898,8 +898,17 @@ async function runLLMPass(
         };
 
         // Update city if Gemini found a more specific one
+        // If city changed, reset GPS coordinates to force re-geocoding
+        // (prevents stale coords from original city, e.g., Sottomarina → Monselice)
         if (result.city && result.city.length > 2) {
+          const oldCity = (matchedSagra?.location_text ?? "").toLowerCase().trim();
+          const newCity = result.city.toLowerCase().trim();
           updateData.location_text = result.city;
+          if (oldCity && newCity !== oldCity && !newCity.includes(oldCity) && !oldCity.includes(newCity)) {
+            updateData.location = null; // Force re-geocoding on next pass
+            updateData.status = "pending_geocode";
+            console.log(`[enrich] City changed "${oldCity}" → "${newCity}" — reset GPS for re-geocode`);
+          }
         }
 
         // Update province if Gemini detected it
