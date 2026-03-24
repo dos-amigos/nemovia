@@ -158,8 +158,8 @@ async function scrapeListingPage(url) {
 
     // Dates — "Dal DD/MM/YYYY" + "Al DD/MM/YYYY" for multi-day, "Il DD/MM/YYYY" for single-day
     const captionText = $el.find("div.caption").text();
-    const startMatch = captionText.match(/Dal\s+(\d{1,2}\/\d{1,2}\/\d{4})/i);
-    const endMatch = captionText.match(/Al\s+(\d{1,2}\/\d{1,2}\/\d{4})/i);
+    const startMatch = captionText.match(/\bDal\s+(\d{1,2}\/\d{1,2}\/\d{4})/i);
+    const endMatch = captionText.match(/\bAl\s+(\d{1,2}\/\d{1,2}\/\d{4})/i);
     const singleMatch = captionText.match(/Il:?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
     const startDate = startMatch ? parseDate(startMatch[1]) : (singleMatch ? parseDate(singleMatch[1]) : null);
     const endDate = endMatch ? parseDate(endMatch[1]) : null;
@@ -241,8 +241,8 @@ async function scrapeDetailPage(url) {
     const detailText = $(".info-detail").text();
     let startDate = null;
     let endDate = null;
-    const dalMatch = detailText.match(/Dal\s+(\d{1,2}\/\d{1,2}\/\d{4})/i);
-    const alMatch = detailText.match(/Al\s+(\d{1,2}\/\d{1,2}\/\d{4})/i);
+    const dalMatch = detailText.match(/\bDal\s+(\d{1,2}\/\d{1,2}\/\d{4})/i);
+    const alMatch = detailText.match(/\bAl\s+(\d{1,2}\/\d{1,2}\/\d{4})/i);
     const ilMatch = detailText.match(/Il:?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
     if (dalMatch) startDate = parseDate(dalMatch[1]);
     if (alMatch) endDate = parseDate(alMatch[1]);
