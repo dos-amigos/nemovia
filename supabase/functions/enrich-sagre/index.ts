@@ -1250,11 +1250,12 @@ async function fetchPixabayPhotos(
 }
 
 function pickPixabayPhotoForSagra(photos: PixabayHit[], sagraId: string): { imageUrl: string; imageCredit: string } {
+  const PICK_POOL = Math.min(5, photos.length);
   let hash = 0;
   for (let i = 0; i < sagraId.length; i++) {
     hash = ((hash << 5) - hash + sagraId.charCodeAt(i)) | 0;
   }
-  const picked = photos[Math.abs(hash) % photos.length];
+  const picked = photos[Math.abs(hash) % PICK_POOL];
   return {
     imageUrl: picked.largeImageURL,  // 1280px wide
     imageCredit: `${picked.user}|${picked.pageURL}`,
@@ -1266,12 +1267,12 @@ function pickPixabayPhotoForSagra(photos: PixabayHit[], sagraId: string): { imag
  * Uses large (940px) for good quality without being too heavy.
  */
 function pickPexelsPhotoForSagra(photos: PexelsPhoto[], sagraId: string): { imageUrl: string; imageCredit: string } {
-  // Use same hash-based picking as Unsplash for deterministic variety
+  const PICK_POOL = Math.min(5, photos.length);
   let hash = 0;
   for (let i = 0; i < sagraId.length; i++) {
     hash = ((hash << 5) - hash + sagraId.charCodeAt(i)) | 0;
   }
-  const picked = photos[Math.abs(hash) % photos.length];
+  const picked = photos[Math.abs(hash) % PICK_POOL];
   return {
     imageUrl: picked.src.large,  // 940px wide
     imageCredit: `${picked.photographer}|${picked.photographer_url}?utm_source=nemovia&utm_medium=referral`,
@@ -1283,12 +1284,16 @@ function pickPexelsPhotoForSagra(photos: PexelsPhoto[], sagraId: string): { imag
  * Returns a different photo for each sagra even when they share the same tag.
  */
 function pickPhotoForSagra(photos: UnsplashPhoto[], sagraId: string): UnsplashPhoto {
-  // Simple hash for deterministic distribution across the pool
+  // Unsplash returns results ordered by relevance — #1 is best match.
+  // Only pick from the TOP 5 most relevant results to avoid off-topic images
+  // (e.g., pickles instead of seafood at position #14).
+  // The hash provides variety when multiple sagre share the same query.
+  const PICK_POOL = Math.min(5, photos.length);
   let hash = 0;
   for (let i = 0; i < sagraId.length; i++) {
     hash = ((hash << 5) - hash + sagraId.charCodeAt(i)) | 0;
   }
-  return photos[Math.abs(hash) % photos.length];
+  return photos[Math.abs(hash) % PICK_POOL];
 }
 
 async function runUnsplashPass(
