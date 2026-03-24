@@ -58,8 +58,13 @@ export const TAG_TO_CATEGORY: Record<string, FoodCategory> = {
   Stoccafisso: "pesce",
   Sarde: "pesce",
   Anguilla: "pesce",
-  Rane: "pesce",
-  Rana: "pesce",
+  // Rane = carne (anfibi, NON pesci — si cucinano fritte o in umido come carne)
+  Rane: "carne",
+  Rana: "carne",
+  // Salumi → carne
+  Bondola: "carne",
+  Soppressa: "carne",
+  Sopressa: "carne",
   // Specific sweets → dolci
   Tiramisù: "dolci",
   Tiramisu: "dolci",

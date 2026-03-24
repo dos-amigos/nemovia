@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import * as m from "motion/react-m";
-import { Calendar, MapPin } from "lucide-react";
+import { Calendar, MapPin, Banknote } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FadeImage } from "@/components/animations/FadeImage";
 import { FoodIcons } from "@/lib/constants/food-icons";
@@ -74,12 +74,17 @@ export function SagraCard({ sagra, distanceKm }: SagraCardProps) {
           </Badge>
         )}
 
-        {/* Free badge positioned top-right */}
-        {sagra.is_free === true && (
-          <Badge className="absolute right-2 top-2 bg-accent text-accent-foreground">
+        {/* Price badge positioned top-right */}
+        {sagra.is_free === true ? (
+          <Badge className="absolute right-2 top-2 bg-emerald-500 text-white border-0">
             Gratis
           </Badge>
-        )}
+        ) : sagra.price_info ? (
+          <Badge className="absolute right-2 top-2 gap-1 bg-black/50 text-white backdrop-blur-sm border-0">
+            <Banknote className="h-3 w-3" />
+            {sagra.price_info.length <= 15 ? sagra.price_info : "A pagamento"}
+          </Badge>
+        ) : null}
 
         {/* Food type icons positioned bottom-right (up to 3) — hidden when empty via :has() */}
         <div className="absolute bottom-2 right-2 hidden has-[span]:flex items-center gap-0.5">

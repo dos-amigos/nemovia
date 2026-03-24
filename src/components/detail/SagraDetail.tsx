@@ -3,7 +3,8 @@ import {
   MapPin,
   Calendar,
   Tag,
-  Euro,
+  Banknote,
+  CircleCheck,
   ExternalLink,
   UtensilsCrossed,
   Clock,
@@ -152,10 +153,16 @@ export default function SagraDetail({ sagra, videoUrl }: SagraDetailProps) {
                 <span>{formatDateRange(sagra.start_date, sagra.end_date)}</span>
               </div>
 
-              {(sagra.is_free || sagra.price_info) && (
+              {sagra.is_free === true && (
+                <div className="flex items-center gap-2 text-sm text-emerald-600">
+                  <CircleCheck className="size-4 shrink-0" />
+                  <span>Ingresso gratuito</span>
+                </div>
+              )}
+              {!sagra.is_free && sagra.price_info && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Euro className="size-4 shrink-0" />
-                  <span>{sagra.is_free ? "Ingresso gratuito" : sagra.price_info}</span>
+                  <Banknote className="size-4 shrink-0" />
+                  <span>{sagra.price_info}</span>
                 </div>
               )}
             </div>
