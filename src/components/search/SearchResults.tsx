@@ -1,13 +1,12 @@
 "use client";
 
-import { useQueryState } from "nuqs";
 import { Search } from "lucide-react";
 import { SagraCard } from "@/components/sagra/SagraCard";
 import { SagraListItem } from "@/components/sagra/SagraListItem";
 import { SagraGrid } from "@/components/sagra/SagraGrid";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FadeIn } from "@/components/animations/FadeIn";
-import { ViewToggle, viewParser } from "./ViewToggle";
+import { ViewToggle, useViewMode } from "./ViewToggle";
 import type { SagraCardData } from "@/lib/queries/types";
 
 interface SearchResultsProps {
@@ -15,7 +14,7 @@ interface SearchResultsProps {
 }
 
 export function SearchResults({ sagre }: SearchResultsProps) {
-  const [vista] = useQueryState("vista", viewParser);
+  const [vista, setVista] = useViewMode();
 
   if (sagre.length === 0) {
     return (
@@ -34,7 +33,7 @@ export function SearchResults({ sagre }: SearchResultsProps) {
           <p className="text-sm text-muted-foreground">
             {sagre.length} {sagre.length === 1 ? "sagra trovata" : "sagre trovate"}
           </p>
-          <ViewToggle />
+          <ViewToggle value={vista} onChange={setVista} />
         </div>
 
         {vista === "lista" ? (
