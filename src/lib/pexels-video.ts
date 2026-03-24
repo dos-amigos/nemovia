@@ -1,5 +1,12 @@
 const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
 
+// =============================================================================
+// REGOLA TASSATIVA N.1: NO CIBO ORIENTALE — MAI sushi, bacchette, ramen, asian
+// Pexels ignora i filtri negativi (-asian), serve filtro lato codice + query
+// =============================================================================
+const ASIAN_BAN = " -asian -sushi -chopsticks -ramen -chinese -japanese -wok";
+const BANNED_VIDEO_RE = /sushi|chopstick|asian|chinese|japanese|ramen|wok|noodle|dim.?sum|tofu|soy.?sauce|kimchi|thai|vietnamese|korean|oriental/i;
+
 interface PexelsVideoFile {
   quality: string;
   file_type: string;
@@ -9,6 +16,7 @@ interface PexelsVideoFile {
 }
 
 interface PexelsVideo {
+  url?: string;
   video_files: PexelsVideoFile[];
 }
 
@@ -92,11 +100,12 @@ const TAG_QUERIES: Record<string, string> = {
 
 function extractThemeQuery(title: string, foodTags?: string[] | null): string | null {
   for (const [pattern, query] of TITLE_THEMES) {
-    if (pattern.test(title)) return query;
+    // TASSATIVO: append anti-Asian filter to EVERY query
+    if (pattern.test(title)) return query + ASIAN_BAN;
   }
   if (foodTags?.length) {
     for (const tag of foodTags) {
-      if (TAG_QUERIES[tag]) return TAG_QUERIES[tag];
+      if (TAG_QUERIES[tag]) return TAG_QUERIES[tag]; // already have -asian
     }
   }
   return null;
@@ -123,7 +132,8 @@ export async function searchCityVideo(
   ].filter(Boolean) as string[];
 
   for (const query of queries) {
-    const url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=1&size=small&orientation=landscape`;
+    // Fetch 5 results so we have alternatives if top result is Asian food
+    const url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=5&size=small&orientation=landscape`;
 
     try {
       const res = await fetch(url, {
@@ -134,9 +144,13 @@ export async function searchCityVideo(
       if (!res.ok) continue;
 
       const data: PexelsSearchResponse = await res.json();
-      if (data.videos.length === 0) continue;
+      // TASSATIVO: filter out Asian food videos by checking URL slug
+      const safeVideos = data.videos.filter(
+        (v) => !v.url || !BANNED_VIDEO_RE.test(v.url)
+      );
+      if (safeVideos.length === 0) continue;
 
-      const video = data.videos[0];
+      const video = safeVideos[0];
       const hdFile = video.video_files.find(
         (f) =>
           f.quality === "hd" &&

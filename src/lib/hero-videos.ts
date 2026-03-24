@@ -86,6 +86,19 @@ export const FOOD_VIDEO_QUERIES = [
   "Italian outdoor food market vegetables -asian -chinese",
 ] as const;
 
+// =============================================================================
+// REGOLA TASSATIVA: NO CIBO ORIENTALE — filtra via video con sushi/bacchette/asian
+// Pexels ignora i filtri negativi (-asian -sushi), serve filtro lato codice
+// =============================================================================
+const BANNED_VIDEO_KEYWORDS = /sushi|chopstick|asian|chinese|japanese|ramen|wok|noodle|dim.?sum|tofu|soy.?sauce|kimchi|thai|vietnamese|korean|oriental/i;
+
+function isAsianFoodVideo(video: PexelsVideo): boolean {
+  // Check video URL slug (Pexels URLs contain description)
+  if (BANNED_VIDEO_KEYWORDS.test(video.url)) return true;
+  // Check photographer name patterns (some accounts specialize in Asian food)
+  return false;
+}
+
 interface PexelsVideoFile {
   quality: string;
   file_type: string;
@@ -132,10 +145,12 @@ export async function fetchCityVideo(): Promise<HeroVideo | null> {
     if (!res.ok) return null;
 
     const data: PexelsSearchResponse = await res.json();
-    if (data.videos.length === 0) return null;
+    // TASSATIVO: filter out any Asian/oriental food videos
+    const safeVideos = data.videos.filter((v) => !isAsianFoodVideo(v));
+    if (safeVideos.length === 0) return null;
 
-    // Pick a random video from results
-    const video = data.videos[Math.floor(Math.random() * data.videos.length)];
+    // Pick a random video from safe results
+    const video = safeVideos[Math.floor(Math.random() * safeVideos.length)];
 
     // Prefer HD mp4 <= 1280px wide, fallback to SD
     const hdFile = video.video_files.find(
@@ -188,10 +203,11 @@ export async function fetchCityVideos(count: number): Promise<HeroVideo[]> {
         if (!res.ok) return null;
 
         const data: PexelsSearchResponse = await res.json();
-        if (data.videos.length === 0) return null;
+        const safeVideos = data.videos.filter((v) => !isAsianFoodVideo(v));
+        if (safeVideos.length === 0) return null;
 
         const video =
-          data.videos[Math.floor(Math.random() * data.videos.length)];
+          safeVideos[Math.floor(Math.random() * safeVideos.length)];
 
         const hdFile = video.video_files.find(
           (f) =>
@@ -252,10 +268,11 @@ export async function fetchFoodVideos(count: number): Promise<HeroVideo[]> {
         if (!res.ok) return null;
 
         const data: PexelsSearchResponse = await res.json();
-        if (data.videos.length === 0) return null;
+        const safeVideos = data.videos.filter((v) => !isAsianFoodVideo(v));
+        if (safeVideos.length === 0) return null;
 
         const video =
-          data.videos[Math.floor(Math.random() * data.videos.length)];
+          safeVideos[Math.floor(Math.random() * safeVideos.length)];
 
         const hdFile = video.video_files.find(
           (f) =>
