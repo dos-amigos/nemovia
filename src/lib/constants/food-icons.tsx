@@ -21,7 +21,7 @@ export type FoodCategory =
  * Includes both Gemini FOOD_TAGS and common Italian food names as fallback.
  * Tags not listed here fall through to "altro".
  */
-const TAG_TO_CATEGORY: Record<string, FoodCategory> = {
+export const TAG_TO_CATEGORY: Record<string, FoodCategory> = {
   // Standard FOOD_TAGS from Gemini prompt
   Carne: "carne",
   Pesce: "pesce",

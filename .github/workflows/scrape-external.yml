@@ -8,6 +8,8 @@ on:
     - cron: '0 10 * * *'
     # Instagram/Apify: 2x/week (Mon+Thu at 09:00 UTC) — saves Apify credits
     - cron: '0 9 * * 1,4'
+    # CulturaVeneto: 2x/week (Mon+Thu at 07:00 UTC)
+    - cron: '0 7 * * 1,4'
   workflow_dispatch:
     inputs:
       script:
@@ -19,6 +21,7 @@ on:
           - facebook
           - tavily
           - instagram
+          - culturaveneto
 
 jobs:
   scrape-facebook:
@@ -75,3 +78,20 @@ jobs:
           APIFY_API: ${{ secrets.APIFY_API }}
           GROQ_KEY: ${{ secrets.GROQ_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+  scrape-culturaveneto:
+    if: >
+      github.event_name == 'workflow_dispatch' && (github.event.inputs.script == 'all' || github.event.inputs.script == 'culturaveneto')
+      || github.event_name == 'schedule' && github.event.schedule == '0 7 * * 1,4'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: node scripts/scrape-culturaveneto.mjs
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

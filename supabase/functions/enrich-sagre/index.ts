@@ -364,13 +364,18 @@ function chunkBatch<T>(items: T[], size: number): T[][] {
 function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
   return `Sei un esperto di sagre italiane e gastronomia veneta. Per ogni evento nella lista JSON, analizza TUTTI i campi (title, location_text, description, source_description) e genera:
 
-1. **is_sagra**: true SOLO se è UN SINGOLO evento specifico (sagra/festa del cibo/fiera gastronomica) con nome proprio, luogo preciso e data.
+1. **is_sagra**: true se è UN SINGOLO evento specifico con nome proprio, luogo preciso e data, che rientra in UNA di queste categorie:
+   - Sagra, festa del cibo, fiera gastronomica, festa paesana con cibo
+   - Fiera enogastronomica, mostra del vino, palio del vino, festa dell'uva
+   - Mostra del prodotto tipico (asparago, radicchio, formaggio, olio, ecc.)
+   - Festa patronale o religiosa SE include stand gastronomici
    false se:
-   - Antiquariato, mostra, concerto puro, evento sportivo, mercato generico senza cibo
-   - Articoli/pagine che ELENCANO più eventi ("Le sagre di agosto a Padova", "Eventi enogastronomici di aprile", "Sagre ed Eventi Veneto")
+   - Antiquariato, concerto puro, evento sportivo, mercato generico senza cibo
+   - Mostre di fiori, piante, giardinaggio (senza cibo)
+   - Articoli/pagine che ELENCANO più eventi ("Le sagre di agosto a Padova", "Eventi enogastronomici di aprile")
    - Calendari, guide, roundup, "cosa fare questo weekend", "le migliori sagre di..."
    - Titoli con PLURALE generico: "Sagre e feste", "Fiere e festival", "Eventi enogastronomici"
-   REGOLA CHIAVE: una vera sagra ha UN nome specifico ("Sagra della Zucca", "Festa del Baccalà"), NON un titolo che descrive una categoria di eventi.
+   REGOLA CHIAVE: una vera sagra ha UN nome specifico ("Sagra della Zucca", "Festa del Baccalà", "Palio del Chiaretto"), NON un titolo che descrive una categoria di eventi.
 
 2. **confidence**: numero 0-100. Quanto sei sicuro che questa sia una vera sagra specifica con dati corretti.
    - 90-100: sagra vera, titolo chiaro, date presenti, luogo preciso
@@ -804,17 +809,20 @@ async function runLLMPass(
 
         const confidence = typeof result.confidence === "number" ? Math.min(100, Math.max(0, result.confidence)) : 50;
 
-        // NOT a sagra, or blocklisted, or confidence too low → discard
+        // NOT a sagra, or blocklisted, or confidence too low → discard or needs_review
         if (result.is_sagra === false || isBlocklisted || confidence < 30) {
+          // High confidence + not blocklisted → send to needs_review for admin to decide
+          // (LLM sometimes wrongly rejects wine fairs, food exhibitions, etc.)
+          const effectiveStatus = (confidence >= 70 && !isBlocklisted) ? "needs_review" : "discarded";
           await supabase.from("sagre").update({
             is_active: false,
             status: "classified_non_sagra",
             confidence,
-            review_status: "discarded",
+            review_status: effectiveStatus,
             updated_at: new Date().toISOString(),
           }).eq("id", result.id);
           classified++;
-          console.log(`Discarded: ${matchedSagra?.title} (confidence=${confidence}, is_sagra=${result.is_sagra})`);
+          console.log(`${effectiveStatus === "needs_review" ? "Needs review" : "Discarded"}: ${matchedSagra?.title} (confidence=${confidence}, is_sagra=${result.is_sagra})`);
           continue;
         }
 
@@ -868,8 +876,9 @@ async function runLLMPass(
         if (isHighConfidence && hasDate && isVeneto && isFuture) {
           review_status = "auto_approved";
         } else if (!isVeneto && hasDate && isHighConfidence) {
-          // High confidence but wrong region → discard silently
-          review_status = "discarded";
+          // Province unknown → needs_review (could be Veneto with missing geocoding)
+          // Province known non-Veneto → discard
+          review_status = effectiveProvince ? "discarded" : "needs_review";
         } else {
           review_status = "needs_review";
         }

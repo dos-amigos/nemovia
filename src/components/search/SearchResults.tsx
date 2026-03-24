@@ -1,8 +1,13 @@
+"use client";
+
+import { useQueryState } from "nuqs";
 import { Search } from "lucide-react";
 import { SagraCard } from "@/components/sagra/SagraCard";
+import { SagraListItem } from "@/components/sagra/SagraListItem";
 import { SagraGrid } from "@/components/sagra/SagraGrid";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FadeIn } from "@/components/animations/FadeIn";
+import { ViewToggle, viewParser } from "./ViewToggle";
 import type { SagraCardData } from "@/lib/queries/types";
 
 interface SearchResultsProps {
@@ -10,6 +15,8 @@ interface SearchResultsProps {
 }
 
 export function SearchResults({ sagre }: SearchResultsProps) {
+  const [vista] = useQueryState("vista", viewParser);
+
   if (sagre.length === 0) {
     return (
       <EmptyState
@@ -23,18 +30,34 @@ export function SearchResults({ sagre }: SearchResultsProps) {
   return (
     <FadeIn>
       <div className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-          {sagre.length} {sagre.length === 1 ? "sagra trovata" : "sagre trovate"}
-        </p>
-        <SagraGrid>
-          {sagre.map((sagra) => (
-            <SagraCard
-              key={sagra.id}
-              sagra={sagra}
-              distanceKm={sagra.distance_km}
-            />
-          ))}
-        </SagraGrid>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            {sagre.length} {sagre.length === 1 ? "sagra trovata" : "sagre trovate"}
+          </p>
+          <ViewToggle />
+        </div>
+
+        {vista === "lista" ? (
+          <div className="flex flex-col gap-2">
+            {sagre.map((sagra) => (
+              <SagraListItem
+                key={sagra.id}
+                sagra={sagra}
+                distanceKm={sagra.distance_km}
+              />
+            ))}
+          </div>
+        ) : (
+          <SagraGrid>
+            {sagre.map((sagra) => (
+              <SagraCard
+                key={sagra.id}
+                sagra={sagra}
+                distanceKm={sagra.distance_km}
+              />
+            ))}
+          </SagraGrid>
+        )}
       </div>
     </FadeIn>
   );

@@ -276,6 +276,27 @@
 
 ## Log Sessioni
 
+### 2026-03-24 (sessione 14) — Dedup aggressiva + pulizia DB + immagini
+- **deduplicate_sagre() function**: trova cluster duplicati (3 metodi: title sim>0.7+provincia, title sim>0.5+città, stessa città+date), tiene il più completo, ELIMINA dal DB (non solo disattiva)
+- **cleanup_stale_sagre() function**: elimina needs_review/discarded con date passate o senza dati
+- **pg_cron "cleanup-and-dedup-daily"**: ogni giorno alle 02:00 UTC — expire + cleanup + dedup
+- **find_duplicate_sagra() RPC aggiornata**: soglie abbassate (0.5 titolo, 0.4 città), Method 3 con ±14gg
+- **Pulizia DB**: 285→118 righe (108 stale + 57 dedup + 2 manuali eliminati)
+- **Sagre attive**: 38→25 (eliminati duplicati brocolo×5, rane×3, zucca×3, maggio×3)
+- **Fix immagine Palio del Recioto**: URL solosagre rotto sostituito con Unsplash
+- **Migration 030**: `030_aggressive_dedup_cleanup.sql` (functions + cron)
+- **Gemini 429 deprioritizzato**: Groq+Mistral coprono enrichment, Gemini solo fallback
+- **Fix pipeline enrichment**: 3 fix al processo di approvazione:
+  1. is_sagra=false + confidence≥70 → needs_review (non discard) — evita scartare fiere vino/enogastronomia
+  2. Prompt LLM allargato: include fiere vino, mostre prodotto tipico, feste patronali con cibo
+  3. Provincia sconosciuta → needs_review (non discard) — evita scartare sagre venete senza geocoding
+- **enrich-sagre deployata** con fix
+- **View toggle /cerca**: griglia (attuale) + lista (foto sx, dettagli dx, tag colorati)
+- **Nuovo scraper culturaveneto.it**: `scripts/scrape-culturaveneto.mjs`, GitHub Action 2x/week
+  - 162 eventi food (fiere-mercatini-enogastronomia), cursor-based pagination, GPS da detail pages
+  - Fonte ufficiale Regione Veneto — dati alta qualità
+- **Fix immagine Mandorlato**: dolci generici → foto nougat reale
+
 ### 2026-03-17 (sessione 8) — Quality rearchitecture + Admin area + Instagram/Apify
 - **MAJOR: Quality rearchitecture** — user demanded fresh start ("cancelliamo tutto")
   - Migration 023: `confidence` (0-100) + `review_status` columns, archive ALL existing sagre
