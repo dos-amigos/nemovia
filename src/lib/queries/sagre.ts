@@ -233,7 +233,7 @@ export async function searchSagre(
 
     const { data, error } = await query
       .order("start_date", { ascending: true, nullsFirst: false })
-      .limit(50);
+      .limit(200);
 
     if (error) {
       console.error("searchSagre query error:", error.message);
