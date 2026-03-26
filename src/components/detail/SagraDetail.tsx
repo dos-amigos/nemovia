@@ -34,10 +34,12 @@ export default function SagraDetail({ sagra, videoUrl }: SagraDetailProps) {
   const lng = hasLocation ? sagra.location!.coordinates[0] : null;
 
   const rawDescription = sagra.enhanced_description ?? sagra.source_description ?? sagra.description;
-  // Strip markdown artifacts (##, **, *) that may leak from Gemini or Tavily snippets
+  // Clean up description: strip markdown, fix escaped newlines, normalize whitespace
   const description = rawDescription
-    ?.replace(/^#+\s*/gm, "")
-    .replace(/\*{1,2}([^*]+)\*{1,2}/g, "$1")
+    ?.replace(/^#+\s*/gm, "")                    // Remove markdown headers
+    .replace(/\*{1,2}([^*]+)\*{1,2}/g, "$1")    // Remove bold/italic markers
+    .replace(/\\n/g, "\n")                        // Fix literal \n from JSON encoding
+    .replace(/\n{3,}/g, "\n\n")                  // Collapse triple+ newlines to double
     .trim() || null;
   const fallback = getFallbackImage(sagra.id, sagra.food_tags, sagra.title, description);
   const hasGoodImage = sagra.image_url && !isLowQualityUrl(sagra.image_url);
@@ -56,8 +58,8 @@ export default function SagraDetail({ sagra, videoUrl }: SagraDetailProps) {
         <div className="space-y-6 lg:sticky lg:top-20 lg:self-start">
           {/* Hero image/video with parallax (mobile only) */}
           <ParallaxHero className="relative -mx-4 -mt-4 h-64 w-[calc(100%+2rem)] overflow-hidden sm:-mx-6 sm:h-72 sm:w-[calc(100%+3rem)] lg:mx-0 lg:mt-0 lg:w-full lg:h-[28rem] lg:rounded-xl">
-            {/* Media: pipeline image > video > fallback image */}
-            {!hasGoodImage && videoUrl ? (
+            {/* Media: video (preferred) > pipeline image > fallback image */}
+            {videoUrl ? (
               <video
                 autoPlay
                 muted

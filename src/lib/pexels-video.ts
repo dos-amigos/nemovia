@@ -5,7 +5,7 @@ const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
 // Pexels ignora i filtri negativi (-asian), serve filtro lato codice + query
 // =============================================================================
 const ASIAN_BAN = " -asian -sushi -chopsticks -ramen -chinese -japanese -wok";
-const BANNED_VIDEO_RE = /sushi|chopstick|asian|chinese|japanese|ramen|wok|noodle|dim.?sum|tofu|soy.?sauce|kimchi|thai|vietnamese|korean|oriental/i;
+const BANNED_VIDEO_RE = /sushi|chopstick|asian|chinese|japanese|ramen|wok|noodle|dim.?sum|tofu|soy.?sauce|kimchi|thai|vietnamese|korean|oriental|bento|miso|teriyaki|tempura|gyoza|edamame|wasabi|sashimi|udon|pho|curry|pad.?thai|spring.?roll|dumpling|stir.?fry|bok.?choy|szechuan|cantonese|mandarin|sake|matcha/i;
 
 interface PexelsVideoFile {
   quality: string;
@@ -18,6 +18,8 @@ interface PexelsVideoFile {
 interface PexelsVideo {
   url?: string;
   video_files: PexelsVideoFile[];
+  tags?: Array<{ name?: string }>;
+  user?: { name?: string; url?: string };
 }
 
 interface PexelsSearchResponse {
@@ -144,10 +146,12 @@ export async function searchCityVideo(
       if (!res.ok) continue;
 
       const data: PexelsSearchResponse = await res.json();
-      // TASSATIVO: filter out Asian food videos by checking URL slug
-      const safeVideos = data.videos.filter(
-        (v) => !v.url || !BANNED_VIDEO_RE.test(v.url)
-      );
+      // TASSATIVO: filter out Asian food videos by checking URL, tags, and user info
+      const safeVideos = data.videos.filter((v) => {
+        const tagText = v.tags?.map((t) => t.name).filter(Boolean).join(" ") ?? "";
+        const allText = [v.url, tagText, v.user?.name].filter(Boolean).join(" ");
+        return !BANNED_VIDEO_RE.test(allText);
+      });
       if (safeVideos.length === 0) continue;
 
       const video = safeVideos[0];

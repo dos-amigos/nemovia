@@ -21,7 +21,7 @@ export function SagraListItem({ sagra, distanceKm }: SagraListItemProps) {
   const hasGoodImage = sagra.image_url && !isLowQualityUrl(sagra.image_url);
   const imageSrc = hasGoodImage ? sagra.image_url! : fallback;
 
-  const description = sagra.enhanced_description ?? "";
+  const description = (sagra.enhanced_description ?? "").replace(/\\n/g, "\n");
   const foodTags = sagra.food_tags ?? [];
 
   return (

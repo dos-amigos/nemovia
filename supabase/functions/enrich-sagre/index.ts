@@ -191,6 +191,105 @@ const TAG_QUERIES: Record<string, string> = {
 const DEFAULT_UNSPLASH_QUERY = "Italian grilled sausage polenta rustic";
 
 // =============================================================================
+// Vision AI image validation — REGOLA 0: ZERO foto sbagliate
+// Uses Groq Vision to verify the image matches the expected food product.
+// If validation fails, the photo is skipped and next candidate is tried.
+// =============================================================================
+
+/**
+ * Extract the expected food/product from a sagra title.
+ * "Sagra del Broccolo" → "broccolo"
+ * "Le Grandi Capre d'Italia" → "formaggio di capra"
+ * "Festa della Zucca" → "zucca"
+ */
+function extractExpectedProduct(title: string): string {
+  // Try to extract "del/della/dello/dell'/dei/delle/degli X" pattern
+  const match = title.match(/\b(?:del|della|dello|dell'|dei|delle|degli)\s+(.+?)(?:\s+di\s+|\s+a\s+|\s*[-–]\s*|\s*$)/i);
+  if (match) return match[1].trim();
+
+  // Known special cases
+  if (/capre|capra|caprino/i.test(title)) return "formaggio di capra";
+  if (/baccalà|baccala/i.test(title)) return "baccalà (pesce)";
+  if (/asparag/i.test(title)) return "asparagi";
+  if (/radicchio/i.test(title)) return "radicchio";
+
+  // Fallback: return the full title for context
+  return title;
+}
+
+/**
+ * Validate an image URL against the expected food product using Groq Vision.
+ * Returns true if the image matches, false if it doesn't.
+ * On API errors, returns true (fail-open to avoid blocking the pipeline).
+ */
+async function validateImageWithVision(
+  imageUrl: string,
+  sagraTitle: string,
+): Promise<boolean> {
+  const groqKey = Deno.env.get("GROQ_KEY");
+  if (!groqKey) return true; // fail-open if no key
+
+  const expectedProduct = extractExpectedProduct(sagraTitle);
+
+  try {
+    const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${groqKey}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.2-90b-vision-preview",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Questa immagine verrà usata per "${sagraTitle}" (prodotto atteso: ${expectedProduct}).
+Rispondi SOLO con "SI" o "NO".
+Rispondi "NO" se:
+- L'immagine mostra un prodotto DIVERSO da ${expectedProduct} (es. pizza invece di formaggio, pasta invece di pesce)
+- L'immagine contiene QUALSIASI cibo asiatico/orientale: sushi, bacchette, ramen, wok, noodle, tofu, dim sum, bento, miso, curry asiatico
+- L'immagine contiene bacchette cinesi/giapponesi
+Rispondi "SI" SOLO se l'immagine mostra chiaramente ${expectedProduct} E NON contiene cibo orientale.
+UNA sola parola: SI o NO.`,
+              },
+              {
+                type: "image_url",
+                image_url: { url: imageUrl },
+              },
+            ],
+          },
+        ],
+        temperature: 0.1,
+        max_tokens: 10,
+      }),
+    });
+
+    if (!resp.ok) {
+      console.warn(`Vision validation API error ${resp.status} for "${sagraTitle}" — fail-open`);
+      return true; // fail-open
+    }
+
+    const data = await resp.json();
+    const answer = (data.choices?.[0]?.message?.content ?? "").trim().toUpperCase();
+    const isValid = answer.startsWith("SI") || answer.startsWith("SÌ") || answer === "YES";
+
+    if (!isValid) {
+      console.log(`🚫 Vision REJECTED image for "${sagraTitle}" (expected: ${expectedProduct}, answer: ${answer})`);
+    } else {
+      console.log(`✅ Vision APPROVED image for "${sagraTitle}"`);
+    }
+
+    return isValid;
+  } catch (err) {
+    console.warn(`Vision validation error for "${sagraTitle}":`, err);
+    return true; // fail-open on network errors
+  }
+}
+
+// =============================================================================
 // Geocoding helpers (copied verbatim from src/lib/enrichment/geocode.ts)
 // Deno Edge Functions cannot import from the Next.js src/ directory.
 // =============================================================================
@@ -426,15 +525,18 @@ function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
 
     Paragrafo 1: Descrizione dell'evento (cosa è, storia, edizione)
 
-    Paragrafo 2 (se ci sono dati): Menu e piatti ("Tra i piatti: polenta e baccalà, grigliate, fritture.")
+    Paragrafo 2 (SOLO se ci sono piatti ESPLICITI nella fonte): Menu e piatti ("Tra i piatti: polenta e baccalà, grigliate, fritture."). Se la fonte NON elenca piatti specifici → OMETTI questo paragrafo. MAI inventare un menu.
 
-    Paragrafo 3 (se ci sono dati): Info pratiche su righe separate con "\\n":
-    "📍 Via Piave 12, Tribano (PD)\\n🕐 Ven 18-23, Sab-Dom 10-23\\n🎟️ Ingresso libero\\n📞 333 456789 | info@sagra.it"
+    Paragrafo 3 (SOLO se i dati sono ESPLICITAMENTE presenti nella source_description/description originale): Info pratiche su righe separate con "\\n":
+    "📍 [indirizzo REALE dalla fonte]\\n🕐 [orari REALI dalla fonte]\\n🎟️ [prezzo REALE dalla fonte]\\n📞 [contatti REALI dalla fonte]"
+    INCLUDI SOLO le righe per cui HAI DATI REALI dalla fonte. Se non c'è indirizzo → niente riga 📍. Se non ci sono orari → niente riga 🕐. Se non ci sono contatti → niente riga 📞.
 
     REGOLA FONDAMENTALE: NON perdere informazioni utili dalla description originale. Riformula in italiano corretto ma CONSERVA:
     - Orari, indirizzo, menu, programma, contatti, numero edizione, prezzo, organizzatore
-    Se la description originale è vuota o assente: CREANE una credibile basata su titolo e luogo (solo paragrafo 1).
-    MAI inventare dettagli specifici (menu, orari, prezzi) se non sono nella description originale.
+    Se la description originale è vuota o assente: scrivi SOLO una breve descrizione generica dell'evento basata su titolo e luogo (solo paragrafo 1). NIENT'ALTRO.
+    ⚠️ DIVIETO ASSOLUTO: MAI INVENTARE indirizzi, numeri di telefono, email, orari, prezzi, menu specifici, nomi di organizzatori.
+    Se un dato NON è nella fonte originale → NON includerlo nella description. ZERO eccezioni.
+    MAI usare placeholder come "Via Roma 1", "333 456789", "info@sagra.it" — sono FALSI.
     MAI lasciare vuota!
 
 11. **unsplash_query**: 3-5 parole IN INGLESE per cercare una FOTO del CIBO PROTAGONISTA dell'evento.
@@ -446,7 +548,7 @@ function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
     - "Prosciutto Veneto DOP" → "prosciutto crudo sliced Italian ham closeup"
     - "Festa della Soppressa" → "Italian soppressa salami sliced cured meat closeup"
     - "Sagra dell'Asparago Bianco" → "white asparagus spears bundle closeup"
-    - "Le Grandi Capre d'Italia" → "goat cheese Italian fresh closeup"
+    - "Le Grandi Capre d'Italia" → "goat cheese wheel round soft rind closeup"
     - "Sagra del Pesce" → "fresh seafood platter Mediterranean closeup"
     - "Festa della Zucca" → "pumpkin orange closeup autumn"
     ESEMPI SBAGLIATI: "Italian food festival" (troppo generico), "beer" (per sagra di formaggi), "pasta" (per sagra di prosciutto)
@@ -1044,8 +1146,8 @@ const ITALIAN_FOOD_TRANSLATIONS: Record<string, string> = {
   "salsiccia": "Italian sausage grilled outdoor",
   "carne": "grilled meat outdoor Italian barbecue",
   "dolci": "Italian pastry dessert table",
-  "formaggio": "Italian cheese wheel aged Asiago Montasio",
-  "formaggi": "Italian cheese wheel aged Asiago Montasio",
+  "formaggio": "aged cheese wheel wedge Italian closeup",
+  "formaggi": "aged cheese wheel wedge Italian closeup",
   "pinza": "Italian focaccia flatbread rustic",
   "riso": "Italian risotto rice dish",
   "birra": "craft beer pint glass golden ale",
@@ -1079,8 +1181,8 @@ const ITALIAN_FOOD_TRANSLATIONS: Record<string, string> = {
   "salute": "Italian autumn harvest festival",
   "soppressa": "Italian soppressa salami sliced cured meat",
   "sopressa": "Italian soppressa salami sliced cured meat",
-  "capra": "goat cheese Italian fresh",
-  "capre": "goat cheese Italian fresh",
+  "capra": "goat cheese wheel round soft rind closeup",
+  "capre": "goat cheese wheel round soft rind closeup",
   "mais": "corn polenta yellow Italian",
   "panettone": "Italian panettone Christmas cake",
   "pandoro": "Italian pandoro Christmas cake",
@@ -1133,6 +1235,31 @@ interface UnsplashPhoto {
   urls: { raw: string };
   user: { name: string; links: { html: string } };
   links: { download_location: string };
+  description?: string | null;
+  alt_description?: string | null;
+  tags?: Array<{ title?: string }>;
+}
+
+// =============================================================================
+// REGOLA TASSATIVA N.1: NO CIBO ORIENTALE — filtro su TUTTE le foto
+// =============================================================================
+const BANNED_IMAGE_RE = /sushi|chopstick|asian|chinese|japanese|ramen|wok|noodle|dim.?sum|tofu|soy.?sauce|kimchi|thai|vietnamese|korean|oriental|bento|miso|teriyaki|tempura|gyoza|edamame|wasabi|sashimi|udon|pho|curry|pad.?thai|spring.?roll|dumpling/i;
+
+/** Filter out Asian food photos from ANY image API results */
+function filterBannedPhotos<T extends { description?: string | null; alt_description?: string | null }>(
+  photos: T[],
+  source: string,
+): T[] {
+  const before = photos.length;
+  const safe = photos.filter((p) => {
+    const text = [p.description, p.alt_description].filter(Boolean).join(" ");
+    return !BANNED_IMAGE_RE.test(text);
+  });
+  const removed = before - safe.length;
+  if (removed > 0) {
+    console.log(`🚫 Filtered ${removed} Asian food photos from ${source} results`);
+  }
+  return safe;
 }
 
 /**
@@ -1172,7 +1299,10 @@ async function fetchUnsplashPhotos(
   }
 
   const data = await resp.json();
-  return { photos: (data.results ?? []) as UnsplashPhoto[], rateLimitLow, error: false };
+  const rawPhotos = (data.results ?? []) as UnsplashPhoto[];
+  // REGOLA 1: filter out Asian food photos BEFORE they can be assigned
+  const photos = filterBannedPhotos(rawPhotos, `Unsplash:${query}`);
+  return { photos, rateLimitLow, error: false };
 }
 
 // =============================================================================
@@ -1183,6 +1313,10 @@ interface PexelsPhoto {
   src: { large2x: string; large: string; medium: string };
   photographer: string;
   photographer_url: string;
+  alt?: string;
+  url?: string;
+  description?: string | null;
+  alt_description?: string | null;
 }
 
 /**
@@ -1221,7 +1355,15 @@ async function fetchPexelsPhotos(
   }
 
   const data = await resp.json();
-  return { photos: (data.photos ?? []) as PexelsPhoto[], rateLimitLow, error: false };
+  const rawPhotos = (data.photos ?? []) as PexelsPhoto[];
+  // REGOLA 1: filter out Asian food — check alt text and URL
+  const photos = rawPhotos.filter((p) => {
+    const text = [p.alt, p.url].filter(Boolean).join(" ");
+    return !BANNED_IMAGE_RE.test(text);
+  });
+  const removed = rawPhotos.length - photos.length;
+  if (removed > 0) console.log(`🚫 Filtered ${removed} Asian food photos from Pexels:${query}`);
+  return { photos, rateLimitLow, error: false };
 }
 
 // =============================================================================
@@ -1237,6 +1379,7 @@ interface PixabayHit {
   webformatURL: string;
   user: string;
   pageURL: string;
+  tags?: string;
 }
 
 async function fetchPixabayPhotos(
@@ -1272,7 +1415,15 @@ async function fetchPixabayPhotos(
   }
 
   const data = await resp.json();
-  return { photos: (data.hits ?? []) as PixabayHit[], rateLimitLow, error: false };
+  const rawPhotos = (data.hits ?? []) as PixabayHit[];
+  // REGOLA 1: filter out Asian food — check tags and pageURL
+  const photos = rawPhotos.filter((p) => {
+    const text = [p.tags, p.pageURL].filter(Boolean).join(" ");
+    return !BANNED_IMAGE_RE.test(text);
+  });
+  const removed = rawPhotos.length - photos.length;
+  if (removed > 0) console.log(`🚫 Filtered ${removed} Asian food photos from Pixabay:${query}`);
+  return { photos, rateLimitLow, error: false };
 }
 
 function pickPixabayPhotoForSagra(photos: PixabayHit[], sagraId: string): { imageUrl: string; imageCredit: string } {
@@ -1306,20 +1457,40 @@ function pickPexelsPhotoForSagra(photos: PexelsPhoto[], sagraId: string): { imag
 }
 
 /**
- * Pick a photo from a pool, using a hash of the sagra ID for deterministic variety.
- * Returns a different photo for each sagra even when they share the same tag.
+ * Pick and VALIDATE a photo for a sagra.
+ * Tries photos from the pool in order, validates each with Vision AI.
+ * Returns the first photo that passes validation, or the first photo if all fail.
+ * REGOLA 0: ZERO foto sbagliate — ogni immagine DEVE essere validata.
  */
-function pickPhotoForSagra(photos: UnsplashPhoto[], sagraId: string): UnsplashPhoto {
-  // Unsplash returns results ordered by relevance — #1 is best match.
-  // Only pick from the TOP 5 most relevant results to avoid off-topic images
-  // (e.g., pickles instead of seafood at position #14).
-  // The hash provides variety when multiple sagre share the same query.
+async function pickAndValidatePhoto(
+  photos: UnsplashPhoto[],
+  sagraId: string,
+  sagraTitle: string,
+): Promise<UnsplashPhoto> {
   const PICK_POOL = Math.min(5, photos.length);
+
+  // Try each photo in the top pool, starting from the hash-based pick
   let hash = 0;
   for (let i = 0; i < sagraId.length; i++) {
     hash = ((hash << 5) - hash + sagraId.charCodeAt(i)) | 0;
   }
-  return photos[Math.abs(hash) % PICK_POOL];
+  const startIdx = Math.abs(hash) % PICK_POOL;
+
+  for (let attempt = 0; attempt < PICK_POOL; attempt++) {
+    const idx = (startIdx + attempt) % PICK_POOL;
+    const photo = photos[idx];
+    const previewUrl = `${photo.urls.raw}&w=400&h=300&fit=crop&q=60`;
+
+    const isValid = await validateImageWithVision(previewUrl, sagraTitle);
+    if (isValid) return photo;
+
+    // Vision rejected — try next photo
+    await sleep(500); // small delay between vision calls
+  }
+
+  // All photos rejected by vision — return first one anyway (fail-open)
+  console.warn(`⚠️ All ${PICK_POOL} photos rejected by Vision for "${sagraTitle}" — using first as fallback`);
+  return photos[startIdx % PICK_POOL];
 }
 
 async function runUnsplashPass(
@@ -1480,9 +1651,9 @@ async function runUnsplashPass(
 
     if (!photos || photos.length === 0) continue;
 
-    // Step 3: Assign a photo to each sagra in this group (no additional API calls)
+    // Step 3: Assign a VALIDATED photo to each sagra (Vision AI checks match)
     for (const sagra of groupSagre) {
-      const photo = pickPhotoForSagra(photos, sagra.id);
+      const photo = await pickAndValidatePhoto(photos, sagra.id, sagra.title);
 
       const imageUrl = `${photo.urls.raw}&w=800&h=500&fit=crop&q=80`;
       const imageCredit = `${photo.user.name}|${photo.user.links.html}?utm_source=nemovia&utm_medium=referral`;
@@ -1591,7 +1762,7 @@ async function runUnsplashPass(
         if (!photos || photos.length === 0) continue;
 
         for (const sagra of groupSagre) {
-          const photo = pickPhotoForSagra(photos, sagra.id);
+          const photo = await pickAndValidatePhoto(photos, sagra.id, sagra.title);
           const imageUrl = `${photo.urls.raw}&w=800&h=500&fit=crop&q=80`;
           const imageCredit = `${photo.user.name}|${photo.user.links.html}?utm_source=nemovia&utm_medium=referral`;
 

@@ -1,5 +1,13 @@
 # REGOLE TASSATIVE — LEGGERE PRIMA DI QUALSIASI AZIONE
 
+## 0. ZERO FOTO SBAGLIATE, ZERO TESTO NON FORMATTATO — NON NEGOZIABILE
+- OGNI immagine assegnata dal pipeline DEVE essere validata con Vision AI (Groq Vision)
+- Vision AI verifica: "questa foto mostra [prodotto dal titolo sagra]?" — se NO → scartare, provare la prossima
+- Query Unsplash DEVONO essere IPER-SPECIFICHE: mai "cheese" generico, mai "food Italian"
+- Description DEVE essere formattata: paragrafi separati, emoji info pratiche, MAI muro di testo
+- MAI inventare dati: indirizzi, telefoni, email, orari, menu — SOLO da fonte originale
+- Se non c'è il dato nella fonte → NON includerlo. ZERO eccezioni.
+
 ## 1. NO CIBO ORIENTALE — GRAVISSIMO
 MAI MAI MAI mostrare sushi, bacchette, ramen, cibo asiatico/orientale/cinese/giapponese in NESSUNA foto o video.
 - OGNI query Pexels/Unsplash DEVE avere `-asian -sushi -chopsticks -ramen -chinese -japanese -wok`
