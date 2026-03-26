@@ -98,7 +98,11 @@ export function isNonSagraTitle(title: string): boolean {
     /\b(mercato|mercatino|mercatini)\b/i.test(t) ||
     /\bfiera\b/i.test(t) ||
     /\brassegna\b/i.test(t) ||
-    /\bfestival\b/i.test(t)
+    /\bfestival\b/i.test(t) ||
+    /\b(dj|dj\s*set|lineup|line[\s-]?up)\b/i.test(t) ||
+    /\b(apr[eè]s[\s-]?ski|afterski|after[\s-]?ski)\b/i.test(t) ||
+    /\b(discoteca|nightclub|night[\s-]?club)\b/i.test(t) ||
+    /\b(serata\s+danzante|ballo\s+liscio)\b/i.test(t)
   ) {
     return true;
   }

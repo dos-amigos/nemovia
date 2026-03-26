@@ -437,16 +437,21 @@ function buildEnrichmentPrompt(batch: SagraForLLM[]): string {
     MAI inventare dettagli specifici (menu, orari, prezzi) se non sono nella description originale.
     MAI lasciare vuota!
 
-11. **unsplash_query**: 3-5 parole IN INGLESE per cercare FOTO del PROTAGONISTA dell'evento.
-    REGOLA FONDAMENTALE: leggi TUTTA la description/source_description per capire il VERO soggetto, poi traduci in inglese.
-    - Se la description parla di "vino rosato Chiaretto" → "rosé pink wine glass vineyard" (NON "wine" generico)
-    - Se parla di "ciliegie" → "fresh red cherries tree branch" (NON "berries" o "fruit")
-    - Se parla di "fagiolo di Lamon" → "borlotti beans Italian dish" (NON verdure generiche)
-    - Se parla di "riso" → "Italian risotto rice dish" (NON cannoli o pasta)
-    La query deve essere SPECIFICA al piatto/prodotto menzionato nella description, non generica.
-    Esempi: "Sagra del Pesce" → "fresh seafood platter Mediterranean", "Festa della Zucca" → "pumpkin soup autumn Italian"
-    VIETATO: "festival", "party", "celebration", "market", "outdoor", "village", "traditional", "Italian food" generico.
-    OGNI query DEVE descrivere il CIBO/PRODOTTO SPECIFICO dell'evento.
+11. **unsplash_query**: 3-5 parole IN INGLESE per cercare una FOTO del CIBO PROTAGONISTA dell'evento.
+    REGOLA CRITICA: la foto DEVE mostrare ESATTAMENTE il prodotto nel titolo. Se il titolo dice "Sagra del Broccolo", la foto DEVE mostrare BROCCOLI, non peperoni o mais.
+    PASSO 1: identifica il PRODOTTO PRINCIPALE dal titolo (es. "broccolo", "prosciutto", "asparago", "soppressa")
+    PASSO 2: traduci quel prodotto SPECIFICO in inglese con 1-2 aggettivi descrittivi + "closeup" per forzare primo piano del prodotto
+    ESEMPI CORRETTI:
+    - "Sagra del Broccolo" → "broccoli florets green vegetable closeup"
+    - "Prosciutto Veneto DOP" → "prosciutto crudo sliced Italian ham closeup"
+    - "Festa della Soppressa" → "Italian soppressa salami sliced cured meat closeup"
+    - "Sagra dell'Asparago Bianco" → "white asparagus spears bundle closeup"
+    - "Le Grandi Capre d'Italia" → "goat cheese Italian fresh closeup"
+    - "Sagra del Pesce" → "fresh seafood platter Mediterranean closeup"
+    - "Festa della Zucca" → "pumpkin orange closeup autumn"
+    ESEMPI SBAGLIATI: "Italian food festival" (troppo generico), "beer" (per sagra di formaggi), "pasta" (per sagra di prosciutto)
+    VIETATO: "festival", "party", "celebration", "market", "outdoor", "village", "traditional", "Italian food", "beer" (se non è sagra della birra).
+    OGNI query DEVE contenere il NOME ESATTO del cibo/prodotto tradotto in inglese + "closeup".
 
 EVENTI:
 ${JSON.stringify(batch)}
@@ -798,6 +803,9 @@ async function runLLMPass(
         /\beventi\s+enogastronomic/i,
         /\b(le\s+sagre|le\s+feste|gli\s+eventi)\s+(di|del|da|più)\b/i,
         /\b(cosa\s+fare|dove\s+andare)\b/i,
+        /\b(dj|dj\s*set|lineup|line[\s-]?up)\b/i,
+        /\b(apr[eè]s[\s-]?ski|afterski|after[\s-]?ski)\b/i,
+        /\b(discoteca|nightclub|night[\s-]?club)\b/i,
       ];
 
       // Write each enriched event back to DB
@@ -841,7 +849,7 @@ async function runLLMPass(
         const effectiveEndDate = (DATE_RE.test(result.end_date ?? "") ? result.end_date : null)
           || matchedSagra?.end_date || null;
         const hasDate = !!effectiveStartDate && DATE_RE.test(effectiveStartDate);
-        const isHighConfidence = confidence >= 50;
+        const isHighConfidence = confidence >= 70;
 
         // Province: must be a valid Veneto province to auto-approve
         const effectiveProvince = (result.province_code?.toUpperCase() || matchedSagra?.province || null) as string | null;
@@ -1017,8 +1025,8 @@ function isLowQualityUrl(url: string | null | undefined): boolean {
 // Italian food word → English Unsplash query (for title-based fallback in Pass 3)
 const ITALIAN_FOOD_TRANSLATIONS: Record<string, string> = {
   "radicchio": "radicchio red chicory Italian",
-  "asparago": "fresh green asparagus dish",
-  "asparagi": "fresh green asparagus dish",
+  "asparago": "white asparagus spears Bassano Veneto",
+  "asparagi": "white asparagus spears Bassano Veneto",
   "zucca": "pumpkin soup autumn harvest",
   "zucche": "pumpkin soup autumn harvest",
   "fagiolo": "Italian bean soup rustic",
@@ -1036,11 +1044,11 @@ const ITALIAN_FOOD_TRANSLATIONS: Record<string, string> = {
   "salsiccia": "Italian sausage grilled outdoor",
   "carne": "grilled meat outdoor Italian barbecue",
   "dolci": "Italian pastry dessert table",
-  "formaggio": "Italian cheese board rustic",
-  "formaggi": "Italian cheese board rustic",
+  "formaggio": "Italian cheese wheel aged Asiago Montasio",
+  "formaggi": "Italian cheese wheel aged Asiago Montasio",
   "pinza": "Italian focaccia flatbread rustic",
   "riso": "Italian risotto rice dish",
-  "birra": "craft beer outdoor festival",
+  "birra": "craft beer pint glass golden ale",
   "oca": "roasted goose Italian dish",
   "anatra": "roasted duck Italian dish",
   "castagne": "roasted chestnuts autumn",
@@ -1052,7 +1060,7 @@ const ITALIAN_FOOD_TRANSLATIONS: Record<string, string> = {
   "fragola": "fresh strawberries Italian",
   "fragole": "fresh strawberries Italian",
   "tartufo": "Italian truffle dish",
-  "prosciutto": "Italian prosciutto ham cutting",
+  "prosciutto": "prosciutto crudo sliced Italian ham closeup",
   "salame": "Italian salami cured meat",
   "pane": "Italian bread rustic bakery",
   "pasta": "fresh Italian pasta homemade",
@@ -1060,8 +1068,8 @@ const ITALIAN_FOOD_TRANSLATIONS: Record<string, string> = {
   "trippa": "Italian tripe stew",
   "lumache": "Italian snail dish",
   "rane": "fried frog legs Italian",
-  "broccolo": "broccoli Italian dish",
-  "broccoli": "broccoli Italian dish",
+  "broccolo": "broccoli florets green vegetable closeup",
+  "broccoli": "broccoli florets green vegetable closeup",
   "carciofo": "Italian artichoke dish",
   "carciofi": "Italian artichoke dish",
   "bisi": "Italian peas risotto spring",
@@ -1069,6 +1077,15 @@ const ITALIAN_FOOD_TRANSLATIONS: Record<string, string> = {
   "primavera": "spring countryside Italian village",
   "pasqua": "Easter spring flowers Italian",
   "salute": "Italian autumn harvest festival",
+  "soppressa": "Italian soppressa salami sliced cured meat",
+  "sopressa": "Italian soppressa salami sliced cured meat",
+  "capra": "goat cheese Italian fresh",
+  "capre": "goat cheese Italian fresh",
+  "mais": "corn polenta yellow Italian",
+  "panettone": "Italian panettone Christmas cake",
+  "pandoro": "Italian pandoro Christmas cake",
+  "grappa": "grappa Italian spirit glass",
+  "prosecco": "prosecco sparkling wine Veneto",
 };
 
 /**
