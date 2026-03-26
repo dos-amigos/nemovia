@@ -208,7 +208,7 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
           type="button"
           onClick={() => scrollToCard("left")}
           aria-label="Scorri a sinistra"
-          className="pointer-events-auto absolute left-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-background/80 shadow-md backdrop-blur-sm opacity-70 hover:opacity-100 transition-opacity"
+          className="pointer-events-auto absolute left-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-background/80 shadow-md backdrop-blur-sm opacity-70 hover:opacity-100 transition-opacity focus-visible:opacity-100 focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
@@ -216,7 +216,7 @@ export function ScrollRow({ sagre, ariaLabel }: ScrollRowProps) {
           type="button"
           onClick={() => scrollToCard("right")}
           aria-label="Scorri a destra"
-          className="pointer-events-auto absolute right-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-background/80 shadow-md backdrop-blur-sm opacity-70 hover:opacity-100 transition-opacity"
+          className="pointer-events-auto absolute right-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-background/80 shadow-md backdrop-blur-sm opacity-70 hover:opacity-100 transition-opacity focus-visible:opacity-100 focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
           <ChevronRight className="h-5 w-5" />
         </button>

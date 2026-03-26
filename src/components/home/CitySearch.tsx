@@ -85,7 +85,7 @@ export function CitySearch() {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => filtered.length > 0 && setOpen(true)}
-          placeholder="Cerca per citta..."
+          placeholder="Cerca per città..."
           className="w-full bg-transparent text-white placeholder:text-white/60 focus:outline-none"
           autoComplete="off"
           role="combobox"

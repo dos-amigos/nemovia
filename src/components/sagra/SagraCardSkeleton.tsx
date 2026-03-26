@@ -1,40 +1,31 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function SagraCardSkeleton() {
   return (
-    <Card className="overflow-hidden py-0">
-      {/* Image area */}
-      <Skeleton className="h-40 w-full rounded-none" />
+    <div className="relative h-52 w-full overflow-hidden rounded-xl">
+      {/* Image placeholder */}
+      <Skeleton className="absolute inset-0 rounded-xl" />
 
-      {/* Content */}
-      <CardContent className="space-y-1.5 p-3">
+      {/* Gradient overlay mimicking card style */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 via-40% to-transparent rounded-xl" />
+
+      {/* Text content at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 p-3 space-y-1.5">
         {/* Title */}
-        <Skeleton className="h-5 w-3/4" />
-
-        {/* Description */}
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-5 w-3/4 bg-white/20" />
 
         {/* Location row */}
         <div className="flex items-center gap-1">
-          <Skeleton className="h-3.5 w-3.5 rounded-full" />
-          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-3.5 w-3.5 rounded-full bg-white/15" />
+          <Skeleton className="h-3.5 w-1/2 bg-white/15" />
         </div>
 
         {/* Date row */}
         <div className="flex items-center gap-1">
-          <Skeleton className="h-3.5 w-3.5 rounded-full" />
-          <Skeleton className="h-4 w-1/3" />
+          <Skeleton className="h-3 w-3 rounded-full bg-white/15" />
+          <Skeleton className="h-3 w-1/3 bg-white/15" />
         </div>
-
-        {/* Tags row */}
-        <div className="flex items-center gap-1 pt-0.5">
-          <Skeleton className="h-5 w-14 rounded-full" />
-          <Skeleton className="h-5 w-12 rounded-full" />
-          <Skeleton className="h-5 w-16 rounded-full" />
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
