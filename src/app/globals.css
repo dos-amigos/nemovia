@@ -55,6 +55,16 @@
   --input: oklch(0.905 0.008 260);
   --ring: oklch(var(--brand-l) var(--brand-c) var(--brand-h));
 
+  /* Food category colors */
+  --food-carne: oklch(0.40 0.12 40);
+  --food-pesce: oklch(0.62 0.17 230);
+  --food-vino: oklch(0.35 0.15 358);
+  --food-zucca: oklch(0.58 0.18 45);
+  --food-verdura: oklch(0.55 0.17 145);
+  --food-gnocco: oklch(0.58 0.13 85);
+  --food-dolci: oklch(0.52 0.19 340);
+  --food-altro: oklch(0.42 0.19 358);
+
   /* Charts */
   --chart-1: oklch(var(--brand-l) var(--brand-c) var(--brand-h));
   --chart-2: oklch(var(--accent-l) var(--accent-c) var(--accent-h));
@@ -106,6 +116,14 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-food-carne: var(--food-carne);
+  --color-food-pesce: var(--food-pesce);
+  --color-food-vino: var(--food-vino);
+  --color-food-zucca: var(--food-zucca);
+  --color-food-verdura: var(--food-verdura);
+  --color-food-gnocco: var(--food-gnocco);
+  --color-food-dolci: var(--food-dolci);
+  --color-food-altro: var(--food-altro);
   --font-sans: var(--font-geist-sans);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

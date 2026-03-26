@@ -19,7 +19,7 @@ export function ViewToggle({
         type="button"
         onClick={() => onChange("griglia")}
         className={cn(
-          "rounded-md p-1.5 transition-colors",
+          "flex h-9 w-9 items-center justify-center rounded-md transition-colors",
           value === "griglia"
             ? "bg-background text-primary shadow-sm"
             : "text-muted-foreground hover:text-foreground"
@@ -33,7 +33,7 @@ export function ViewToggle({
         type="button"
         onClick={() => onChange("lista")}
         className={cn(
-          "rounded-md p-1.5 transition-colors",
+          "flex h-9 w-9 items-center justify-center rounded-md transition-colors",
           value === "lista"
             ? "bg-background text-primary shadow-sm"
             : "text-muted-foreground hover:text-foreground"

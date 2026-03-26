@@ -41,11 +41,11 @@ export function SagraListItem({ sagra, distanceKm }: SagraListItemProps) {
           sizes="(max-width: 640px) 100vw, 120px"
         />
         {sagra.is_free === true ? (
-          <Badge className="absolute right-1.5 top-1.5 bg-emerald-500 text-white border-0 text-[10px] px-1.5 py-0">
+          <Badge className="absolute right-1.5 top-1.5 bg-emerald-500 text-white border-0 text-[11px] px-1.5 py-0">
             Gratis
           </Badge>
         ) : sagra.price_info ? (
-          <Badge className="absolute right-1.5 top-1.5 gap-0.5 bg-black/50 text-white backdrop-blur-sm border-0 text-[10px] px-1.5 py-0">
+          <Badge className="absolute right-1.5 top-1.5 gap-0.5 bg-black/50 text-white backdrop-blur-sm border-0 text-[11px] px-1.5 py-0">
             <Banknote className="h-2.5 w-2.5" />
           </Badge>
         ) : null}
@@ -95,7 +95,7 @@ export function SagraListItem({ sagra, distanceKm }: SagraListItemProps) {
               return (
                 <span
                   key={tag}
-                  className="inline-block rounded-full px-2 py-0.5 text-[11px] font-medium text-white leading-tight"
+                  className="inline-block rounded-full px-2 py-0.5 text-xs font-medium text-white leading-tight"
                   style={{ backgroundColor: color }}
                 >
                   {tag}

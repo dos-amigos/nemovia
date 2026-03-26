@@ -83,7 +83,7 @@ export function ActiveFilters() {
           <button
             type="button"
             onClick={badge.onRemove}
-            className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20"
+            className="-mr-1 ml-0.5 flex h-5 w-5 items-center justify-center rounded-full hover:bg-muted-foreground/20"
             aria-label={`Rimuovi filtro ${badge.label}`}
           >
             <X className="h-3 w-3" />

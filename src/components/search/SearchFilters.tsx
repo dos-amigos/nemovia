@@ -195,9 +195,11 @@ export function SearchFilters({ variant = "sidebar" }: SearchFiltersProps) {
                 placeholder="Cerca per città..."
                 autoComplete="off"
                 role="combobox"
+                aria-label="Cerca per città"
                 aria-expanded={cityOpen}
                 aria-haspopup="listbox"
                 aria-autocomplete="list"
+                aria-controls="filter-city-listbox"
                 className="h-10 w-full rounded-lg border border-input bg-transparent pl-9 pr-3 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
               />
             </div>
@@ -205,6 +207,7 @@ export function SearchFilters({ variant = "sidebar" }: SearchFiltersProps) {
             {cityOpen && filteredCities.length > 0 && (
               <ul
                 ref={cityListRef}
+                id="filter-city-listbox"
                 role="listbox"
                 className="absolute left-0 right-0 z-50 mt-1 max-h-[240px] overflow-y-auto rounded-lg border border-border bg-popover shadow-lg"
               >
@@ -286,7 +289,7 @@ export function SearchFilters({ variant = "sidebar" }: SearchFiltersProps) {
         }}
         className="w-full"
       />
-      <div className="flex justify-between text-[10px] text-muted-foreground">
+      <div className="flex justify-between text-[11px] text-muted-foreground">
         <span>5 km</span>
         <span>50 km</span>
         <span>100 km</span>
@@ -426,7 +429,7 @@ export function SearchFilters({ variant = "sidebar" }: SearchFiltersProps) {
         </div>
 
         {error && (
-          <p className="text-xs text-destructive">{error}</p>
+          <p className="text-xs text-destructive" role="alert">{error}</p>
         )}
 
         {/* Radius slider — full width below when geo active */}
@@ -448,7 +451,7 @@ export function SearchFilters({ variant = "sidebar" }: SearchFiltersProps) {
           {citySearchBlock}
 
           {error && (
-            <p className="text-xs text-destructive">{error}</p>
+            <p className="text-xs text-destructive" role="alert">{error}</p>
           )}
 
           {radiusBlock}

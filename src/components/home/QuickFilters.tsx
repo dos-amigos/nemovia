@@ -40,7 +40,7 @@ export function QuickFilters() {
             >
               <Badge
                 variant="outline"
-                className="cursor-pointer px-3 py-1.5 text-sm whitespace-nowrap hover:bg-secondary"
+                className="cursor-pointer px-3 py-2 text-sm whitespace-nowrap hover:bg-secondary"
               >
                 {chip.emoji} {chip.label}
               </Badge>

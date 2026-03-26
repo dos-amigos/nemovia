@@ -156,14 +156,14 @@ export function getPrimaryCategory(
  * - Altro: coral (brand primary)
  */
 export const CATEGORY_COLORS: Record<FoodCategory, string> = {
-  carne: "#7C2D12",
-  pesce: "#0EA5E9",
-  vino: "#881337",
-  zucca: "#EA580C",
-  verdura: "#16A34A",
-  gnocco: "#CA8A04",
-  dolci: "#DB2777",
-  altro: "#9B1B30",
+  carne: "var(--food-carne)",
+  pesce: "var(--food-pesce)",
+  vino: "var(--food-vino)",
+  zucca: "var(--food-zucca)",
+  verdura: "var(--food-verdura)",
+  gnocco: "var(--food-gnocco)",
+  dolci: "var(--food-dolci)",
+  altro: "var(--food-altro)",
 };
 
 /** Get themed color for a set of food tags */

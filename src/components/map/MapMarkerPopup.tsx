@@ -34,7 +34,7 @@ export default function MapMarkerPopup({ sagra }: MapMarkerPopupProps) {
         </div>
         {/* Free badge */}
         {sagra.is_free === true && (
-          <span className="absolute top-2 right-2 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-semibold text-white">
+          <span className="absolute top-2 right-2 rounded-full bg-emerald-500 px-2 py-0.5 text-[11px] font-semibold text-white">
             Gratis
           </span>
         )}
@@ -62,7 +62,7 @@ export default function MapMarkerPopup({ sagra }: MapMarkerPopupProps) {
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary"
+                className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"
               >
                 {tag}
               </span>

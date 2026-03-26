@@ -89,9 +89,11 @@ export function CitySearch() {
           className="w-full bg-transparent text-white placeholder:text-white/60 focus:outline-none"
           autoComplete="off"
           role="combobox"
+          aria-label="Cerca per città"
           aria-expanded={open}
           aria-haspopup="listbox"
           aria-autocomplete="list"
+          aria-controls="hero-city-listbox"
         />
       </div>
 
@@ -99,6 +101,7 @@ export function CitySearch() {
       {open && filtered.length > 0 && (
         <ul
           ref={listRef}
+          id="hero-city-listbox"
           role="listbox"
           className="absolute left-0 right-0 z-50 mt-2 max-h-[200px] overflow-y-auto rounded-lg border border-white/20 bg-black/70 backdrop-blur-md"
         >
