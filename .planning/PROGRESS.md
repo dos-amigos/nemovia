@@ -276,6 +276,17 @@
 
 ## Log Sessioni
 
+### 2026-03-26 (sessione 15) — Tooltip mappa + dedup geo-proximity + logging admin
+- **Tooltip mappa migliorato**: da testo piatto Leaflet a nuvoletta ricca con titolo bold, luogo (provincia), data in rosso brand. CSS custom `.sagra-tooltip` in globals.css
+- **Dedup geo-proximity (Method C)**: ST_DWithin 15km + title similarity >0.5 + date ±7 giorni. Cattura eventi multi-sede come "Rassegna Asparago Bianco" (Bassano vs Romano D'Ezzelino)
+- **dedup_logs table**: logga ogni merge con keeper/deleted title+location, metodo usato, similarity score
+- **Admin "Unioni recenti"**: nuova sezione in DashboardView — sagra eliminata (rosso) vs mantenuta (verde), badge metodo, % similarità
+- **Merge espande date range**: quando due sagre vengono unite, il keeper prende start_date più vecchio e end_date più recente
+- **Migration 031**: `031_dedup_logs_geo_proximity.sql` — tabella + funzione aggiornata + run iniziale
+- **Migration 031 DA APPLICARE**: utente deve applicare manualmente in Supabase SQL Editor
+- **Provider chain LLM confermata**: Groq → Mistral → Gemini → Vertex è l'ordine giusto (Groq a 0%, Mistral al 23%)
+- **Duplicato Asparago Bianco identificato**: 2 record da CulturaVeneto (Bassano 10/4 + Romano D'Ezzelino 16/4) — stesso evento multi-sede, la nuova dedup geo li catturerebbe
+
 ### 2026-03-24 (sessione 14) — Dedup aggressiva + pulizia DB + immagini
 - **deduplicate_sagre() function**: trova cluster duplicati (3 metodi: title sim>0.7+provincia, title sim>0.5+città, stessa città+date), tiene il più completo, ELIMINA dal DB (non solo disattiva)
 - **cleanup_stale_sagre() function**: elimina needs_review/discarded con date passate o senza dati
