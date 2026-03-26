@@ -199,7 +199,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* Leaflet tooltip override — rich sagra tooltip */
+/* Leaflet tooltip override — speech-bubble with arrow pointing at pin */
 .sagra-tooltip.leaflet-tooltip {
   background: white;
   border: none;
@@ -208,8 +208,20 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   font-family: inherit;
 }
-.sagra-tooltip.leaflet-tooltip::before {
-  border-top-color: white;
+/* Arrow pointing down toward the pin */
+.sagra-tooltip.leaflet-tooltip-top::before {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid white;
+  border-bottom: none;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.08));
 }
 .sagra-tooltip-inner {
   display: flex;
