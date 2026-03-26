@@ -16,41 +16,13 @@ export interface HeroVideo {
 }
 
 /**
- * Curated hero videos — Italian food, cooking, vineyards, markets, festivals.
- * All videos are landscape, 720p, 5-24s, under 5MB each.
+ * Curated hero videos — EMPTY until manually verified.
+ * ALL local food videos removed because they could not be verified
+ * and at least one contained chopsticks/Asian food.
+ * The hero now relies ONLY on Pexels API city + food videos (which ARE filtered).
+ * To re-add local videos: download, WATCH THEM, verify NO Asian food, then add here.
  */
-export const HERO_VIDEOS: HeroVideo[] = [
-  {
-    src: "/videos/hero-3.mp4",
-    photographer: "cottonbro studio",
-    pexelsUrl: "https://www.pexels.com/video/4253150/",
-    type: "food",
-  },
-  {
-    src: "/videos/hero-4.mp4",
-    photographer: "Klaus Nielsen",
-    pexelsUrl: "https://www.pexels.com/video/6288312/",
-    type: "food",
-  },
-  {
-    src: "/videos/hero-5.mp4",
-    photographer: "Kelly",
-    pexelsUrl: "https://www.pexels.com/video/19905400/",
-    type: "food",
-  },
-  {
-    src: "/videos/hero-6.mp4",
-    photographer: "Klaus Nielsen",
-    pexelsUrl: "https://www.pexels.com/video/6281185/",
-    type: "food",
-  },
-  {
-    src: "/videos/hero-7.mp4",
-    photographer: "Devilishly Good",
-    pexelsUrl: "https://www.pexels.com/video/5372095/",
-    type: "food",
-  },
-];
+export const HERO_VIDEOS: HeroVideo[] = [];
 
 // =============================================================================
 // Veneto city center video queries for Pexels API
@@ -90,12 +62,14 @@ export const FOOD_VIDEO_QUERIES = [
 // REGOLA TASSATIVA: NO CIBO ORIENTALE — filtra via video con sushi/bacchette/asian
 // Pexels ignora i filtri negativi (-asian -sushi), serve filtro lato codice
 // =============================================================================
-const BANNED_VIDEO_KEYWORDS = /sushi|chopstick|asian|chinese|japanese|ramen|wok|noodle|dim.?sum|tofu|soy.?sauce|kimchi|thai|vietnamese|korean|oriental/i;
+const BANNED_VIDEO_KEYWORDS = /sushi|chopstick|asian|chinese|japanese|ramen|wok|noodle|dim.?sum|tofu|soy.?sauce|kimchi|thai|vietnamese|korean|oriental|bento|miso|teriyaki|tempura|gyoza|edamame|wasabi|sashimi|udon|pho|curry|pad.?thai|spring.?roll|dumpling|stir.?fry|bok.?choy|szechuan|cantonese|mandarin|sake|matcha/i;
 
 function isAsianFoodVideo(video: PexelsVideo): boolean {
   // Check video URL slug (Pexels URLs contain description)
   if (BANNED_VIDEO_KEYWORDS.test(video.url)) return true;
-  // Check photographer name patterns (some accounts specialize in Asian food)
+  // Check video tags
+  const tagText = video.tags?.map((t) => t.name).filter(Boolean).join(" ") ?? "";
+  if (BANNED_VIDEO_KEYWORDS.test(tagText)) return true;
   return false;
 }
 
@@ -112,6 +86,7 @@ interface PexelsVideo {
   url: string;
   user: { name: string };
   video_files: PexelsVideoFile[];
+  tags?: Array<{ name?: string }>;
 }
 
 interface PexelsSearchResponse {

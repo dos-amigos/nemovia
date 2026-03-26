@@ -121,7 +121,7 @@ export function HeroSection({ cityVideos = [], foodApiVideos = [] }: HeroSection
       <section className="relative mx-4 h-[280px] rounded-2xl sm:mx-6 sm:h-[340px] lg:mx-8 lg:h-[400px]">
         {/* Video + gradients clipped to rounded corners */}
         <div className="absolute inset-0 overflow-hidden rounded-2xl">
-          {video && (
+          {video ? (
             <video
               ref={videoRef}
               src={video.src}
@@ -130,6 +130,14 @@ export function HeroSection({ cityVideos = [], foodApiVideos = [] }: HeroSection
               playsInline
               onEnded={advanceVideo}
               onError={advanceVideo}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            /* Fallback: safe Italian food image when no video available */
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src="/images/fallback/generico-1.jpg"
+              alt="Sagre del Veneto"
               className="absolute inset-0 h-full w-full object-cover"
             />
           )}
