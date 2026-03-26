@@ -75,7 +75,7 @@ export default function MapView({
           ];
           return (
             <Marker key={sagra.id} position={position} icon={getMarkerIcon(sagra.food_tags)}>
-              <Tooltip className="sagra-tooltip" direction="top" offset={[0, -10]}>
+              <Tooltip className="sagra-tooltip" direction="top" offset={[0, -30]}>
                 <div className="sagra-tooltip-inner">
                   <strong className="sagra-tooltip-title">{sagra.title}</strong>
                   <span className="sagra-tooltip-location">
