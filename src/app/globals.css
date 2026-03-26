@@ -199,6 +199,42 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
 
+/* Leaflet tooltip override — rich sagra tooltip */
+.sagra-tooltip.leaflet-tooltip {
+  background: white;
+  border: none;
+  border-radius: 10px;
+  padding: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  font-family: inherit;
+}
+.sagra-tooltip.leaflet-tooltip::before {
+  border-top-color: white;
+}
+.sagra-tooltip-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 12px;
+  min-width: 160px;
+  max-width: 260px;
+}
+.sagra-tooltip-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1.3;
+}
+.sagra-tooltip-location {
+  font-size: 11px;
+  color: #666;
+}
+.sagra-tooltip-date {
+  font-size: 11px;
+  color: #9B1B30;
+  font-weight: 500;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-pulse {
     animation: none;

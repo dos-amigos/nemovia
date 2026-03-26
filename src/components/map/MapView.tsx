@@ -10,6 +10,8 @@ import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from "react-l
 import MarkerClusterGroup from "react-leaflet-cluster";
 import { VENETO_CENTER, DEFAULT_MAP_ZOOM } from "@/lib/constants/veneto";
 import { getMarkerIcon } from "@/lib/map-markers";
+import { formatDateRange } from "@/lib/utils";
+import { provinceSuffix } from "@/lib/constants/veneto";
 import type { MapMarkerData } from "@/lib/queries/types";
 import MapMarkerPopup from "./MapMarkerPopup";
 import MapGestureHandler from "./MapGestureHandler";
@@ -73,7 +75,18 @@ export default function MapView({
           ];
           return (
             <Marker key={sagra.id} position={position} icon={getMarkerIcon(sagra.food_tags)}>
-              <Tooltip>{sagra.title}</Tooltip>
+              <Tooltip className="sagra-tooltip" direction="top" offset={[0, -10]}>
+                <div className="sagra-tooltip-inner">
+                  <strong className="sagra-tooltip-title">{sagra.title}</strong>
+                  <span className="sagra-tooltip-location">
+                    📍 <span style={{ textTransform: "capitalize" }}>{sagra.location_text?.toLowerCase() ?? "Veneto"}</span>
+                    {provinceSuffix(sagra.province, sagra.location_text)}
+                  </span>
+                  <span className="sagra-tooltip-date">
+                    📅 {formatDateRange(sagra.start_date, sagra.end_date)}
+                  </span>
+                </div>
+              </Tooltip>
               <Popup>
                 <MapMarkerPopup sagra={sagra} />
               </Popup>

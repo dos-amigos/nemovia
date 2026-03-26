@@ -22,12 +22,14 @@ import {
   toggleExternalSource,
   deleteExternalSource,
   getProviderStatus,
+  getDedupLogs,
   type ReviewStatus,
   type SourceOverview,
   type ExternalSource,
   type CronJob,
   type DbDiagnostics,
   type ProviderStatus,
+  type DedupLog,
 } from "./actions";
 import { EditModal } from "./EditModal";
 import { Check, X, ExternalLink, LogOut, ChevronLeft, ChevronRight, RefreshCw, Play, Pause, Plus, Trash2, Power, LayoutDashboard, BarChart3, List } from "lucide-react";
@@ -97,6 +99,7 @@ export function AdminDashboard() {
   const [isPending, startTransition] = useTransition();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [enrichLogs, setEnrichLogs] = useState<any[]>([]);
+  const [dedupLogs, setDedupLogs] = useState<DedupLog[]>([]);
   const [sourcesOverview, setSourcesOverview] = useState<SourceOverview[]>([]);
   const [cronJobs, setCronJobs] = useState<CronJob[]>([]);
   const [enrichMsg, setEnrichMsg] = useState<string | null>(null);
@@ -125,6 +128,7 @@ export function AdminDashboard() {
       setLastUpdate(new Date());
     });
     getEnrichLogs(6).then(setEnrichLogs).catch(() => {});
+    getDedupLogs(10).then(setDedupLogs).catch(() => {});
     getSourcesOverview().then(setSourcesOverview).catch(() => {});
     getCronJobs().then(setCronJobs).catch(() => {});
     getStatusCounts().then(setCounts).catch(() => {});
@@ -229,6 +233,7 @@ export function AdminDashboard() {
             enrichMsg={enrichMsg}
             isPending={isPending}
             enrichLogs={enrichLogs}
+            dedupLogs={dedupLogs}
             sourcesOverview={sourcesOverview}
             counts={counts}
             onTriggerEnrich={handleTriggerEnrich}
@@ -296,9 +301,16 @@ export function AdminDashboard() {
 // DASHBOARD VIEW — Overview chiaro
 // =============================================================================
 
+const METHOD_LABELS: Record<string, string> = {
+  title_province: "Titolo simile + provincia",
+  title_city: "Titolo simile + città",
+  city_date: "Stessa città + date",
+  geo_proximity: "Vicine (<15km) + titolo simile",
+};
+
 function DashboardView({
   pipeline, isWorking, lastEnrichAgo, pendingTotal, enrichMsg, isPending,
-  enrichLogs, sourcesOverview, counts,
+  enrichLogs, dedupLogs, sourcesOverview, counts,
   onTriggerEnrich,
 }: {
   pipeline: PipelineData | null;
@@ -309,6 +321,7 @@ function DashboardView({
   isPending: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   enrichLogs: any[];
+  dedupLogs: DedupLog[];
   sourcesOverview: SourceOverview[];
   counts: Record<string, number>;
   onTriggerEnrich: () => void;
@@ -464,6 +477,47 @@ function DashboardView({
                     <td className="py-1 pr-3 text-right font-mono text-green-600">{log.llm_count ?? 0}</td>
                     <td className="py-1 pr-3 text-right font-mono text-red-400">{log.skipped_count ?? 0}</td>
                     <td className="max-w-[200px] truncate py-1 text-red-500">{log.error_message ?? ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Dedup logs — recent merges */}
+      {dedupLogs.length > 0 && (
+        <div className="rounded-xl bg-white p-4 shadow">
+          <h3 className="mb-2 text-sm font-bold">Unioni recenti (dedup)</h3>
+          <div className="overflow-x-auto text-xs">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b text-left text-[10px] text-muted-foreground">
+                  <th className="pb-1 pr-3">Quando</th>
+                  <th className="pb-1 pr-3">Eliminata</th>
+                  <th className="pb-1 pr-3">Mantenuta</th>
+                  <th className="pb-1 pr-3">Metodo</th>
+                  <th className="pb-1 text-right">Sim.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dedupLogs.map((log) => (
+                  <tr key={log.id}>
+                    <td className="py-1.5 pr-3 whitespace-nowrap">{timeAgo(log.merged_at)}</td>
+                    <td className="py-1.5 pr-3">
+                      <div className="max-w-[180px] truncate font-medium text-red-600" title={log.deleted_title}>{log.deleted_title}</div>
+                      {log.deleted_location && <div className="text-[10px] text-muted-foreground">{log.deleted_location}</div>}
+                    </td>
+                    <td className="py-1.5 pr-3">
+                      <div className="max-w-[180px] truncate font-medium text-green-700" title={log.keeper_title}>{log.keeper_title}</div>
+                      {log.keeper_location && <div className="text-[10px] text-muted-foreground">{log.keeper_location}</div>}
+                    </td>
+                    <td className="py-1.5 pr-3">
+                      <span className="inline-block rounded-full bg-purple-50 px-2 py-0.5 text-[10px] text-purple-700">
+                        {METHOD_LABELS[log.method ?? ""] ?? log.method ?? "—"}
+                      </span>
+                    </td>
+                    <td className="py-1.5 text-right font-mono">{log.similarity != null ? `${(log.similarity * 100).toFixed(0)}%` : "—"}</td>
                   </tr>
                 ))}
               </tbody>

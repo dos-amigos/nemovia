@@ -253,6 +253,39 @@ export async function getEnrichLogs(limit: number = 10) {
 }
 
 // ============================================================
+// Dedup logs — shows admin what was merged/deleted
+// ============================================================
+
+export type DedupLog = {
+  id: string;
+  merged_at: string;
+  keeper_id: string;
+  keeper_title: string;
+  keeper_location: string | null;
+  deleted_title: string;
+  deleted_location: string | null;
+  method: string | null;
+  similarity: number | null;
+};
+
+export async function getDedupLogs(limit: number = 10): Promise<DedupLog[]> {
+  if (!(await isAdmin())) throw new Error("Unauthorized");
+  const db = createAdminClient();
+
+  const { data, error } = await db
+    .from("dedup_logs")
+    .select("id, merged_at, keeper_id, keeper_title, keeper_location, deleted_title, deleted_location, method, similarity")
+    .order("merged_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("dedup_logs query error:", error.message);
+    return [];
+  }
+  return (data ?? []) as DedupLog[];
+}
+
+// ============================================================
 // System control: pg_cron, scrapers, diagnostics
 // ============================================================
 
