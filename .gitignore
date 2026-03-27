@@ -41,3 +41,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 node_modules
+
+# claude code artifacts
+.agents/
+.claude/
+skills-lock.json
+supabase/.temp/
+backup-conversazione-*.txt

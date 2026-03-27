@@ -5,7 +5,7 @@
 
 ---
 
-## 1. Fonti ATTIVE (18 totali, 17 operative)
+## 1. Fonti ATTIVE (21 totali, 20 operative)
 
 ### Edge Functions (Supabase, pg_cron)
 
@@ -25,6 +25,9 @@
 | 12 | prolocobellunesi.it | WP REST API | 2x/day | ~50 BL | NUOVO sess.17 | The Events Calendar, copre tutto BL |
 | 13 | anteprimasagre.it | WP REST API | 2x/day | ~80 TV | NUOVO sess.17 | Sagre-focused, TV+VE+PD+VI |
 | 14 | 2d2web.com | Cheerio | 2x/day | ~224 | NUOVO sess.17 | 132 inserite al primo run! Multi-provincia |
+| 15 | gardaclick.com | Cheerio | 1x/day | ~20 VR | NUOVO sess.17 | Area Garda, 14 inserite, 5 merged |
+| 16 | eventivicenza | JSON API | 2x/day | ~1-5 VI | NUOVO sess.17 | REST API /opendata/api/, GPS coords |
+| 17 | regioneveneto | XLSX parser | 1x/week lun | **1,123** | NUOVO sess.17 | FONTE DEFINITIVA — tutte le sagre registrate per legge |
 
 ### GitHub Actions (Node.js)
 
@@ -50,27 +53,21 @@
 - **Copertura**: 100% sagre registrate in tutto il Veneto
 - **Rischio legale**: Zero (dati pubblici istituzionali)
 - **Implementazione**: Parser XLSX → import nel DB
-- **Stato**: DA IMPLEMENTARE
+- **URL**: `https://www.regione.veneto.it/documents/10713/13530434/Calendario+sagre+e+fiere+18.02.2026.xlsx/...`
+- **Entries**: 1,123 sagre (VI 388, TV 237, VR 192, PD 123, VE 95, BL 66, RO 22)
+- **Colonne**: Provincia, Comune, Denominazione, Periodo/orario, Attivita, Sito web, Organizzatore
+- **Base legale**: DGR 184/2017, LR 34/2014
+- **Stato**: IMPLEMENTATO (sessione 17, migration 040, cron 1x/settimana lunedi 06:15 UTC)
 
 ---
 
 ## 3. Fonti DA IMPLEMENTARE (ricerca completata 2026-03-27)
 
-### ALTA PRIORITÀ
-
-| # | Fonte | Provincia | Volume | Tipo | Note |
-|---|-------|-----------|--------|------|------|
-| 1 | prolocobellunesi.it | BL | 60 Pro Loco | WordPress REST API `/wp-json/tribe/events/v1/events/` | Copre TUTTO BL con un solo scraper |
-| 2 | anteprimasagre.it | TV (tutto Veneto) | ~80 sagre/anno | WordPress REST API | Solo sagre, aggiornato settimanalmente |
-| 3 | 2d2web.com | Tutto Veneto | ~60+ sagre | HTML statico, ASP.NET paginato `?pg=N` | Multi-provincia |
-| 4 | eventi.comune.vicenza.it | VI | dati strutturati | REST API pubblica `/opendata/api/` | Fonte istituzionale |
-
 ### MEDIA PRIORITÀ
 
 | # | Fonte | Provincia | Volume | Tipo | Note |
 |---|-------|-----------|--------|------|------|
-| 5 | gardaclick.com | VR | 130+ eventi | HTML statico | Area Garda, facile |
-| 6 | trevisoeventi.com | TV | ~80-100/anno | HTML statico | Treviso-specifico, no anti-bot |
+| 1 | trevisoeventi.com | TV | ~80-100/anno | HTML statico | Treviso-specifico, no anti-bot |
 | 7 | easyvi.it | VI | provincia intera | AJAX `/getevents.php` | |
 | 8 | 4jesoloevents.it | VE | 40+ eventi | HTML | Dati eccellenti |
 | 9 | trevisoinfo.it | TV | ~40 | HTML statico `<li>` | Semplicissimo |
@@ -104,15 +101,15 @@
 
 ## 4. Fonti per Provincia (copertura attuale)
 
-| Provincia | Sagre attive | Fonti principali | Gap |
-|-----------|-------------|-------------------|-----|
-| TV | 17 | eventiesagre, itinerarinelgusto, insagra | Manca anteprimasagre, trevisoeventi |
-| VR | 16 | sagritaly, eventiesagre, insagra | Manca gardaclick, visitverona |
-| PD | 11 | eventiesagre, insagra, sagriamo | OK ma ampliabile |
-| VI | 6 | eventiesagre | Manca eventi.comune.vicenza, easyvi |
-| BL | 6 | eventiesagre | Manca prolocobellunesi (coprirebbe tutto) |
-| VE | 5 | eventiesagre, insagra | Manca 4jesoloevents |
-| RO | 1→5 | insagra (nuovo!) | Manca culturaveneto filtro RO |
+| Provincia | Fonti attive | Gap residuo |
+|-----------|-------------|-------------|
+| TV | eventiesagre, itinerarinelgusto, insagra, anteprimasagre, 2d2web, regioneveneto | trevisoeventi (media prio) |
+| VR | sagritaly, eventiesagre, insagra, gardaclick, 2d2web, regioneveneto | OK |
+| PD | eventiesagre, insagra, sagriamo, 2d2web, regioneveneto | OK |
+| VI | eventiesagre, eventivicenza, 2d2web, regioneveneto | easyvi (media prio) |
+| BL | eventiesagre, prolocobellunesi, 2d2web, regioneveneto | OK |
+| VE | eventiesagre, insagra, anteprimasagre, 2d2web, regioneveneto | 4jesoloevents (media prio) |
+| RO | insagra, culturaveneto, 2d2web, regioneveneto | OK |
 
 ---
 
