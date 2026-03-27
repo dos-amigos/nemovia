@@ -154,32 +154,39 @@ Le prime 6 fonti usano il generico `scrape-sagre` con selettori configurati nel 
 
 ## 5. Pagine Social (external_sources)
 
-### Facebook
+### Facebook — Aggregatori (4 pagine, migration 024)
 - Sagre Veneto (74.897 like) — facebook.com/sagre.veneto/
 - Sagre in Veneto (35.000+ follower) — facebook.com/SagrenelVeneto/
 - UNPLI Veneto Pro Loco — facebook.com/unpliveneto.proloco
 - Pro Loco Verona (9.848 like) — facebook.com/prolocoverona/
 
-### Instagram
-- Gestite da admin via external_sources table
+### Facebook — Pro Loco (39 pagine, migration 056)
 
-### Social DA AGGIUNGERE (da ricerca Venezia + costiere)
+**PD (8):** Monselice, Montegrotto Terme, Vo' Euganeo, Abano Terme, Selvazzano, Piove di Sacco, Cittadella, Este
+**VI (13):** Breganze, Sandrigo (Festa Bacala), Thiene, Schio, Arzignano, Chiampo, Valdagno, Lonigo, Bassano, Recoaro Terme, Asiago, Bolzano Vicentino, UNPLI Vicenza
+**TV (6):** Castelfranco Veneto, Valdobbiadene, Conegliano, Mogliano Veneto, Combai, Pieve di Soligo
+**VR (5):** Valeggio sul Mincio (31.7K likes!), Soave, Isola della Scala, Legnago, Bussolengo
+**VE (8):** Mira, Dolo, Rosolina, Caorle, Portogruaro, Noale, Mirano, San Dona di Piave
+**BL (3):** Pieve di Cadore, Auronzo di Cadore, Ponte nelle Alpi
+**RO (1):** Badia Polesine
+
+### Instagram (8 pagine, migration 056 + 4 originali migration 024)
+- Originali: @sagreveneto, @sagreinveneto, @unpliveneto, @venetoinfesta
+- Nuove: @proloco.dueville, @prolocopiovedisacco, @proloco.camposampiero, @pro_loco_auronzo, @visit_caorle, @guidaallesagre (3.2K), @prolocomontagnana, @prolocomalo
+
+### Social DA AGGIUNGERE (ricerca futura)
 
 **Facebook:**
 - festadesanpierodecasteo (San Piero, la piu grande festa veneziana)
 - asf.venezia (Sant'Antonio, Castello)
-- bragora (San Giovanni in Bragora)
 - Sagra Del Pesce Chioggia, Festa del Pesce Caorle
-- Feste Marinare Cortellazzo, Sagra S.Stefano Portosecco
-- Pro Loco Rosolina, Pro Loco Caorle, Pro Loco Eraclea
-- Pro Loco Thiene, Pro Loco Schio, Pro Marostica
 - Rovigo Eventi (@rovigoeventioj)
-- prolocoarquapetrarca, comunearquapetrarca
+- Pro Loco Negrar Valpolicella, Pro Loco Villafranca VR
+- Pro Loco Sernaglia, Pro Loco Fontanelle (Sagre di Qualita)
 
 **Instagram:**
 - @festadesanpierodecasteo, @festabenefica_s.giacomo, @asf_venezia
 - @sagradelpescechioggia
-- @arquapetrarca
 
 ---
 
