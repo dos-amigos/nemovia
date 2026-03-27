@@ -80,7 +80,7 @@ BEGIN
           THEN 'city_date'
           -- Method C: Geographic proximity (<15km) + similar title + close dates
           WHEN a.location IS NOT NULL AND b.location IS NOT NULL
-               AND ST_DWithin(a.location::geography, b.location::geography, 15000)
+               AND extensions.ST_DWithin(a.location::extensions.geography, b.location::extensions.geography, 15000)
                AND extensions.similarity(a.normalized_title, b.normalized_title) > 0.5
                AND a.start_date IS NOT NULL AND b.start_date IS NOT NULL
                AND ABS(a.start_date - b.start_date) <= 7
@@ -121,7 +121,7 @@ BEGIN
         -- Catches multi-venue events like "Rassegna Asparago Bianco" in Bassano vs Romano D'Ezzelino
         (
           a.location IS NOT NULL AND b.location IS NOT NULL
-          AND ST_DWithin(a.location::geography, b.location::geography, 15000)
+          AND extensions.ST_DWithin(a.location::extensions.geography, b.location::extensions.geography, 15000)
           AND extensions.similarity(a.normalized_title, b.normalized_title) > 0.5
           AND a.start_date IS NOT NULL AND b.start_date IS NOT NULL
           AND ABS(a.start_date - b.start_date) <= 7

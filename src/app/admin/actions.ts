@@ -519,6 +519,7 @@ export async function getSourcesOverview(): Promise<SourceOverview[]> {
     { name: "trovasagre", display_name: "TrovaSagre", type: "api" as const },
     { name: "sagriamo", display_name: "Sagriamo", type: "api" as const },
     { name: "cheventi", display_name: "ChEventi", type: "api" as const },
+    { name: "insagra", display_name: "InSagra", type: "api" as const },
   ];
   for (const s of customSources) {
     const log = lastLogMap.get(s.name);

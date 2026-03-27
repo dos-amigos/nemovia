@@ -17,16 +17,16 @@ INSERT INTO public.scraper_sources (
   'Itinerari nel Gusto',
   'https://www.itinerarinelgusto.it/sagre-e-feste/veneto',
   '.row.tile.post.pad',              -- event card container (Schema.org Event)
-  'h2.events a',                     -- title with link
+  'p.events-list-title a',           -- title with link (updated 2026-03-27)
   'meta[itemprop="startDate"]',      -- ISO datetime in content attr
   'meta[itemprop="endDate"]',        -- ISO datetime in content attr
-  'h3.event-header a',               -- city name (may include "Provincia di" prefix)
-  'h2.events a',                     -- event detail URL (same as title link)
+  'p.event-header a',                -- city name (updated 2026-03-27)
+  'p.events-list-title a',           -- event detail URL (updated 2026-03-27)
   'meta[itemprop="image"]',          -- full-size CDN image URL in content attr
   NULL,                              -- no price info available
   '?sagre-e-feste_pg_from={n}',     -- offset-based: buildPageUrl calculates (page-1)*15
   NULL,                              -- no next-page selector needed (offset calc handles it)
-  3,                                 -- conservative: 3 pages x 15 events = 45 events
+  10,                                -- 10 pages x 15 events = 150 events
   true                               -- active from start
 )
 ON CONFLICT (name) DO NOTHING;       -- safe to re-run

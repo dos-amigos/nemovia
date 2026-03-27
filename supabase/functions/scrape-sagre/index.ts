@@ -512,21 +512,34 @@ function extractVenetoInFestaDetail($: cheerio.CheerioAPI): DetailContent {
 }
 
 function extractItinerariDetail($: cheerio.CheerioAPI): DetailContent {
-  // Description: from .FullNews div, fallback to .entry-content
+  // Description: from div.text-content (main content area), fallback to #FullNews
+  // Updated 2026-03-27: site uses div.text.text-content, not div.FullNews
   let description: string | null = null;
-  const fullNewsText = $("div.FullNews").first().text().trim();
-  if (fullNewsText) {
-    description = fullNewsText.slice(0, 1000);
-  } else {
-    const entryText = $("div.entry-content").first().text().trim();
-    if (entryText) {
-      description = entryText.slice(0, 1000);
+  const textContent = $("div.text-content").first();
+  if (textContent.length > 0) {
+    // Get paragraph text, skip newsletter forms and navigation
+    const paragraphs: string[] = [];
+    textContent.find("p").each((_i: number, el: cheerio.Element) => {
+      const text = $(el).text().trim();
+      // Skip newsletter, form labels, and navigation text
+      if (text && !text.includes("newsletter") && !text.includes("Iscriviti") && !text.includes("informativa sulla privacy")) {
+        paragraphs.push(text);
+      }
+    });
+    if (paragraphs.length > 0) {
+      description = paragraphs.join("\n\n").slice(0, 1000);
+    }
+  }
+  if (!description) {
+    const fullNewsText = $("#FullNews").first().text().trim();
+    if (fullNewsText) {
+      description = fullNewsText.slice(0, 1000);
     }
   }
 
-  // Menu: look for <ul> lists inside .FullNews
+  // Menu: look for <ul> lists inside text-content or FullNews
   let menu: string | null = null;
-  const menuUl = $("div.FullNews ul").first();
+  const menuUl = $("div.text-content ul, #FullNews ul").first();
   if (menuUl.length > 0) {
     const items: string[] = [];
     menuUl.find("li").each((_i: number, el: cheerio.Element) => {
@@ -825,10 +838,11 @@ function extractRawEvent($: any, el: any, source: ScraperSource): RawEventData {
 
   // --- itinerarinelgusto-specific extraction ---
   // Server-rendered cards with Schema.org microdata (schema.org/Event)
-  // Selectors verified from live HTML: .row.tile.post.pad containers,
-  // h2.events a for title/URL, meta[itemprop] for dates/image, h3.event-header a for city
+  // Container: .row.tile.post.pad, title in p.events-list-title a,
+  // city in p.event-header a, dates in meta[itemprop], image in meta[itemprop="image"]
+  // Selectors updated 2026-03-27 from live HTML verification
   if (source.name === "itinerarinelgusto") {
-    const title = $el.find("h2.events a").first().text().trim();
+    const title = $el.find("p.events-list-title a").first().text().trim();
 
     // Dates: Schema.org meta tags provide clean ISO datetimes (e.g. "2026-03-08T17:00:00")
     const startIso = $el.find('meta[itemprop="startDate"]').first().attr("content") ?? "";
@@ -839,13 +853,17 @@ function extractRawEvent($: any, el: any, source: ScraperSource): RawEventData {
       : startIso ? startIso.slice(0, 10).split("-").reverse().join("/")
       : $el.find("span.eventi-data").first().text().trim();
 
-    // City: from h3.event-header a (e.g. "Roncade", "Provincia di Treviso")
-    const cityRaw = $el.find("h3.event-header a").first().text().trim();
+    // City: from p.event-header a (e.g. "Villorba", "Valdobbiadene")
+    const cityRaw = $el.find("p.event-header a").first().text().trim();
     // Strip "Provincia di " prefix if present
     const city = cityRaw.replace(/^Provincia di\s+/i, "").trim();
 
-    // URL: from the title link
-    let url = $el.find("h2.events a").first().attr("href") ?? null;
+    // URL: from the title link (itemprop="url")
+    let url = $el.find("p.events-list-title a").first().attr("href") ?? null;
+    if (!url) {
+      // Fallback: itemprop="url" on anchor wrapping figure
+      url = $el.find('a[itemprop="url"]').first().attr("href") ?? null;
+    }
     if (url && !url.startsWith("http")) {
       try { url = new URL(url, source.base_url).href; } catch { /* */ }
     }
@@ -853,7 +871,7 @@ function extractRawEvent($: any, el: any, source: ScraperSource): RawEventData {
     // Image: prefer full-size from Schema.org meta, fallback to figure img
     let image = $el.find('meta[itemprop="image"]').first().attr("content") ?? null;
     if (!image) {
-      image = $el.find("figure.box-pic img").first().attr("src") ?? null;
+      image = $el.find("figure[class^='box-pic'] img").first().attr("src") ?? null;
     }
     if (image && !image.startsWith("http")) {
       try { image = new URL(image, source.base_url).href; } catch { /* */ }

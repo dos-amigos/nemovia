@@ -162,6 +162,7 @@ supabase/
 | scrape-trovasagre | 07:15, 19:15 | Fonte trovasagre |
 | scrape-sagriamo | 07:20, 19:20 | Fonte sagriamo |
 | scrape-cheventi | 08:00, 20:00 | Fonte cheventi.it (JSON-LD con GPS) |
+| scrape-insagra | 07:35, 19:35 | Fonte insagra.it (JSON-LD con GPS, paginated) |
 
 ### GitHub Actions Cron (`.github/workflows/scrape-external.yml`)
 
@@ -205,6 +206,13 @@ Pipeline 3 passi con budget temporale 120s:
 - JSON-LD con coordinate GPS (skip geocoding → `status: pending_llm`)
 - 7 province Veneto in una sola invocazione
 - Filtro `isFoodEvent()` per escludere concerti/mostre/teatro
+
+### scrape-insagra
+- Listing pages paginate (5 pagine, ~41 eventi Veneto)
+- Per ogni evento: fetch detail page → parse JSON-LD Event
+- GPS coordinates incluse → `status: pending_llm` (skip geocoding)
+- Province estratte da URL path (`/veneto/{province}/...`)
+- Filtri: isNoiseTitle, isNonSagraTitle, containsPastYear, past event date check
 
 > **Nota**: le Edge Function usano copie inline delle funzioni pure (Deno non importa da `src/`). Timeout: 60s (free) / 150s (pro).
 

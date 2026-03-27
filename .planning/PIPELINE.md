@@ -66,6 +66,7 @@ FRONTEND
 | trovasagre.it | JSON API | 2x/giorno | |
 | sagriamo.it | REST API | 2x/giorno | |
 | cheventi.it | Cheerio | 2x/giorno | |
+| insagra.it | JSON-LD | 2x/giorno | Listing + detail pages, GPS coords |
 
 ### GitHub Actions (Node.js)
 | Fonte | Frequenza | Note |
@@ -268,6 +269,7 @@ Una vera sagra ha UN nome specifico ("Sagra della Zucca"), NON un titolo che des
 | scrape-trovasagre | 07:15, 19:15 | API JSON |
 | scrape-sagriamo | 07:20, 19:20 | REST API |
 | scrape-cheventi | 2x/giorno | Cheerio |
+| scrape-insagra | 07:35, 19:35 | JSON-LD listing+detail |
 
 ### GitHub Actions
 | Job | Orario | Note |

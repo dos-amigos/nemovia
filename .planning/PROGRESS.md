@@ -11,7 +11,7 @@
 - **Framework**: Next.js 15, Tailwind v4, Shadcn/UI
 - **Database**: Supabase (PostGIS + pg_trgm)
 - **Scraping attuale**: Cheerio in Edge Functions + Node.js scripts via GitHub Actions
-- **Fonti attive (13)**: assosagre, venetoinfesta, solosagre, sagritaly, eventiesagre, itinerarinelgusto + sagretoday, trovasagre, sagriamo + cheventi, facebook, tavily, instagram/apify
+- **Fonti attive (17)**: assosagre, solosagre, sagritaly, eventiesagre, itinerarinelgusto, sagretoday, trovasagre, sagriamo, cheventi, insagra, culturaveneto, prolocobellunesi, anteprimasagre, 2d2web + facebook, tavily, instagram/apify. Vedi `.planning/FONTI.md` per dettagli.
 - **Pipeline**: pg_cron (Edge Functions) + GitHub Actions (Node.js scripts)
 - **Immagini**: Unsplash → Pexels → local fallback (cascata in enrich-sagre Pass 3)
 - **Quality system**: confidence scoring (0-100) + review_status workflow + admin area
