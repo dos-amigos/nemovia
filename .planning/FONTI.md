@@ -68,6 +68,13 @@
 | # | Fonte | Provincia | Volume | Tipo | Note |
 |---|-------|-----------|--------|------|------|
 | 1 | trevisoeventi.com | TV | ~80-100/anno | HTML statico | Treviso-specifico, no anti-bot |
+
+### DA INVESTIGARE (ricerca in corso)
+
+| Area | Note | Priorita |
+|------|------|----------|
+| **Venezia centro storico** | Feste parrocchiali/sestiere (San Piero, San Giacomo dall'Orio, etc.) — molto locali, non su aggregatori | ALTA |
+| **Arqua Petrarca (PD)** | Festa delle Giuggiole + altre sagre Colli Euganei | ALTA |
 | 7 | easyvi.it | VI | provincia intera | AJAX `/getevents.php` | |
 | 8 | 4jesoloevents.it | VE | 40+ eventi | HTML | Dati eccellenti |
 | 9 | trevisoinfo.it | TV | ~40 | HTML statico `<li>` | Semplicissimo |
