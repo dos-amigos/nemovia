@@ -167,10 +167,11 @@
     animation: shimmer 1.5s ease-in-out infinite;
   }
   .glass-nav {
-    background: oklch(0.985 0.005 260 / 0.65);
-    backdrop-filter: blur(16px) saturate(1.4);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
-    border-color: oklch(1 0 0 / 0.15);
+    background: oklch(0.985 0.005 260 / 0.55);
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    border-color: oklch(1 0 0 / 0.12);
+    box-shadow: 0 1px 3px oklch(0 0 0 / 0.06);
     will-change: backdrop-filter;
   }
   .glass-overlay {
