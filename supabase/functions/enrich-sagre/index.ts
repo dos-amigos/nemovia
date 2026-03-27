@@ -246,14 +246,20 @@ async function validateImageWithVision(
             content: [
               {
                 type: "text",
-                text: `Questa immagine verrà usata per "${sagraTitle}" (prodotto atteso: ${expectedProduct}).
-Rispondi SOLO con "SI" o "NO".
+                text: `VERIFICA RIGOROSA. Questa foto sarà associata a "${sagraTitle}".
+Il prodotto che DEVE apparire nella foto è: ${expectedProduct}.
+
+Rispondi SOLO "SI" o "NO".
+
 Rispondi "NO" se:
-- L'immagine mostra un prodotto DIVERSO da ${expectedProduct} (es. pizza invece di formaggio, pasta invece di pesce)
-- L'immagine contiene QUALSIASI cibo asiatico/orientale: sushi, bacchette, ramen, wok, noodle, tofu, dim sum, bento, miso, curry asiatico
-- L'immagine contiene bacchette cinesi/giapponesi
-Rispondi "SI" SOLO se l'immagine mostra chiaramente ${expectedProduct} E NON contiene cibo orientale.
-UNA sola parola: SI o NO.`,
+- La foto NON mostra ${expectedProduct}. Esempi: formaggio al posto di gnocchi = NO. Fragole/dolci al posto di polpette = NO. Pane al posto di pesce = NO.
+- La foto mostra un prodotto DIVERSO anche se è cibo italiano (es. la sagra è "del Gnocco" ma la foto mostra formaggio → NO)
+- La foto contiene cibo asiatico/orientale (sushi, bacchette, ramen, wok, noodle, tofu, dim sum)
+- La foto è generica (paesaggio, persone, tavola imbandita senza il prodotto specifico)
+
+Rispondi "SI" SOLO se nella foto è CHIARAMENTE VISIBILE e RICONOSCIBILE il prodotto "${expectedProduct}".
+Se hai dubbi → rispondi NO.
+UNA sola parola:`,
               },
               {
                 type: "image_url",
@@ -1488,9 +1494,10 @@ async function pickAndValidatePhoto(
     await sleep(500); // small delay between vision calls
   }
 
-  // All photos rejected by vision — return first one anyway (fail-open)
-  console.warn(`⚠️ All ${PICK_POOL} photos rejected by Vision for "${sagraTitle}" — using first as fallback`);
-  return photos[startIdx % PICK_POOL];
+  // All photos rejected by vision — return NULL (fail-closed)
+  // Better to show category fallback image than a WRONG photo
+  console.warn(`🚫 All ${PICK_POOL} photos rejected by Vision for "${sagraTitle}" — no image assigned (will use fallback)`);
+  return null as unknown as UnsplashPhoto;
 }
 
 async function runUnsplashPass(
@@ -1655,7 +1662,28 @@ async function runUnsplashPass(
     for (const sagra of groupSagre) {
       const photo = await pickAndValidatePhoto(photos, sagra.id, sagra.title);
 
+      // If Vision AI rejected ALL photos, skip this sagra (fail-closed)
+      // The frontend will show a category-based fallback image instead
+      if (!photo || !photo.urls) {
+        console.log(`⚠️ No valid photo for "${sagra.title}" — will use category fallback`);
+        continue;
+      }
+
       const imageUrl = `${photo.urls.raw}&w=800&h=500&fit=crop&q=80`;
+
+      // DEDUP CHECK: ensure this exact photo isn't already used by another ACTIVE sagra
+      const photoBase = photo.urls.raw.split("?")[0];
+      const { data: dupeCheck } = await supabase
+        .from("sagre")
+        .select("id")
+        .eq("is_active", true)
+        .like("image_url", `${photoBase}%`)
+        .neq("id", sagra.id)
+        .limit(1);
+      if (dupeCheck && dupeCheck.length > 0) {
+        console.log(`🔄 Photo already used by another sagra, skipping for "${sagra.title}"`);
+        continue;
+      }
       const imageCredit = `${photo.user.name}|${photo.user.links.html}?utm_source=nemovia&utm_medium=referral`;
 
       await supabase.from("sagre").update({
