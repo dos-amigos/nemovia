@@ -1,11 +1,10 @@
 // =============================================================================
-// scrape-insagra — Scrape sagre from insagra.it (JSON-LD Event on detail pages)
-// Fetches Veneto listing pages (paginated, ~5 pages), follows detail links,
-// parses JSON-LD Event schema with GPS coordinates.
-// GPS included → status starts at pending_llm (skip geocoding).
+// scrape-insagra — Scrape sagre from insagra.it REST API
+// Uses: https://insagra.it/wp-json/insagra/v1/events/search?region=veneto
+// Returns structured JSON with GPS coords, dates, organizer info.
+// GPS included → status = pending_llm (skip geocoding).
 // =============================================================================
 
-import * as cheerio from "npm:cheerio@1";
 import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 // --- Type definitions ---
@@ -33,6 +32,33 @@ interface DuplicateResult {
   price_info: string | null;
   is_free: boolean | null;
   sources: string[];
+}
+
+// --- API response type ---
+interface InsagraApiEvent {
+  id?: number;
+  title?: string;
+  slug?: string;
+  excerpt?: string;
+  content?: string;
+  data_inizio?: string;
+  data_fine?: string;
+  ora_inizio?: string;
+  ora_fine?: string;
+  indirizzo?: string;
+  lat?: string | number;
+  lng?: string | number;
+  organizzatore?: string;
+  telefono?: string;
+  email?: string;
+  sito_web?: string;
+  costo_ingresso?: string;
+  tipo_evento?: string;
+  regione?: string;
+  provincia?: string;
+  citta?: string;
+  featured_image?: string;
+  permalink?: string;
 }
 
 // --- Helper functions (inline copies for Deno edge runtime) ---
@@ -87,14 +113,23 @@ function decodeHtmlEntities(text: string): string {
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
-    .replace(/&ndash;/g, "–")
-    .replace(/&mdash;/g, "—")
-    .replace(/&rsquo;/g, "'")
-    .replace(/&lsquo;/g, "'")
+    .replace(/&ndash;/g, "\u2013")
+    .replace(/&mdash;/g, "\u2014")
+    .replace(/&rsquo;/g, "\u2019")
+    .replace(/&lsquo;/g, "\u2018")
     .replace(/&rdquo;/g, "\u201D")
     .replace(/&ldquo;/g, "\u201C")
     .replace(/&nbsp;/g, " ")
-    .replace(/&hellip;/g, "…");
+    .replace(/&hellip;/g, "\u2026");
+}
+
+function stripHtmlTags(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function isNoiseTitle(title: string): boolean {
@@ -178,38 +213,19 @@ function isLowQualityUrl(url: string | null | undefined): boolean {
 const PROVINCE_NAME_TO_CODE: Record<string, string> = {
   belluno: "BL", padova: "PD", rovigo: "RO", treviso: "TV",
   venezia: "VE", vicenza: "VI", verona: "VR",
-  // abbreviations used in insagra URLs
   bl: "BL", pd: "PD", ro: "RO", tv: "TV",
   ve: "VE", vi: "VI", vr: "VR",
+  // Full province names with "Provincia di" prefix
+  "provincia di belluno": "BL", "provincia di padova": "PD",
+  "provincia di rovigo": "RO", "provincia di treviso": "TV",
+  "provincia di venezia": "VE", "provincia di vicenza": "VI",
+  "provincia di verona": "VR",
 };
 
 function resolveProvince(rawProvince: string | null | undefined): string | null {
   if (!rawProvince) return null;
   const key = rawProvince.trim().toLowerCase();
   return PROVINCE_NAME_TO_CODE[key] ?? null;
-}
-
-// --- HTTP fetch helper ---
-
-async function fetchWithTimeout(url: string, timeoutMs = 15_000): Promise<string | null> {
-  const controller = new AbortController();
-  const tid = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const resp = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; Nemovia/1.0; +https://nemovia.it)",
-        "Accept": "text/html,application/xhtml+xml",
-        "Accept-Language": "it-IT,it;q=0.9,en;q=0.5",
-      },
-    });
-    if (!resp.ok) return null;
-    return await resp.text();
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(tid);
-  }
 }
 
 // --- Upsert logic ---
@@ -242,7 +258,7 @@ async function upsertEvent(
     return { result: "merged", id: existing.id };
   }
 
-  // insagra provides GPS coords → skip geocoding, go straight to pending_llm
+  // insagra API provides GPS coords → skip geocoding, go straight to pending_llm
   const hasCoords = event.lat != null && event.lng != null;
 
   const insertData: Record<string, unknown> = {
@@ -314,65 +330,51 @@ async function logRun(
   });
 }
 
-// --- Listing page parser: extract detail page URLs ---
+// --- API fetch helper ---
 
-function extractDetailLinks(html: string): string[] {
-  const $ = cheerio.load(html);
-  const links: string[] = [];
+async function fetchApiPage(page: number, perPage: number): Promise<InsagraApiEvent[]> {
+  const url = `https://insagra.it/wp-json/insagra/v1/events/search?region=veneto&per_page=${perPage}&page=${page}`;
+  console.log(`[insagra] Fetching API page ${page}: ${url}`);
 
-  // insagra listing pages have event cards linking to detail pages
-  // URL pattern: /veneto/{province}/{city}/{slug}/
-  $("a[href]").each((_i: number, el: cheerio.Element) => {
-    const href = $(el).attr("href");
-    if (!href) return;
-    // Match detail page URLs: /veneto/{province}/{city}/{slug}/
-    if (/^https?:\/\/insagra\.it\/veneto\/[^/]+\/[^/]+\/[^/]+\/?$/.test(href)) {
-      if (!links.includes(href)) links.push(href);
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(), 20_000);
+  try {
+    const resp = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; Nemovia/1.0; +https://nemovia.it)",
+        "Accept": "application/json",
+      },
+    });
+    if (!resp.ok) {
+      console.error(`[insagra] API returned ${resp.status} for page ${page}`);
+      return [];
     }
-  });
-
-  return links;
+    const data = await resp.json();
+    // API may return an array directly or wrapped in an object
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.events)) return data.events;
+    if (data && Array.isArray(data.results)) return data.results;
+    if (data && Array.isArray(data.data)) return data.data;
+    console.warn(`[insagra] Unexpected API response shape on page ${page}:`, Object.keys(data));
+    return [];
+  } catch (err) {
+    console.error(`[insagra] Fetch error page ${page}:`, err instanceof Error ? err.message : String(err));
+    return [];
+  } finally {
+    clearTimeout(tid);
+  }
 }
 
-// --- Detail page parser: extract Event JSON-LD ---
+// --- Parse a single API event into NormalizedEvent ---
 
-function parseDetailPage(html: string, sourceUrl: string): NormalizedEvent | null {
-  const $ = cheerio.load(html);
-
-  // Find Event JSON-LD
-  let eventData: Record<string, unknown> | null = null;
-
-  $('script[type="application/ld+json"]').each((_i: number, el: cheerio.Element) => {
-    try {
-      const jsonData = JSON.parse($(el).text().trim());
-
-      // Direct Event type
-      if (jsonData["@type"] === "Event") {
-        eventData = jsonData;
-        return false; // break
-      }
-
-      // Nested in @graph array
-      if (jsonData["@graph"] && Array.isArray(jsonData["@graph"])) {
-        for (const item of jsonData["@graph"]) {
-          if (item["@type"] === "Event") {
-            eventData = item;
-            return false;
-          }
-        }
-      }
-    } catch {
-      // JSON parse error — skip
-    }
-  });
-
-  if (!eventData) return null;
-
-  // Extract title
-  const title = decodeHtmlEntities(String(eventData.name || "").trim());
+function parseApiEvent(raw: InsagraApiEvent): NormalizedEvent | null {
+  // Extract and clean title
+  const rawTitle = raw.title ?? "";
+  const title = decodeHtmlEntities(rawTitle).trim();
   if (!title) return null;
 
-  // Apply filters
+  // Apply noise/non-sagra filters
   if (isNoiseTitle(title)) {
     console.log(`[insagra] Skipping noise title: "${title}"`);
     return null;
@@ -382,129 +384,147 @@ function parseDetailPage(html: string, sourceUrl: string): NormalizedEvent | nul
     return null;
   }
 
-  // Extract dates (YYYY-MM-DD)
+  // --- Dates ---
+  // API returns data_inizio / data_fine (could be YYYY-MM-DD or other formats)
   let startDate: string | null = null;
   let endDate: string | null = null;
-  if (eventData.startDate) startDate = String(eventData.startDate).slice(0, 10);
-  if (eventData.endDate) endDate = String(eventData.endDate).slice(0, 10);
 
-  // Extract description from JSON-LD
-  let description: string | null = null;
-  if (eventData.description) {
-    description = decodeHtmlEntities(String(eventData.description).trim());
-    // Clean up whitespace
-    description = description.replace(/\s+/g, " ").trim();
-    if (description.length > 2000) description = description.slice(0, 2000);
-    if (description.length < 10) description = null;
+  if (raw.data_inizio) {
+    const d = new Date(raw.data_inizio);
+    if (!isNaN(d.getTime())) startDate = d.toISOString().slice(0, 10);
+  }
+  if (raw.data_fine) {
+    const d = new Date(raw.data_fine);
+    if (!isNaN(d.getTime())) endDate = d.toISOString().slice(0, 10);
   }
 
-  // Also try to get richer description from HTML body (JSON-LD description is often truncated)
-  const descSection = $("h3:contains('Descrizione')").next();
-  if (descSection.length > 0) {
-    const htmlDesc = descSection.text().trim();
-    if (htmlDesc && htmlDesc.length > (description?.length ?? 0)) {
-      description = decodeHtmlEntities(htmlDesc.replace(/\s+/g, " ").trim());
-      if (description.length > 2000) description = description.slice(0, 2000);
-    }
+  // Skip events without start date
+  if (!startDate) {
+    console.log(`[insagra] Skipping "${title}" -- no start date`);
+    return null;
   }
+
+  // Build source URL
+  const sourceUrl = raw.permalink
+    ? raw.permalink
+    : raw.slug
+      ? `https://insagra.it/evento/${raw.slug}/`
+      : `https://insagra.it/?p=${raw.id ?? 0}`;
 
   // Apply past year filter
-  if (containsPastYear(title, sourceUrl, description ?? undefined)) {
+  const excerptText = raw.excerpt ? stripHtmlTags(decodeHtmlEntities(raw.excerpt)) : "";
+  if (containsPastYear(title, sourceUrl, excerptText)) {
     console.log(`[insagra] Skipping past year: "${title}"`);
     return null;
   }
 
   // Skip past events
-  if (startDate) {
-    const eventEnd = endDate || startDate;
-    if (new Date(eventEnd) < new Date(new Date().toISOString().slice(0, 10))) {
-      console.log(`[insagra] Skipping past event: "${title}" (ends ${eventEnd})`);
-      return null;
-    }
-  }
-
-  // Skip events without any date
-  if (!startDate) {
-    console.log(`[insagra] Skipping "${title}" — no date available`);
+  const eventEnd = endDate || startDate;
+  if (new Date(eventEnd) < new Date(new Date().toISOString().slice(0, 10))) {
+    console.log(`[insagra] Skipping past event: "${title}" (ends ${eventEnd})`);
     return null;
   }
 
-  // Extract location
-  const location = eventData.location as Record<string, unknown> | undefined;
-  let city = "";
-  let provinceRaw: string | null = null;
+  // --- Location ---
+  const rawCity = typeof raw.citta === "string" ? raw.citta : (raw.citta?.name ?? raw.citta?.slug ?? String(raw.citta ?? ""));
+  const city = decodeHtmlEntities(rawCity.trim());
+  const rawProv = typeof raw.provincia === "string" ? raw.provincia : (raw.provincia?.name ?? raw.provincia?.slug ?? String(raw.provincia ?? ""));
+  const province = resolveProvince(rawProv);
 
-  if (location) {
-    const address = location.address as Record<string, unknown> | undefined;
-    if (address) {
-      city = String(address.addressLocality || "").trim();
-      // addressRegion on insagra is always "Veneto", not useful for province
-    }
-    if (!city) city = String(location.name || "").split(",")[0].trim();
+  if (!city) {
+    console.log(`[insagra] Skipping "${title}" -- no city`);
+    return null;
   }
 
-  // Extract province from URL: /veneto/{province}/{city}/{slug}/
-  const urlMatch = sourceUrl.match(/insagra\.it\/veneto\/([^/]+)\//);
-  if (urlMatch) {
-    provinceRaw = urlMatch[1];
-  }
-
-  const province = resolveProvince(provinceRaw);
-
-  if (!city) city = provinceRaw ?? "";
-  city = decodeHtmlEntities(city);
-
-  // Validate region — insagra listing is Veneto-only but double-check
+  // Validate region -- API is filtered to Veneto but double-check
   if (!province) {
-    console.log(`[insagra] Skipping "${title}" — cannot resolve province from URL: ${sourceUrl}`);
+    console.log(`[insagra] Skipping "${title}" -- cannot resolve province "${raw.provincia}"`);
     return null;
   }
 
-  // Extract GPS coordinates
+  // --- GPS coordinates ---
   let lat: number | null = null;
   let lng: number | null = null;
-  const geo = (location?.geo as Record<string, unknown>) ?? null;
-  if (geo) {
-    lat = typeof geo.latitude === "number" ? geo.latitude : parseFloat(String(geo.latitude));
-    lng = typeof geo.longitude === "number" ? geo.longitude : parseFloat(String(geo.longitude));
+  if (raw.lat != null && raw.lng != null) {
+    lat = typeof raw.lat === "number" ? raw.lat : parseFloat(String(raw.lat));
+    lng = typeof raw.lng === "number" ? raw.lng : parseFloat(String(raw.lng));
     if (isNaN(lat) || isNaN(lng)) { lat = null; lng = null; }
     // Validate Veneto bounding box (roughly lat 44.8-46.7, lng 10.6-13.1)
     if (lat != null && lng != null) {
       if (lat < 44.5 || lat > 47.0 || lng < 10.0 || lng > 13.5) {
-        console.log(`[insagra] Coords outside Veneto for "${title}": ${lat}, ${lng} — clearing`);
+        console.log(`[insagra] Coords outside Veneto for "${title}": ${lat}, ${lng} -- clearing`);
         lat = null;
         lng = null;
       }
     }
   }
 
-  // Extract image from page (not in JSON-LD for insagra)
-  let imageUrl: string | null = null;
-  // Try og:image meta tag
-  const ogImage = $('meta[property="og:image"]').attr("content");
-  if (ogImage && !isLowQualityUrl(ogImage)) {
-    imageUrl = ogImage;
+  // --- Description: combine content + organizer info ---
+  // Build rich source_description with all structured data
+  const descParts: string[] = [];
+
+  // Main content/excerpt
+  if (raw.content) {
+    const cleanContent = stripHtmlTags(decodeHtmlEntities(raw.content)).trim();
+    if (cleanContent.length > 10) {
+      descParts.push(cleanContent.length > 1500 ? cleanContent.slice(0, 1500) : cleanContent);
+    }
+  } else if (excerptText && excerptText.length > 10) {
+    descParts.push(excerptText);
   }
-  // Try first content image if no og:image
-  if (!imageUrl) {
-    const contentImg = $(".entry-content img, article img, .post-content img").first().attr("src");
-    if (contentImg && !isLowQualityUrl(contentImg)) {
-      imageUrl = contentImg.startsWith("http") ? contentImg : `https://insagra.it${contentImg}`;
+
+  // Address
+  if (raw.indirizzo) {
+    descParts.push(`Indirizzo: ${decodeHtmlEntities(raw.indirizzo.trim())}`);
+  }
+
+  // Time info
+  if (raw.ora_inizio) {
+    const timeStr = raw.ora_fine
+      ? `Orario: ${raw.ora_inizio} - ${raw.ora_fine}`
+      : `Orario: dalle ${raw.ora_inizio}`;
+    descParts.push(timeStr);
+  }
+
+  // Organizer info (phone, email, website)
+  if (raw.organizzatore) {
+    descParts.push(`Organizzatore: ${decodeHtmlEntities(raw.organizzatore.trim())}`);
+  }
+  if (raw.telefono) {
+    descParts.push(`Telefono: ${raw.telefono.trim()}`);
+  }
+  if (raw.email) {
+    descParts.push(`Email: ${raw.email.trim()}`);
+  }
+  if (raw.sito_web) {
+    descParts.push(`Sito web: ${raw.sito_web.trim()}`);
+  }
+
+  let sourceDescription: string | null = descParts.length > 0
+    ? descParts.join("\n\n")
+    : null;
+
+  if (sourceDescription && sourceDescription.length > 2000) {
+    sourceDescription = sourceDescription.slice(0, 2000);
+  }
+
+  // --- Price info ---
+  let priceInfo: string | null = null;
+  let isFree: boolean | null = null;
+  if (raw.costo_ingresso) {
+    const cost = raw.costo_ingresso.trim().toLowerCase();
+    if (cost === "gratuito" || cost === "gratis" || cost === "free" || cost === "0" || cost === "0.00") {
+      isFree = true;
+      priceInfo = "Ingresso gratuito";
+    } else if (cost && cost !== "non specificato" && cost !== "n/a" && cost !== "-") {
+      priceInfo = decodeHtmlEntities(raw.costo_ingresso.trim());
     }
   }
 
-  // Price info
-  const offers = eventData.offers as Record<string, unknown> | undefined;
-  let priceInfo: string | null = null;
-  let isFree: boolean | null = null;
-  if (offers) {
-    const price = String(offers.price || "");
-    if (price === "0" || price === "0.00") {
-      isFree = true;
-      priceInfo = "Ingresso gratuito";
-    } else if (price && price !== "Non specificato") {
-      priceInfo = price;
-    }
+  // --- Image ---
+  let imageUrl: string | null = null;
+  if (raw.featured_image && !isLowQualityUrl(raw.featured_image)) {
+    imageUrl = raw.featured_image;
   }
 
   return {
@@ -519,7 +539,7 @@ function parseDetailPage(html: string, sourceUrl: string): NormalizedEvent | nul
     isFree,
     imageUrl,
     url: sourceUrl,
-    sourceDescription: description,
+    sourceDescription,
     contentHash: generateContentHash(title, city, startDate),
     lat,
     lng,
@@ -528,10 +548,9 @@ function parseDetailPage(html: string, sourceUrl: string): NormalizedEvent | nul
 
 // --- Main scraping logic ---
 
-const BASE_URL = "https://insagra.it/regione/veneto/";
-const MAX_PAGES = 6; // insagra has ~5 pages, add 1 safety margin
+const PER_PAGE = 50;
+const MAX_PAGES = 10; // 50 * 10 = 500 events max, safety cap
 const SOURCE_NAME = "insagra";
-const DELAY_MS = 1500; // politeness delay
 
 async function scrapeInsagra(supabase: SupabaseClient): Promise<void> {
   const startedAt = Date.now();
@@ -539,72 +558,53 @@ async function scrapeInsagra(supabase: SupabaseClient): Promise<void> {
   let totalInserted = 0;
   let totalMerged = 0;
   let totalSkipped = 0;
+  let totalApiEvents = 0;
 
   try {
-    // Phase 1: Collect all detail page URLs from listing pages
-    const allDetailUrls: string[] = [];
-
+    // Paginate through the API
     for (let page = 1; page <= MAX_PAGES; page++) {
-      const url = page === 1 ? BASE_URL : `${BASE_URL}page/${page}/`;
-      console.log(`[insagra] Fetching listing page ${page}: ${url}`);
-
-      const html = await fetchWithTimeout(url, 15_000);
-      if (!html) {
-        console.log(`[insagra] No HTML for page ${page}, stopping pagination`);
+      // Time budget check (120s total for edge function)
+      if (Date.now() - startedAt > 110_000) {
+        console.log(`[insagra] Time budget exceeded at page ${page}, stopping`);
         break;
       }
 
-      const links = extractDetailLinks(html);
-      console.log(`[insagra] Page ${page}: found ${links.length} detail links`);
+      const events = await fetchApiPage(page, PER_PAGE);
+      console.log(`[insagra] Page ${page}: received ${events.length} events from API`);
 
-      if (links.length === 0) {
+      if (events.length === 0) {
         // No more events — end of pagination
         break;
       }
 
-      for (const link of links) {
-        if (!allDetailUrls.includes(link)) allDetailUrls.push(link);
+      totalApiEvents += events.length;
+
+      for (const rawEvent of events) {
+        const event = parseApiEvent(rawEvent);
+        if (!event) continue;
+
+        totalFound++;
+        const { result } = await upsertEvent(supabase, event, SOURCE_NAME);
+        if (result === "inserted") totalInserted++;
+        else if (result === "merged") totalMerged++;
+        else totalSkipped++;
+
+        console.log(`[insagra] ${result}: "${event.title}" (${event.city}, ${event.province})${event.lat != null ? " [GPS]" : ""}`);
       }
 
-      // Politeness delay between listing pages
-      await new Promise(r => setTimeout(r, DELAY_MS));
-    }
-
-    console.log(`[insagra] Total unique detail URLs: ${allDetailUrls.length}`);
-
-    // Phase 2: Fetch each detail page and parse JSON-LD Event
-    for (const detailUrl of allDetailUrls) {
-      // Time budget check (120s total)
-      if (Date.now() - startedAt > 110_000) {
-        console.log(`[insagra] Time budget exceeded, stopping`);
+      // If fewer events than per_page, we reached the last page
+      if (events.length < PER_PAGE) {
+        console.log(`[insagra] Last page reached (${events.length} < ${PER_PAGE})`);
         break;
       }
 
-      console.log(`[insagra] Fetching detail: ${detailUrl}`);
-      const html = await fetchWithTimeout(detailUrl, 10_000);
-      if (!html) {
-        console.log(`[insagra] Failed to fetch: ${detailUrl}`);
-        continue;
-      }
-
-      const event = parseDetailPage(html, detailUrl);
-      if (!event) continue;
-
-      totalFound++;
-      const { result } = await upsertEvent(supabase, event, SOURCE_NAME);
-      if (result === "inserted") totalInserted++;
-      else if (result === "merged") totalMerged++;
-      else totalSkipped++;
-
-      console.log(`[insagra] ${result}: "${event.title}" (${event.city}, ${event.province})`);
-
-      // Politeness delay between detail pages
-      await new Promise(r => setTimeout(r, DELAY_MS));
+      // Small delay between API pages (politeness)
+      await new Promise(r => setTimeout(r, 500));
     }
 
     await logRun(supabase, "success", totalFound, totalInserted, totalMerged, null, startedAt,
-      `skipped=${totalSkipped}, detail_urls=${allDetailUrls.length}`);
-    console.log(`[insagra] Done: found=${totalFound}, inserted=${totalInserted}, merged=${totalMerged}, skipped=${totalSkipped}, duration=${Date.now() - startedAt}ms`);
+      `skipped=${totalSkipped}, api_events=${totalApiEvents}`);
+    console.log(`[insagra] Done: api_events=${totalApiEvents}, found=${totalFound}, inserted=${totalInserted}, merged=${totalMerged}, skipped=${totalSkipped}, duration=${Date.now() - startedAt}ms`);
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     console.error(`[insagra] Error:`, errorMessage);
@@ -620,7 +620,7 @@ Deno.serve(async (_req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
-  console.log(`[scrape-insagra] Starting — scraping insagra.it Veneto listings`);
+  console.log(`[scrape-insagra] Starting -- insagra.it REST API (Veneto)`);
 
   EdgeRuntime.waitUntil(scrapeInsagra(supabase));
 
