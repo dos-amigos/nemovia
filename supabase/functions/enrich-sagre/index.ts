@@ -232,7 +232,11 @@ async function validateImageWithVision(
   const expectedProduct = extractExpectedProduct(sagraTitle);
 
   try {
-    const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    // ========================================================================
+    // STEP 1: Ask Vision "what do you see?" — if it can't clearly identify
+    // the subject, the photo is too ambiguous/abstract/blurry and gets rejected.
+    // ========================================================================
+    const descResp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -246,20 +250,7 @@ async function validateImageWithVision(
             content: [
               {
                 type: "text",
-                text: `VERIFICA RIGOROSA. Questa foto sarà associata a "${sagraTitle}".
-Il prodotto che DEVE apparire nella foto è: ${expectedProduct}.
-
-Rispondi SOLO "SI" o "NO".
-
-Rispondi "NO" se:
-- La foto NON mostra ${expectedProduct}. Esempi: formaggio al posto di gnocchi = NO. Fragole/dolci al posto di polpette = NO. Pane al posto di pesce = NO.
-- La foto mostra un prodotto DIVERSO anche se è cibo italiano (es. la sagra è "del Gnocco" ma la foto mostra formaggio → NO)
-- La foto contiene cibo asiatico/orientale (sushi, bacchette, ramen, wok, noodle, tofu, dim sum)
-- La foto è generica (paesaggio, persone, tavola imbandita senza il prodotto specifico)
-
-Rispondi "SI" SOLO se nella foto è CHIARAMENTE VISIBILE e RICONOSCIBILE il prodotto "${expectedProduct}".
-Se hai dubbi → rispondi NO.
-UNA sola parola:`,
+                text: `Descrivi cosa vedi in questa foto in MASSIMO 10 parole. Solo il soggetto principale. Se la foto è sfocata, troppo ravvicinata, astratta, o non riesci a capire cosa sia → rispondi "INCOMPRENSIBILE".`,
               },
               {
                 type: "image_url",
@@ -269,23 +260,84 @@ UNA sola parola:`,
           },
         ],
         temperature: 0.1,
+        max_tokens: 30,
+      }),
+    });
+
+    if (!descResp.ok) {
+      console.warn(`Vision Step1 API error ${descResp.status} for "${sagraTitle}" — fail-open`);
+      return true;
+    }
+
+    const descData = await descResp.json();
+    const description = (descData.choices?.[0]?.message?.content ?? "").trim();
+
+    // Reject if Vision says it's incomprehensible or too abstract
+    if (/incomprensibile|non riesco|non si capisce|astratt|sfocato|blurr|unclear|cannot|unrecognizable/i.test(description)) {
+      console.log(`🚫 Vision REJECTED (incomprehensible) for "${sagraTitle}": "${description}"`);
+      return false;
+    }
+
+    // Reject disturbing/inappropriate content
+    if (/sangue|blood|carne cruda|raw meat|ferita|wound|organo|organ/i.test(description)) {
+      console.log(`🚫 Vision REJECTED (disturbing) for "${sagraTitle}": "${description}"`);
+      return false;
+    }
+
+    // Reject if not food-related at all
+    if (/paesaggio|landscape|edificio|building|auto|car|persona|person|testo|text|logo|grafica|neon|insegna|sign/i.test(description) &&
+        !/cibo|food|piatto|dish|cucina|kitchen|formaggio|cheese|pasta|pane|bread|vino|wine|dolce|sweet|frutta|fruit|verdura|vegetable|pesce|fish|carne|meat|polenta|gnocch|risott/i.test(description)) {
+      console.log(`🚫 Vision REJECTED (not food) for "${sagraTitle}": "${description}"`);
+      return false;
+    }
+
+    console.log(`👁️ Vision Step1 for "${sagraTitle}": "${description}"`);
+
+    // ========================================================================
+    // STEP 2: Ask "does this match the expected product?"
+    // Now we know it's a clear, identifiable photo. Check if it's the RIGHT food.
+    // ========================================================================
+    const matchResp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${groqKey}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.2-90b-vision-preview",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Questa foto mostra "${description}". Sarà usata per "${sagraTitle}" (prodotto atteso: ${expectedProduct}).
+
+La foto è COERENTE col prodotto "${expectedProduct}"? Rispondi SOLO "SI" o "NO".
+NO se il soggetto è DIVERSO (es. formaggio per gnocchi, dolci per polpette, insegna per sagra).
+SI solo se il soggetto è chiaramente ${expectedProduct} o molto simile.`,
+              },
+            ],
+          },
+        ],
+        temperature: 0.1,
         max_tokens: 10,
       }),
     });
 
-    if (!resp.ok) {
-      console.warn(`Vision validation API error ${resp.status} for "${sagraTitle}" — fail-open`);
-      return true; // fail-open
+    if (!matchResp.ok) {
+      console.warn(`Vision Step2 API error ${matchResp.status} for "${sagraTitle}" — fail-open`);
+      return true;
     }
 
-    const data = await resp.json();
-    const answer = (data.choices?.[0]?.message?.content ?? "").trim().toUpperCase();
+    const matchData = await matchResp.json();
+    const answer = (matchData.choices?.[0]?.message?.content ?? "").trim().toUpperCase();
     const isValid = answer.startsWith("SI") || answer.startsWith("SÌ") || answer === "YES";
 
     if (!isValid) {
-      console.log(`🚫 Vision REJECTED image for "${sagraTitle}" (expected: ${expectedProduct}, answer: ${answer})`);
+      console.log(`🚫 Vision REJECTED (mismatch) for "${sagraTitle}" (saw: "${description}", expected: ${expectedProduct}, answer: ${answer})`);
     } else {
-      console.log(`✅ Vision APPROVED image for "${sagraTitle}"`);
+      console.log(`✅ Vision APPROVED for "${sagraTitle}" (saw: "${description}")`);
     }
 
     return isValid;
